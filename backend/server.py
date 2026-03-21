@@ -19,6 +19,7 @@ from datetime import datetime, timezone, timedelta
 import jwt
 import bcrypt
 import json
+import httpx
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -199,6 +200,9 @@ class UserCreate(BaseModel):
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
+
+class GoogleAuthRequest(BaseModel):
+    credential: str  # Google ID token from GSI
 
 class UserUpdate(BaseModel):
     nickname: Optional[str] = None
@@ -460,7 +464,11 @@ async def register(user_data: UserCreate):
 @api_router.post("/auth/login", response_model=TokenResponse)
 async def login(credentials: UserLogin):
     user = await db.users.find_one({"email": credentials.email.lower()}, {"_id": 0})
-    if not user or not verify_password(credentials.password, user["password_hash"]):
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    if not user.get("password_hash"):
+        raise HTTPException(status_code=400, detail="This account uses Google Sign-In. Please sign in with Google.")
+    if not verify_password(credentials.password, user["password_hash"]):
         raise HTTPException(status_code=401, detail="Invalid email or password")
     
     token = create_token(user["id"])
@@ -474,6 +482,74 @@ async def login(credentials: UserLogin):
         role=user.get("role"),             # Will be None for existing users
         created_at=user["created_at"]
     )
+    return TokenResponse(token=token, user=user_response)
+
+@api_router.post("/auth/google", response_model=TokenResponse)
+async def google_auth(body: GoogleAuthRequest):
+    """Verify Google ID token and login or register the user."""
+    google_client_id = os.environ.get("GOOGLE_CLIENT_ID")
+    if not google_client_id:
+        raise HTTPException(status_code=500, detail="Google auth not configured")
+
+    # Verify the ID token with Google
+    async with httpx.AsyncClient() as http_client:
+        resp = await http_client.get(
+            f"https://oauth2.googleapis.com/tokeninfo?id_token={body.credential}"
+        )
+    if resp.status_code != 200:
+        raise HTTPException(status_code=401, detail="Invalid Google token")
+
+    google_info = resp.json()
+    # Verify audience matches our client ID
+    if google_info.get("aud") != google_client_id:
+        raise HTTPException(status_code=401, detail="Token audience mismatch")
+
+    email = google_info["email"].lower()
+    name = google_info.get("name", email.split("@")[0])
+    picture = google_info.get("picture")
+
+    # Check if user exists
+    user = await db.users.find_one({"email": email}, {"_id": 0})
+
+    if user:
+        # Existing user — log them in
+        token = create_token(user["id"])
+        user_response = UserResponse(
+            id=user["id"],
+            name=user["name"],
+            nickname=user.get("nickname"),
+            email=user["email"],
+            avatar=user.get("avatar"),
+            family_id=user.get("family_id"),
+            role=user.get("role"),
+            created_at=user["created_at"]
+        )
+    else:
+        # New user — register with Google info (no password)
+        user_id = str(uuid.uuid4())
+        user_doc = {
+            "id": user_id,
+            "name": name,
+            "nickname": None,
+            "email": email,
+            "password_hash": None,  # Google users have no password
+            "avatar": picture,
+            "auth_provider": "google",
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.users.insert_one(user_doc)
+        token = create_token(user_id)
+        user_response = UserResponse(
+            id=user_id,
+            name=name,
+            nickname=None,
+            email=email,
+            avatar=picture,
+            family_id=None,
+            role=None,
+            created_at=user_doc["created_at"]
+        )
+
     return TokenResponse(token=token, user=user_response)
 
 @api_router.get("/auth/me", response_model=UserResponse)
