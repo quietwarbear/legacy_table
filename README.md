@@ -1,16 +1,37 @@
-# family_recipe_app
+# Legacy Table
 
-A new Flutter project.
+Where family recipes live forever.
 
-## Getting Started
+## Project Structure
 
-This project is a starting point for a Flutter application.
+```
+legacy_table/
+├── frontend/    # React web app (Vercel)
+├── backend/     # FastAPI server (Railway)
+└── mobile/      # Flutter app (iOS & Android)
+```
 
-A few resources to get you started if this is your first Flutter project:
+## Frontend (React)
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+```bash
+cd frontend
+npm install
+npm start
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Backend (FastAPI)
+
+```bash
+cd backend
+pip install -r requirements.txt
+cp sample.env .env   # fill in your values
+uvicorn server:app --reload
+```
+
+## Mobile (Flutter)
+
+```bash
+cd mobile
+flutter pub get
+flutter run
+```

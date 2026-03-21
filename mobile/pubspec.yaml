@@ -1,0 +1,151 @@
+name: family_recipe_app
+description: "A new Flutter project."
+# The following line prevents the package from being accidentally published to
+# pub.dev using `flutter pub publish`. This is preferred for private packages.
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+# The following defines the version and build number for your application.
+# A version number is three numbers separated by dots, like 1.2.43
+# followed by an optional build number separated by a +.
+# Both the version and the builder number may be overridden in flutter
+# build by specifying --build-name and --build-number, respectively.
+# In Android, build-name is used as versionName while build-number used as versionCode.
+# Read more about Android versioning at https://developer.android.com/studio/publish/versioning
+# In iOS, build-name is used as CFBundleShortVersionString while build-number is used as CFBundleVersion.
+# Read more about iOS versioning at
+# https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
+# In Windows, build-name is used as the major, minor, and patch parts
+# of the product and file versions while build-number is used as the build suffix.
+version: 1.0.3+103
+
+environment:
+  sdk: ^3.9.2
+
+# Dependencies specify other packages that your package needs in order to work.
+# To automatically upgrade your package dependencies to the latest versions
+# consider running `flutter pub upgrade --major-versions`. Alternatively,
+# dependencies can be manually updated by changing the version numbers below to
+# the latest version available on pub.dev. To see which dependencies have newer
+# versions available, run `flutter pub outdated`.
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # The following adds the Cupertino Icons font to your application.
+  # Use with the CupertinoIcons class for iOS style icons.
+  cupertino_icons: ^1.0.8
+  flutter_svg: ^2.0.10+1
+  dio: ^5.4.0
+  flutter_secure_storage: ^9.0.0
+  shared_preferences: ^2.2.2
+  provider: ^6.1.1
+  shimmer: ^3.0.0
+  pdf: ^3.11.1
+  printing: ^5.13.3
+  path_provider: ^2.1.5
+  share_plus: ^7.2.2
+  image_picker: ^1.2.1
+  permission_handler: ^11.3.1
+  device_preview: ^1.3.1
+  url_launcher: ^6.3.2
+  purchases_flutter: ^9.15.0
+
+dev_dependencies:
+  flutter_launcher_icons: ^0.14.4
+  flutter_test:
+    sdk: flutter
+
+  # The "flutter_lints" package below contains a set of recommended lints to
+  # encourage good coding practices. The lint set provided by the package is
+  # activated in the `analysis_options.yaml` file located at the root of your
+  # package. See that file for information about deactivating specific lint
+  # rules and activating additional ones.
+  flutter_lints: ^5.0.0
+
+# For information on the generic Dart part of this file, see the
+# following page: https://dart.dev/tools/pub/pubspec
+
+# The following section is specific to Flutter packages.
+flutter:
+
+  # The following line ensures that the Material Icons font is
+  # included with your application, so that you can use the icons in
+  # the material Icons class.
+  uses-material-design: true
+
+  # Assets configuration
+  assets:
+    - assets/images/
+    - assets/
+    - assets/icons/
+
+  # Fonts configuration
+  fonts:
+    # Playfair Display - Used for headings (H1, H2, H3, H4, H5, H6)
+    - family: Playfair Display
+      fonts:
+        - asset: fonts/Playfair_Display/PlayfairDisplay-Regular.ttf
+          weight: 400
+        - asset: fonts/Playfair_Display/PlayfairDisplay-SemiBold.ttf
+          weight: 600
+        - asset: fonts/Playfair_Display/PlayfairDisplay-Bold.ttf
+          weight: 700
+        - asset: fonts/Playfair_Display/PlayfairDisplay-Italic.ttf
+          weight: 400
+          style: italic
+        - asset: fonts/Playfair_Display/PlayfairDisplay-SemiBoldItalic.ttf
+          weight: 600
+          style: italic
+        - asset: fonts/Playfair_Display/PlayfairDisplay-BoldItalic.ttf
+          weight: 700
+          style: italic
+
+    # Manrope - Used for body text, buttons, forms, UI elements
+    - family: Manrope
+      fonts:
+        - asset: fonts/Manrope/Manrope-Regular.ttf
+          weight: 400
+        - asset: fonts/Manrope/Manrope-Medium.ttf
+          weight: 500
+        - asset: fonts/Manrope/Manrope-SemiBold.ttf
+          weight: 600
+        - asset: fonts/Manrope/Manrope-Bold.ttf
+          weight: 700
+
+    # Dancing Script - Used for logo text, brand name, decorative elements
+    - family: Dancing Script
+      fonts:
+        - asset: fonts/Dancing_Script/DancingScript-Regular.ttf
+          weight: 400
+        - asset: fonts/Dancing_Script/DancingScript-Medium.ttf
+          weight: 500
+        - asset: fonts/Dancing_Script/DancingScript-SemiBold.ttf
+          weight: 600
+        - asset: fonts/Dancing_Script/DancingScript-Bold.ttf
+          weight: 700
+
+    # Cormorant Garamond - Available but not actively used
+    - family: Cormorant Garamond
+      fonts:
+        - asset: fonts/Cormorant_Garamond/CormorantGaramond-Regular.ttf
+          weight: 400
+        - asset: fonts/Cormorant_Garamond/CormorantGaramond-SemiBold.ttf
+          weight: 600
+        - asset: fonts/Cormorant_Garamond/CormorantGaramond-Bold.ttf
+          weight: 700
+        - asset: fonts/Cormorant_Garamond/CormorantGaramond-Italic.ttf
+          weight: 400
+          style: italic
+        - asset: fonts/Cormorant_Garamond/CormorantGaramond-SemiBoldItalic.ttf
+          weight: 600
+          style: italic
+        - asset: fonts/Cormorant_Garamond/CormorantGaramond-BoldItalic.ttf
+          weight: 700
+          style: italic
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/images/app-icon.png"
+  adaptive_icon_background: "#000000"
+  adaptive_icon_foreground: "assets/images/app-icon.png"
