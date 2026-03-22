@@ -141,6 +141,20 @@ export const PricingPage = () => {
   const [annual, setAnnual] = useState(true);
   const [loadingTier, setLoadingTier] = useState(null);
 
+  // Reset loading state when user returns from Stripe (bfcache / pageshow)
+  useEffect(() => {
+    const resetLoading = (e) => {
+      if (e.persisted) setLoadingTier(null);
+    };
+    window.addEventListener("pageshow", resetLoading);
+    const handleFocus = () => setLoadingTier(null);
+    window.addEventListener("focus", handleFocus);
+    return () => {
+      window.removeEventListener("pageshow", resetLoading);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, []);
+
   const handleSubscribe = async (selectedTier) => {
     if (!token) {
       navigate("/login");
@@ -158,7 +172,7 @@ export const PricingPage = () => {
         {
           price_id: priceId,
           success_url: `${window.location.origin}/subscription/success`,
-          cancel_url: `${window.location.origin}/pricing`,
+          cancel_url: `${window.location.origin}/subscribe`,
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
