@@ -1825,6 +1825,175 @@ const EditRecipePage = () => {
   );
 };
 
+// Share Recipe Card Component
+const ShareRecipeCard = ({ recipe }) => {
+  const canvasRef = React.useRef(null);
+  useEffect(() => {
+    if (!canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    canvas.width = 1080;
+    canvas.height = 1080;
+    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    gradient.addColorStop(0, '#D4A574');
+    gradient.addColorStop(0.5, '#D97A6E');
+    gradient.addColorStop(1, '#A89968');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+    ctx.fillRect(0, 0, canvas.width, 8);
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 56px Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    const maxWidth = canvas.width - 80;
+    const title = recipe.title;
+    const titleLines = [];
+    let currentLine = '';
+    for (let i = 0; i < title.length; i++) {
+      const testLine = currentLine + title[i];
+      const metrics = ctx.measureText(testLine);
+      if (metrics.width > maxWidth && currentLine.length > 0) {
+        titleLines.push(currentLine);
+        currentLine = title[i];
+      } else {
+        currentLine = testLine;
+      }
+    }
+    titleLines.push(currentLine);
+    let yPos = 150;
+    titleLines.forEach((line) => {
+      ctx.fillText(line, canvas.width / 2, yPos);
+      yPos += 70;
+    });
+    ctx.font = 'italic 32px Georgia, serif';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    yPos += 40;
+    ctx.fillText(`A family recipe by ${recipe.author_name}`, canvas.width / 2, yPos);
+    yPos += 80;
+    ctx.font = '24px Georgia, serif';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+    const details = `${recipe.cooking_time} min • Serves ${recipe.servings}`;
+    ctx.fillText(details, canvas.width / 2, yPos);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.lineWidth = 2;
+    yPos += 60;
+    ctx.beginPath();
+    ctx.moveTo(200, yPos);
+    ctx.lineTo(canvas.width - 200, yPos);
+    ctx.stroke();
+    yPos += 60;
+    ctx.font = 'bold 20px Arial, sans-serif';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    ctx.fillText('legacytable.app/recipes/' + recipe.id, canvas.width / 2, yPos);
+    yPos += 70;
+    ctx.font = '28px Georgia, serif';
+    ctx.fillStyle = '#FFFFFF';
+    ctx.fillText('Legacy Table', canvas.width / 2, yPos);
+    ctx.font = '14px Arial, sans-serif';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+    ctx.fillText('Preserve and Share Your Family Culinary Heritage', canvas.width / 2, yPos + 40);
+  }, [recipe]);
+  const handleDownloadImage = () => {
+    if (!canvasRef.current) return;
+    const link = document.createElement('a');
+    link.href = canvasRef.current.toDataURL('image/png');
+    link.download = `${recipe.title.replace(/\s+/g, '_')}_legacy_table.png`;
+    link.click();
+    toast.success('Image downloaded!');
+  };
+  const handleShare = async () => {
+    const shareUrl = `${window.location.origin}/recipe/${recipe.id}`;
+    const shareData = {
+      title: recipe.title,
+      text: `Check out "${recipe.title}" - A family recipe by ${recipe.author_name}`,
+      url: shareUrl,
+    };
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.error('Share failed:', err);
+        }
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        toast.success('Recipe link copied to clipboard!');
+      } catch (err) {
+        toast.error('Failed to copy link');
+      }
+    }
+  };
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-center">
+        <canvas
+          ref={canvasRef}
+          className="rounded-2xl shadow-lg max-w-full border-4 border-primary/20"
+          style={{ maxHeight: '600px', width: 'auto' }}
+        />
+      </div>
+      <div className="flex gap-4 justify-center flex-wrap">
+        <Button
+          onClick={handleDownloadImage}
+          className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 flex items-center gap-2 px-6 py-6"
+        >
+          <Download className="w-5 h-5" />
+          Download Image
+        </Button>
+        <Button
+          onClick={handleShare}
+          variant="outline"
+          className="rounded-full border-2 border-primary text-primary hover:bg-primary/5 flex items-center gap-2 px-6 py-6"
+        >
+          <Share2 className="w-5 h-5" />
+          Share Recipe
+        </Button>
+      </div>
+      <div className="p-4 rounded-xl bg-muted/50 border border-border/50 text-center">
+        <p className="text-sm text-muted-foreground">Share this link:</p>
+        <p className="font-mono text-sm mt-2 break-all text-foreground">
+          legacytable.app/recipes/{recipe.id}
+        </p>
+      </div>
+    </div>
+  );
+};
+
+const ShareRecipeModal = ({ recipe, isOpen, onClose }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-fade-in">
+      <div className="bg-background rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-scale-up shadow-2xl">
+        <div className="sticky top-0 bg-background border-b border-border/50 p-6 flex items-center justify-between">
+          <h2 className="font-serif text-2xl font-bold text-foreground">Share Recipe</h2>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-muted rounded-full transition-colors"
+            aria-label="Close"
+          >
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+        <div className="p-6">
+          <ShareRecipeCard recipe={recipe} />
+        </div>
+        <div className="border-t border-border/50 p-6 flex justify-end">
+          <Button
+            onClick={onClose}
+            variant="outline"
+            className="rounded-full px-8 py-6"
+          >
+            Close
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Recipe Detail Page
 const RecipeDetailPage = () => {
   const [recipe, setRecipe] = useState(null);
@@ -1834,6 +2003,7 @@ const RecipeDetailPage = () => {
   const [newComment, setNewComment] = useState("");
   const [submittingComment, setSubmittingComment] = useState(false);
   const [accessDenied, setAccessDenied] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
   const { token, user } = useAuth();
   const navigate = useNavigate();
   const { id } = useParams();
@@ -2022,8 +2192,27 @@ const RecipeDetailPage = () => {
                   </span>
                 </div>
               </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShareModalOpen(true)}
+                className="rounded-full border-2 border-primary text-primary hover:bg-primary/10"
+                data-testid="share-recipe-btn"
+              >
+                <Share2 className="w-4 h-4 mr-1" />
+                Share
+              </Button>
               {(user?.id === recipe.author_id || user?.role === "keeper") && (
                 <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => navigate(`/recipe/${recipe.id}/cook`)}
+                    className="rounded-full bg-amber-600 hover:bg-amber-700 text-white"
+                    data-testid="cook-mode-btn"
+                  >
+                    <Flame className="w-4 h-4 mr-1" />
+                    Cook Mode
+                  </Button>
                   {user?.id === recipe.author_id && (
                     <Button 
                       variant="outline" 
@@ -2197,6 +2386,352 @@ const RecipeDetailPage = () => {
         </div>
       </div>
     </div>
+  );
+};
+
+
+// Cook Mode Page: Full-screen cooking interface with step-by-step instructions
+const CookModePage = () => {
+  const { id } = useParams();
+  const { token } = useAuth();
+  const navigate = useNavigate();
+  const { canAccess } = useSubscription();
+  const [recipe, setRecipe] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [checkedIngredients, setCheckedIngredients] = useState({});
+  const [screenAwake, setScreenAwake] = useState(false);
+  const [timerMinutes, setTimerMinutes] = useState(0);
+  const [timerSeconds, setTimerSeconds] = useState(0);
+  const [timerActive, setTimerActive] = useState(false);
+  const [accessDenied, setAccessDenied] = useState(false);
+
+  // Parse instructions into steps
+  const parseSteps = (instructionsText) => {
+    if (!instructionsText) return [];
+    const lines = instructionsText.split('\n').filter(line => line.trim());
+    return lines.map(line => line.trim());
+  };
+
+  useEffect(() => {
+    fetchRecipe();
+  }, [id]);
+
+  const fetchRecipe = async () => {
+    try {
+      const response = await axios.get(`${API}/recipes/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setRecipe(response.data);
+      setAccessDenied(false);
+      setLoading(false);
+    } catch (error) {
+      if (error.response?.status === 403) {
+        setAccessDenied(true);
+      } else {
+        toast.error("Recipe not found");
+        navigate("/");
+      }
+      setLoading(false);
+    }
+  };
+
+  // Wake Lock API management
+  const toggleScreenAwake = async () => {
+    if (screenAwake) {
+      // Release wake lock
+      setScreenAwake(false);
+      toast.success("Screen lock released");
+    } else {
+      // Request wake lock
+      try {
+        const wakeLock = await navigator.wakeLock.request('screen');
+        setScreenAwake(true);
+        toast.success("Screen will stay awake");
+
+        // Release on visibility change
+        const handleVisibilityChange = async () => {
+          if (document.hidden) {
+            wakeLock.release();
+            setScreenAwake(false);
+          }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => {
+          document.removeEventListener('visibilitychange', handleVisibilityChange);
+        };
+      } catch (err) {
+        toast.error("Screen wake lock not supported on this device");
+      }
+    }
+  };
+
+  // Timer countdown effect
+  useEffect(() => {
+    let interval;
+    if (timerActive && (timerMinutes > 0 || timerSeconds > 0)) {
+      interval = setInterval(() => {
+        if (timerSeconds > 0) {
+          setTimerSeconds(timerSeconds - 1);
+        } else if (timerMinutes > 0) {
+          setTimerMinutes(timerMinutes - 1);
+          setTimerSeconds(59);
+        } else {
+          setTimerActive(false);
+          toast.success("Timer complete!");
+        }
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [timerActive, timerMinutes, timerSeconds]);
+
+  const handleTimerStart = () => {
+    if (timerMinutes === 0 && timerSeconds === 0) {
+      toast.error("Set a time first");
+      return;
+    }
+    setTimerActive(!timerActive);
+  };
+
+  const handleSetTimer = (mins) => {
+    setTimerMinutes(mins);
+    setTimerSeconds(0);
+    setTimerActive(false);
+  };
+
+  const toggleIngredient = (index) => {
+    setCheckedIngredients(prev => ({
+      ...prev,
+      [index]: !prev[index]
+    }));
+  };
+
+  if (loading) {
+    return (
+      <div className="w-screen h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 rounded-full bg-primary/20 animate-pulse mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading recipe...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (accessDenied) {
+    return (
+      <div className="w-screen h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="font-serif text-2xl font-semibold mb-2">No access to this recipe</h2>
+          <p className="text-muted-foreground mb-6">Join the family to cook this recipe</p>
+          <Button onClick={() => navigate("/recipe/" + id)} className="rounded-full">
+            Back to Recipe
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!recipe) return null;
+
+  if (!canAccess("heritage")) {
+    return (
+      <div className="w-screen h-screen bg-background flex items-center justify-center p-4">
+        <div className="text-center max-w-md">
+          <Crown className="w-12 h-12 text-primary mx-auto mb-4" />
+          <h2 className="font-serif text-2xl font-semibold mb-2">Cook Mode is a Heritage feature</h2>
+          <p className="text-muted-foreground mb-6">Upgrade to Heritage Keeper to use the full-screen cooking interface</p>
+          <Button onClick={() => navigate("/subscribe")} className="rounded-full bg-primary">
+            Upgrade Now
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  const steps = parseSteps(recipe.instructions);
+  const currentStepText = steps[currentStep] || "";
+
+  return (
+    <div className="w-screen h-screen bg-amber-50 dark:bg-amber-950 flex flex-col overflow-hidden">
+      {/* Top Bar */}
+      <div className="bg-amber-100 dark:bg-amber-900 border-b border-amber-200 dark:border-amber-800 p-4 flex items-center justify-between">
+        <div className="flex-1">
+          <h1 className="font-serif text-xl md:text-2xl font-bold text-foreground truncate">
+            {recipe.title}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {recipe.cooking_time} min • {recipe.servings} servings
+          </p>
+        </div>
+        <button
+          onClick={() => navigate(`/recipe/${id}`)}
+          className="p-2 hover:bg-amber-200 dark:hover:bg-amber-800 rounded-lg transition-colors"
+          aria-label="Exit cook mode"
+        >
+          <X className="w-6 h-6 text-foreground" />
+        </button>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 overflow-y-auto flex flex-col md:flex-row gap-6 p-6 md:p-8">
+
+        {/* Left: Instructions (Main) */}
+        <div className="flex-1 flex flex-col justify-center md:min-h-0 md:justify-start">
+          <div className="space-y-6">
+            {/* Step Counter */}
+            <div className="text-sm font-semibold text-amber-700 dark:text-amber-300">
+              Step {currentStep + 1} of {steps.length}
+            </div>
+
+            {/* Large Step Text */}
+            <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 md:p-12 shadow-lg border-2 border-amber-200 dark:border-amber-700 min-h-40 flex items-center">
+              <p className="font-serif text-3xl md:text-4xl lg:text-5xl font-semibold text-foreground leading-relaxed">
+                {currentStepText}
+              </p>
+            </div>
+
+            {/* Step Navigation */}
+            <div className="flex gap-3 justify-between">
+              <Button
+                onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
+                disabled={currentStep === 0}
+                variant="outline"
+                className="flex-1 rounded-xl border-2 border-amber-200 dark:border-amber-700 h-12 text-base font-semibold"
+              >
+                Previous
+              </Button>
+              <Button
+                onClick={() => setCurrentStep(Math.min(steps.length - 1, currentStep + 1))}
+                disabled={currentStep === steps.length - 1}
+                className="flex-1 rounded-xl bg-amber-600 hover:bg-amber-700 text-white h-12 text-base font-semibold"
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Sidebar: Ingredients & Timer */}
+        <div className="w-full md:w-80 space-y-6">
+
+          {/* Ingredients Checklist */}
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border-2 border-amber-200 dark:border-amber-700">
+            <h2 className="font-serif text-lg font-semibold mb-4 text-foreground">
+              Ingredients
+            </h2>
+            <div className="space-y-3 max-h-40 overflow-y-auto">
+              {recipe.ingredients.map((ingredient, index) => (
+                <button
+                  key={index}
+                  onClick={() => toggleIngredient(index)}
+                  className={`w-full text-left p-3 rounded-lg transition-all flex items-start gap-3 ${
+                    checkedIngredients[index]
+                      ? 'bg-green-100 dark:bg-green-900 line-through text-muted-foreground'
+                      : 'bg-amber-50 dark:bg-amber-900/30 text-foreground hover:bg-amber-100 dark:hover:bg-amber-900/50'
+                  }`}
+                >
+                  <Checkbox
+                    checked={checkedIngredients[index] || false}
+                    className="mt-1"
+                    readOnly
+                  />
+                  <span className="text-sm md:text-base">{ingredient}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Timer */}
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border-2 border-amber-200 dark:border-amber-700">
+            <h2 className="font-serif text-lg font-semibold mb-4 text-foreground flex items-center gap-2">
+              <Clock className="w-5 h-5" />
+              Timer
+            </h2>
+
+            {/* Timer Display */}
+            <div className="text-5xl font-bold text-center text-amber-700 dark:text-amber-300 mb-4 font-mono">
+              {String(timerMinutes).padStart(2, '0')}:{String(timerSeconds).padStart(2, '0')}
+            </div>
+
+            {/* Time Input */}
+            <div className="space-y-2 mb-4">
+              <label className="text-sm text-muted-foreground">Set time (minutes):</label>
+              <div className="flex gap-2">
+                <Input
+                  type="number"
+                  min="0"
+                  value={timerMinutes}
+                  onChange={(e) => {
+                    setTimerMinutes(Math.max(0, parseInt(e.target.value) || 0));
+                    setTimerActive(false);
+                  }}
+                  className="h-10 rounded-lg border-2 border-amber-200 dark:border-amber-700"
+                  disabled={timerActive}
+                />
+              </div>
+            </div>
+
+            {/* Quick Timer Buttons */}
+            <div className="grid grid-cols-3 gap-2 mb-4">
+              {[5, 10, 15].map(mins => (
+                <Button
+                  key={mins}
+                  onClick={() => handleSetTimer(mins)}
+                  variant="outline"
+                  size="sm"
+                  className="rounded-lg border-amber-200 dark:border-amber-700 text-sm"
+                  disabled={timerActive}
+                >
+                  {mins}m
+                </Button>
+              ))}
+            </div>
+
+            {/* Timer Control */}
+            <Button
+              onClick={handleTimerStart}
+              className={`w-full rounded-lg h-10 font-semibold ${
+                timerActive
+                  ? 'bg-amber-600 hover:bg-amber-700 text-white'
+                  : 'bg-amber-200 dark:bg-amber-700 text-foreground hover:bg-amber-300 dark:hover:bg-amber-600'
+              }`}
+            >
+              {timerActive ? 'Pause' : 'Start'}
+            </Button>
+          </div>
+
+          {/* Screen Awake Toggle */}
+          <Button
+            onClick={toggleScreenAwake}
+            className={`w-full rounded-lg h-12 font-semibold text-base ${
+              screenAwake
+                ? 'bg-green-600 hover:bg-green-700 text-white'
+                : 'bg-slate-200 dark:bg-slate-700 text-foreground hover:bg-slate-300 dark:hover:bg-slate-600'
+            }`}
+          >
+            {screenAwake ? (
+              <>
+                <Sun className="w-5 h-5 mr-2" />
+                Screen Awake
+              </>
+            ) : (
+              <>
+                <Moon className="w-5 h-5 mr-2" />
+                Keep Awake
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
+    </div>
+      {recipe && (
+        <ShareRecipeModal
+          recipe={recipe}
+          isOpen={shareModalOpen}
+          onClose={() => setShareModalOpen(false)}
+        />
+      )}
   );
 };
 
@@ -3688,6 +4223,7 @@ function App() {
                 <Route path="/add-recipe" element={<ProtectedRoute><AddRecipePage /></ProtectedRoute>} />
                 <Route path="/recipe/:id" element={<ProtectedRoute><RecipeDetailPage /></ProtectedRoute>} />
                 <Route path="/recipe/:id/edit" element={<ProtectedRoute><EditRecipePage /></ProtectedRoute>} />
+                <Route path="/recipe/:id/cook" element={<ProtectedRoute><CookModePage /></ProtectedRoute>} />
                 <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
                 <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
                 <Route path="/family" element={<ProtectedRoute><FamilyPage /></ProtectedRoute>} />
