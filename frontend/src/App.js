@@ -2724,7 +2724,6 @@ const CookModePage = () => {
           </Button>
         </div>
       </div>
-    </div>
       {recipe && (
         <ShareRecipeModal
           recipe={recipe}
@@ -2732,6 +2731,7 @@ const CookModePage = () => {
           onClose={() => setShareModalOpen(false)}
         />
       )}
+    </div>
   );
 };
 
