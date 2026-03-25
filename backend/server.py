@@ -189,6 +189,97 @@ app.add_middleware(
     expose_headers=["*"],
 )
 
+# ===================== CREDIT SYSTEM =====================
+
+# Monthly credit allocation per subscription tier
+TIER_CREDITS = {
+    None: 3,          # Free tier — enough to try AI features
+    "heritage": 15,   # Heritage Keeper
+    "legacy": 50,     # Legacy Collection
+}
+
+# Credit costs per AI feature (used when features are built)
+CREDIT_COSTS = {
+    "recipe_scan": 1,       # AI recipe scanner (OCR + LLM)
+    "voice_to_recipe": 2,   # Voice-to-recipe (STT + LLM)
+    "ai_share_asset": 1,    # AI-generated share image
+}
+
+
+def get_credits_for_tier(tier: Optional[str]) -> int:
+    """Return monthly credit allocation for a subscription tier."""
+    return TIER_CREDITS.get(tier, TIER_CREDITS[None])
+
+
+def next_refresh_date() -> str:
+    """Return an ISO timestamp 30 days from now (next credit refresh)."""
+    return (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()
+
+
+async def refresh_credits_if_needed(user: dict) -> dict:
+    """Check if credits need refreshing; if so, reset balance and return updated user."""
+    refresh_at = user.get("credits_refresh_at")
+    if refresh_at:
+        try:
+            refresh_dt = datetime.fromisoformat(refresh_at)
+            if refresh_dt.tzinfo is None:
+                refresh_dt = refresh_dt.replace(tzinfo=timezone.utc)
+            if datetime.now(timezone.utc) < refresh_dt:
+                return user  # Not yet time to refresh
+        except (ValueError, TypeError):
+            pass  # Invalid date — refresh now
+
+    # Time to refresh credits
+    tier = user.get("subscription_tier")
+    new_balance = get_credits_for_tier(tier)
+    new_refresh = next_refresh_date()
+
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"credits_balance": new_balance, "credits_refresh_at": new_refresh}}
+    )
+    user["credits_balance"] = new_balance
+    user["credits_refresh_at"] = new_refresh
+    return user
+
+
+async def consume_credit(user: dict, feature: str) -> dict:
+    """
+    Deduct credits for using an AI feature.
+    Raises HTTPException if insufficient credits.
+    Returns updated user dict.
+    """
+    cost = CREDIT_COSTS.get(feature, 1)
+    # Auto-refresh if needed before checking balance
+    user = await refresh_credits_if_needed(user)
+    balance = user.get("credits_balance", 0)
+
+    if balance < cost:
+        tier = user.get("subscription_tier")
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "insufficient_credits",
+                "credits_balance": balance,
+                "credits_needed": cost,
+                "message": (
+                    f"This feature costs {cost} credit{'s' if cost > 1 else ''}. "
+                    f"You have {balance} remaining. "
+                    + ("Upgrade your plan for more credits each month." if not tier else "Credits refresh on your billing cycle.")
+                ),
+            }
+        )
+
+    new_balance = balance - cost
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"credits_balance": new_balance}}
+    )
+    user["credits_balance"] = new_balance
+    logger.info("Credit consumed: user=%s feature=%s cost=%d remaining=%d", user["id"], feature, cost, new_balance)
+    return user
+
+
 # ===================== MODELS =====================
 
 class UserCreate(BaseModel):
@@ -218,6 +309,8 @@ class UserResponse(BaseModel):
     family_id: Optional[str] = None
     role: Optional[str] = None
     subscription_tier: Optional[str] = None  # "heritage" | "legacy" | None
+    credits_balance: int = 0
+    credits_refresh_at: Optional[str] = None  # ISO datetime of next refresh
     created_at: str
 
 class TokenResponse(BaseModel):
@@ -437,6 +530,8 @@ async def register(user_data: UserCreate):
     
     # Create user
     user_id = str(uuid.uuid4())
+    initial_credits = get_credits_for_tier(None)  # Free tier credits
+    credits_refresh = next_refresh_date()
     user_doc = {
         "id": user_id,
         "name": user_data.name,
@@ -444,10 +539,12 @@ async def register(user_data: UserCreate):
         "email": user_data.email.lower(),
         "password_hash": hash_password(user_data.password),
         "avatar": None,
+        "credits_balance": initial_credits,
+        "credits_refresh_at": credits_refresh,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.users.insert_one(user_doc)
-    
+
     token = create_token(user_id)
     user_response = UserResponse(
         id=user_id,
@@ -457,6 +554,8 @@ async def register(user_data: UserCreate):
         avatar=None,
         family_id=None,  # New users start without a family
         role=None,        # New users start without a role
+        credits_balance=initial_credits,
+        credits_refresh_at=credits_refresh,
         created_at=user_doc["created_at"]
     )
     return TokenResponse(token=token, user=user_response)
@@ -471,6 +570,8 @@ async def login(credentials: UserLogin):
     if not verify_password(credentials.password, user["password_hash"]):
         raise HTTPException(status_code=401, detail="Invalid email or password")
     
+    # Auto-refresh credits if needed
+    user = await refresh_credits_if_needed(user)
     token = create_token(user["id"])
     user_response = UserResponse(
         id=user["id"],
@@ -478,8 +579,11 @@ async def login(credentials: UserLogin):
         nickname=user.get("nickname"),
         email=user["email"],
         avatar=user.get("avatar"),
-        family_id=user.get("family_id"),  # Will be None for existing users
-        role=user.get("role"),             # Will be None for existing users
+        family_id=user.get("family_id"),
+        role=user.get("role"),
+        subscription_tier=user.get("subscription_tier"),
+        credits_balance=user.get("credits_balance", 0),
+        credits_refresh_at=user.get("credits_refresh_at"),
         created_at=user["created_at"]
     )
     return TokenResponse(token=token, user=user_response)
@@ -513,6 +617,7 @@ async def google_auth(body: GoogleAuthRequest):
 
     if user:
         # Existing user — log them in
+        user = await refresh_credits_if_needed(user)
         token = create_token(user["id"])
         user_response = UserResponse(
             id=user["id"],
@@ -522,11 +627,16 @@ async def google_auth(body: GoogleAuthRequest):
             avatar=user.get("avatar"),
             family_id=user.get("family_id"),
             role=user.get("role"),
+            subscription_tier=user.get("subscription_tier"),
+            credits_balance=user.get("credits_balance", 0),
+            credits_refresh_at=user.get("credits_refresh_at"),
             created_at=user["created_at"]
         )
     else:
         # New user — register with Google info (no password)
         user_id = str(uuid.uuid4())
+        initial_credits = get_credits_for_tier(None)
+        credits_refresh = next_refresh_date()
         user_doc = {
             "id": user_id,
             "name": name,
@@ -535,6 +645,8 @@ async def google_auth(body: GoogleAuthRequest):
             "password_hash": None,  # Google users have no password
             "avatar": picture,
             "auth_provider": "google",
+            "credits_balance": initial_credits,
+            "credits_refresh_at": credits_refresh,
             "created_at": datetime.now(timezone.utc).isoformat()
         }
         await db.users.insert_one(user_doc)
@@ -547,6 +659,8 @@ async def google_auth(body: GoogleAuthRequest):
             avatar=picture,
             family_id=None,
             role=None,
+            credits_balance=initial_credits,
+            credits_refresh_at=credits_refresh,
             created_at=user_doc["created_at"]
         )
 
@@ -554,14 +668,19 @@ async def google_auth(body: GoogleAuthRequest):
 
 @api_router.get("/auth/me", response_model=UserResponse)
 async def get_me(user: dict = Depends(get_current_user)):
+    # Auto-refresh credits if needed
+    user = await refresh_credits_if_needed(user)
     return UserResponse(
         id=user["id"],
         name=user["name"],
         nickname=user.get("nickname"),
         email=user["email"],
         avatar=user.get("avatar"),
-        family_id=user.get("family_id"),  # Will be None for existing users
-        role=user.get("role"),             # Will be None for existing users
+        family_id=user.get("family_id"),
+        role=user.get("role"),
+        subscription_tier=user.get("subscription_tier"),
+        credits_balance=user.get("credits_balance", 0),
+        credits_refresh_at=user.get("credits_refresh_at"),
         created_at=user["created_at"]
     )
 
@@ -585,6 +704,9 @@ async def update_profile(update_data: UserUpdate, user: dict = Depends(get_curre
         avatar=updated_user.get("avatar"),
         family_id=updated_user.get("family_id"),
         role=updated_user.get("role"),
+        subscription_tier=updated_user.get("subscription_tier"),
+        credits_balance=updated_user.get("credits_balance", 0),
+        credits_refresh_at=updated_user.get("credits_refresh_at"),
         created_at=updated_user["created_at"]
     )
 
@@ -1320,15 +1442,22 @@ RC_INACTIVE_EVENTS = {"CANCELLATION", "EXPIRATION", "SUBSCRIBER_ALIAS", "BILLING
 class SubscriptionStatusResponse(BaseModel):
     subscription_tier: Optional[str] = None  # "heritage" | "legacy" | None
     is_active: bool
+    credits_balance: int = 0
+    credits_refresh_at: Optional[str] = None
+    monthly_allowance: int = 3
 
 
 @api_router.get("/subscriptions/status", response_model=SubscriptionStatusResponse)
 async def get_subscription_status(user: dict = Depends(get_current_user)):
-    """Return the current user's subscription tier."""
+    """Return the current user's subscription tier and credit info."""
+    user = await refresh_credits_if_needed(user)
     tier = user.get("subscription_tier")
     return SubscriptionStatusResponse(
         subscription_tier=tier,
         is_active=tier is not None,
+        credits_balance=user.get("credits_balance", 0),
+        credits_refresh_at=user.get("credits_refresh_at"),
+        monthly_allowance=get_credits_for_tier(tier),
     )
 
 
@@ -1362,18 +1491,30 @@ async def revenuecat_webhook(request: Request):
     if event_type in RC_ACTIVE_EVENTS:
         tier = RC_PRODUCT_TIERS.get(product_id)
         if tier:
+            new_credits = get_credits_for_tier(tier)
             await db.users.update_one(
                 {"id": app_user_id},
-                {"$set": {"subscription_tier": tier}}
+                {"$set": {
+                    "subscription_tier": tier,
+                    "credits_balance": new_credits,
+                    "credits_refresh_at": next_refresh_date(),
+                }}
             )
-            logger.info("Set subscription_tier=%s for user=%s", tier, app_user_id)
+            logger.info("Set subscription_tier=%s credits=%d for user=%s", tier, new_credits, app_user_id)
 
     elif event_type in RC_INACTIVE_EVENTS:
+        free_credits = get_credits_for_tier(None)
         await db.users.update_one(
             {"id": app_user_id},
-            {"$unset": {"subscription_tier": ""}}
+            {
+                "$unset": {"subscription_tier": ""},
+                "$set": {
+                    "credits_balance": free_credits,
+                    "credits_refresh_at": next_refresh_date(),
+                }
+            }
         )
-        logger.info("Cleared subscription_tier for user=%s", app_user_id)
+        logger.info("Cleared subscription_tier, reset to %d free credits for user=%s", free_credits, app_user_id)
 
     return {"status": "ok"}
 
@@ -1427,20 +1568,34 @@ async def stripe_webhook(request: Request):
             logger.error("Could not retrieve Stripe customer: %s", e)
 
         if customer_email and tier:
+            new_credits = get_credits_for_tier(tier)
+            new_refresh = next_refresh_date()
             await db.users.update_one(
                 {"email": customer_email},
-                {"$set": {"subscription_tier": tier, "stripe_customer_id": subscription_obj["customer"]}}
+                {"$set": {
+                    "subscription_tier": tier,
+                    "stripe_customer_id": subscription_obj["customer"],
+                    "credits_balance": new_credits,
+                    "credits_refresh_at": new_refresh,
+                }}
             )
-            logger.info("Set subscription_tier=%s for email=%s", tier, customer_email)
+            logger.info("Set subscription_tier=%s credits=%d for email=%s", tier, new_credits, customer_email)
 
     elif event_type == "customer.subscription.deleted":
         customer_id = subscription_obj.get("customer")
         if customer_id:
+            free_credits = get_credits_for_tier(None)
             await db.users.update_one(
                 {"stripe_customer_id": customer_id},
-                {"$unset": {"subscription_tier": ""}}
+                {
+                    "$unset": {"subscription_tier": ""},
+                    "$set": {
+                        "credits_balance": free_credits,
+                        "credits_refresh_at": next_refresh_date(),
+                    }
+                }
             )
-            logger.info("Cleared subscription_tier for stripe_customer=%s", customer_id)
+            logger.info("Cleared subscription_tier, reset to %d free credits for stripe_customer=%s", free_credits, customer_id)
 
     return {"status": "ok"}
 
@@ -1525,6 +1680,197 @@ async def create_portal_session(user: dict = Depends(get_current_user)):
 
 
 # ===================== HEALTH CHECK =====================
+
+# ---- Sample Family & Onboarding ----
+
+SAMPLE_RECIPES = [
+    {
+        "title": "Grandma's Sunday Pot Roast",
+        "ingredients": [
+            "3 lb chuck roast", "4 carrots, chunked", "4 potatoes, quartered",
+            "1 onion, quartered", "3 cloves garlic", "2 cups beef broth",
+            "2 tbsp tomato paste", "1 tsp thyme", "Salt and pepper to taste",
+            "2 tbsp olive oil"
+        ],
+        "instructions": (
+            "Season the roast generously with salt and pepper. Heat olive oil in a Dutch oven over "
+            "high heat and sear the roast on all sides until deeply browned, about 3-4 minutes per side. "
+            "Remove the roast and add onion and garlic, cooking for 2 minutes. Stir in tomato paste and "
+            "thyme, then pour in beef broth. Return the roast, bring to a simmer, cover and cook in a "
+            "325°F oven for 2.5 hours. Add carrots and potatoes for the last 45 minutes. Rest 10 minutes "
+            "before slicing. Serve with the vegetables and pan juices."
+        ),
+        "story": (
+            "Every Sunday after church, Grandma would have this roast waiting. The whole house smelled "
+            "like heaven. She always said the secret was patience — low and slow, just like love."
+        ),
+        "cooking_time": 180,
+        "servings": 6,
+        "category": "Main Dish",
+        "difficulty": "medium",
+    },
+    {
+        "title": "Auntie Mae's Sweet Potato Pie",
+        "ingredients": [
+            "2 large sweet potatoes", "1/2 cup butter, softened", "1 cup sugar",
+            "1/2 cup milk", "2 eggs", "1 tsp vanilla extract",
+            "1/2 tsp cinnamon", "1/4 tsp nutmeg", "1 unbaked 9-inch pie crust"
+        ],
+        "instructions": (
+            "Boil sweet potatoes until tender, about 40 minutes. Drain, peel, and mash until smooth. "
+            "Preheat oven to 350°F. Beat together sweet potatoes and butter until fluffy. Add sugar, "
+            "milk, eggs, vanilla, cinnamon, and nutmeg — mix until well combined. Pour into pie crust. "
+            "Bake for 55-60 minutes until a knife inserted in the center comes out clean. "
+            "Cool completely before serving. Best with a dollop of whipped cream."
+        ),
+        "story": (
+            "Auntie Mae brought this pie to every family gathering. She never wrote the recipe down — "
+            "just pinches of this and handfuls of that. We finally got her to measure it out one "
+            "Thanksgiving. Now it lives on for the next generation."
+        ),
+        "cooking_time": 100,
+        "servings": 8,
+        "category": "Dessert",
+        "difficulty": "easy",
+    },
+    {
+        "title": "Dad's Famous Jerk Chicken",
+        "ingredients": [
+            "8 chicken thighs", "6 scotch bonnet peppers, seeded", "1 bunch scallions",
+            "4 cloves garlic", "2 tbsp soy sauce", "1 tbsp brown sugar",
+            "2 tsp allspice", "1 tsp thyme", "1 tsp black pepper",
+            "Juice of 2 limes", "2 tbsp vegetable oil"
+        ],
+        "instructions": (
+            "Blend scotch bonnets, scallions, garlic, soy sauce, brown sugar, allspice, thyme, pepper, "
+            "lime juice, and oil into a smooth marinade. Score chicken thighs with a knife and coat "
+            "generously with marinade. Refrigerate for at least 4 hours, overnight is best. "
+            "Grill over medium-high heat for 6-8 minutes per side until charred and cooked through "
+            "(internal temp 165°F). Rest 5 minutes before serving with rice and peas."
+        ),
+        "story": (
+            "Dad learned this from his father, who learned it from a cook in Kingston. He says the "
+            "secret is the overnight marinade and real scotch bonnets — no substitutes. Every Fourth "
+            "of July, the whole block lines up for a plate."
+        ),
+        "cooking_time": 30,
+        "servings": 8,
+        "category": "Main Dish",
+        "difficulty": "medium",
+    },
+]
+
+
+@api_router.post("/onboarding/seed-sample-family")
+async def seed_sample_family(user: dict = Depends(get_current_user)):
+    """
+    Create a sample 'Legacy Family' with demo recipes for first-run users.
+    Only works if the user is NOT already in a family.
+    """
+    if user.get("family_id"):
+        raise HTTPException(status_code=400, detail="You are already in a family")
+
+    # Check if user already seeded (idempotency)
+    existing = await db.families.find_one({"created_by": user["id"], "is_sample": True})
+    if existing:
+        raise HTTPException(status_code=400, detail="Sample family already created")
+
+    # Create the sample family
+    family_id = str(uuid.uuid4())
+    family_doc = {
+        "id": family_id,
+        "name": f"The {user['name'].split()[0]} Family" if user.get("name") else "My Family",
+        "invite_code": str(uuid.uuid4())[:8].upper(),
+        "created_by": user["id"],
+        "keeper_id": user["id"],
+        "is_sample": True,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.families.insert_one(family_doc)
+
+    # Update user with family
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"family_id": family_id, "role": "keeper"}}
+    )
+
+    # Seed sample recipes
+    now = datetime.now(timezone.utc)
+    for i, recipe_data in enumerate(SAMPLE_RECIPES):
+        recipe_doc = {
+            "id": str(uuid.uuid4()),
+            "family_id": family_id,
+            "title": recipe_data["title"],
+            "ingredients": recipe_data["ingredients"],
+            "instructions": recipe_data["instructions"],
+            "story": recipe_data.get("story"),
+            "photos": [],
+            "cooking_time": recipe_data["cooking_time"],
+            "servings": recipe_data["servings"],
+            "category": recipe_data["category"],
+            "difficulty": recipe_data["difficulty"],
+            "author_id": user["id"],
+            "author_name": user.get("name", "Family Chef"),
+            "created_at": (now - timedelta(days=i)).isoformat(),
+        }
+        await db.recipes.insert_one(recipe_doc)
+
+    logger.info("Seeded sample family=%s with %d recipes for user=%s", family_id, len(SAMPLE_RECIPES), user["id"])
+
+    return {
+        "family_id": family_id,
+        "family_name": family_doc["name"],
+        "recipes_created": len(SAMPLE_RECIPES),
+        "message": "Welcome to Legacy Table! We've added some sample recipes to get you started.",
+    }
+
+
+# ---- Credits API ----
+
+class CreditsResponse(BaseModel):
+    credits_balance: int
+    credits_refresh_at: Optional[str] = None
+    tier: Optional[str] = None
+    monthly_allowance: int
+
+
+@api_router.get("/credits", response_model=CreditsResponse)
+async def get_credits(user: dict = Depends(get_current_user)):
+    """Return current credit balance, next refresh date, and tier info."""
+    user = await refresh_credits_if_needed(user)
+    tier = user.get("subscription_tier")
+    return CreditsResponse(
+        credits_balance=user.get("credits_balance", 0),
+        credits_refresh_at=user.get("credits_refresh_at"),
+        tier=tier,
+        monthly_allowance=get_credits_for_tier(tier),
+    )
+
+
+class UseCreditsRequest(BaseModel):
+    feature: str  # e.g. "recipe_scan", "voice_to_recipe"
+
+
+class UseCreditsResponse(BaseModel):
+    success: bool
+    credits_remaining: int
+    credits_used: int
+
+
+@api_router.post("/credits/use", response_model=UseCreditsResponse)
+async def use_credits(body: UseCreditsRequest, user: dict = Depends(get_current_user)):
+    """Consume credits for an AI feature. Returns updated balance."""
+    if body.feature not in CREDIT_COSTS:
+        raise HTTPException(status_code=400, detail=f"Unknown feature: {body.feature}")
+
+    cost = CREDIT_COSTS[body.feature]
+    user = await consume_credit(user, body.feature)
+    return UseCreditsResponse(
+        success=True,
+        credits_remaining=user.get("credits_balance", 0),
+        credits_used=cost,
+    )
+
 
 @api_router.get("/")
 async def root():

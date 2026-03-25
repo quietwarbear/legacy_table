@@ -3,7 +3,7 @@ import "@/App.css";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation, Link, useParams } from "react-router-dom";
 import axios from "axios";
 import { Toaster, toast } from "sonner";
-import { ChefHat, Utensils, Camera, Clock, Users, Flame, Heart, Plus, LogOut, Menu, X, Home, User, Search, Download, BookOpen, Moon, Sun, Edit, MessageCircle, Trash2, Send, Bell, Settings, Upload, Copy, Crown, UserPlus } from "lucide-react";
+import { ChefHat, Utensils, Camera, Clock, Users, Flame, Heart, Plus, LogOut, Menu, X, Home, User, Search, Download, BookOpen, Moon, Sun, Edit, MessageCircle, Trash2, Send, Bell, Settings, Upload, Copy, Crown, UserPlus, Sparkles, Share2 } from "lucide-react";
 import * as familiesApi from "./api/families";
 import jsPDF from "jspdf";
 import { Button } from "./components/ui/button";
@@ -24,7 +24,7 @@ import {
   AlertDialogCancel,
 } from "./components/ui/alert-dialog";
 
-import { SubscriptionProvider, useSubscription, PricingPage, SubscriptionSuccessPage } from "./subscription";
+import { SubscriptionProvider, useSubscription, PricingPage, SubscriptionSuccessPage, CreditsBadge, CreditsGate } from "./subscription";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "";
 const API = `${BACKEND_URL}/api`;
@@ -363,6 +363,9 @@ const Navigation = () => {
             </div>
 
             <div className="hidden md:flex items-center gap-3">
+              {/* Credits Badge */}
+              <CreditsBadge />
+
               {/* Upgrade Button */}
               <Link
                 to="/subscribe"
@@ -539,6 +542,9 @@ const Navigation = () => {
             <Users className="w-5 h-5 text-primary" />
             <span className="font-medium">Family</span>
           </Link>
+          <div className="flex items-center gap-2 p-3">
+            <CreditsBadge />
+          </div>
           <Link
             to="/subscribe"
             onClick={() => setMobileMenuOpen(false)}
@@ -1828,6 +1834,7 @@ const EditRecipePage = () => {
 // Share Recipe Card Component
 const ShareRecipeCard = ({ recipe }) => {
   const canvasRef = React.useRef(null);
+  const { hasAny } = useSubscription();
   useEffect(() => {
     if (!canvasRef.current) return;
     const canvas = canvasRef.current;
@@ -1893,7 +1900,22 @@ const ShareRecipeCard = ({ recipe }) => {
     ctx.font = '14px Arial, sans-serif';
     ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
     ctx.fillText('Preserve and Share Your Family Culinary Heritage', canvas.width / 2, yPos + 40);
-  }, [recipe]);
+
+    // Watermark for free-tier users
+    if (!hasAny) {
+      ctx.save();
+      ctx.translate(canvas.width / 2, canvas.height / 2);
+      ctx.rotate(-Math.PI / 6);
+      ctx.font = 'bold 72px Arial, sans-serif';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.18)';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('LEGACY TABLE', 0, -40);
+      ctx.font = 'bold 32px Arial, sans-serif';
+      ctx.fillText('Upgrade to remove watermark', 0, 30);
+      ctx.restore();
+    }
+  }, [recipe, hasAny]);
   const handleDownloadImage = () => {
     if (!canvasRef.current) return;
     const link = document.createElement('a');
@@ -2752,6 +2774,7 @@ const FamilyPage = () => {
   const [editDescription, setEditDescription] = useState("");
   const [editSubmitting, setEditSubmitting] = useState(false);
   const [actionLoading, setActionLoading] = useState(null); // 'leave' | 'delete' | 'remove-{id}' | 'transfer-{id}'
+  const [seedingDemo, setSeedingDemo] = useState(false);
 
   const refreshUser = async () => {
     try {
@@ -2917,6 +2940,23 @@ const FamilyPage = () => {
     }
   };
 
+  const handleSeedSampleFamily = async () => {
+    setSeedingDemo(true);
+    try {
+      await axios.post(`${API}/onboarding/seed-sample-family`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      toast.success("Welcome! Sample recipes have been added.");
+      await refreshUser();
+      navigate("/");
+    } catch (err) {
+      const msg = err.response?.data?.detail || "Could not create sample family";
+      toast.error(msg);
+    } finally {
+      setSeedingDemo(false);
+    }
+  };
+
   const isKeeper = user?.role === "keeper";
   const getMemberDisplayName = (m) => m.nickname || m.name || m.email || "Member";
 
@@ -2929,6 +2969,37 @@ const FamilyPage = () => {
           <p className="text-muted-foreground mb-8">Create or join a family to share recipes.</p>
 
           <div className="space-y-6">
+            {/* Quick Start with sample recipes */}
+            <Card className="rounded-2xl border-amber-300 dark:border-amber-700 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30">
+              <CardContent className="p-8">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
+                    <Sparkles className="w-6 h-6 text-amber-600" />
+                  </div>
+                  <div>
+                    <h2 className="font-serif text-xl font-semibold">Quick Start</h2>
+                    <p className="text-sm text-muted-foreground">See what Legacy Table can do</p>
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground mb-4">
+                  We'll create your family and add a few sample recipes so you can explore
+                  the app right away. You can always delete or replace them later.
+                </p>
+                <Button
+                  onClick={handleSeedSampleFamily}
+                  disabled={seedingDemo}
+                  className="rounded-full bg-amber-600 hover:bg-amber-700 text-white"
+                >
+                  {seedingDemo ? "Setting up…" : "Start with sample recipes"}
+                </Button>
+              </CardContent>
+            </Card>
+
+            <div className="relative flex items-center justify-center my-2">
+              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-border/50" /></div>
+              <span className="relative bg-background px-4 text-sm text-muted-foreground">or set up manually</span>
+            </div>
+
             <Card className="rounded-2xl border-border/50">
               <CardContent className="p-8">
                 <div className="flex items-center gap-3 mb-6">

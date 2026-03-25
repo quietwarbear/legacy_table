@@ -23,6 +23,7 @@ const PRICES = {
 
 const TIER_FEATURES = {
   heritage: [
+    "15 AI credits per month",
     "Unlimited family recipe storage",
     "Family sharing (up to 10 members)",
     "Photo uploads for every recipe",
@@ -30,6 +31,7 @@ const TIER_FEATURES = {
     "Recipe categories & tags",
   ],
   legacy: [
+    "50 AI credits per month",
     "Everything in Heritage Keeper",
     "Unlimited family members",
     "Advanced recipe organization",
@@ -48,11 +50,13 @@ export const useSubscription = () => useContext(SubscriptionContext);
 export const SubscriptionProvider = ({ children }) => {
   const { user, token } = useAuth();
   const [tier, setTier] = useState(null); // "heritage" | "legacy" | null
+  const [credits, setCredits] = useState({ balance: 0, refreshAt: null, monthlyAllowance: 3 });
   const [loading, setLoading] = useState(true);
 
   const fetchStatus = useCallback(async () => {
     if (!token) {
       setTier(null);
+      setCredits({ balance: 0, refreshAt: null, monthlyAllowance: 3 });
       setLoading(false);
       return;
     }
@@ -61,6 +65,11 @@ export const SubscriptionProvider = ({ children }) => {
         headers: { Authorization: `Bearer ${token}` },
       });
       setTier(res.data.subscription_tier || null);
+      setCredits({
+        balance: res.data.credits_balance ?? 0,
+        refreshAt: res.data.credits_refresh_at ?? null,
+        monthlyAllowance: res.data.monthly_allowance ?? 3,
+      });
     } catch {
       setTier(null);
     }
@@ -83,9 +92,12 @@ export const SubscriptionProvider = ({ children }) => {
     return false;
   };
 
+  // Check if user has enough credits for a feature
+  const hasCredits = (cost = 1) => credits.balance >= cost;
+
   return (
     <SubscriptionContext.Provider
-      value={{ tier, loading, hasAny, hasHeritage, hasLegacy, canAccess, refetch: fetchStatus }}
+      value={{ tier, loading, hasAny, hasHeritage, hasLegacy, canAccess, hasCredits, credits, refetch: fetchStatus }}
     >
       {children}
     </SubscriptionContext.Provider>
@@ -124,6 +136,66 @@ export const FeatureGate = ({ minTier = "heritage", children, fallback }) => {
           className="mt-3 text-sm text-muted-foreground hover:text-foreground transition-colors"
         >
           Go back
+        </button>
+      </div>
+    );
+  }
+
+  return children;
+};
+
+// ===================== CREDITS BADGE =====================
+
+export const CreditsBadge = ({ className = "" }) => {
+  const { credits, tier, loading } = useSubscription();
+  const navigate = useNavigate();
+
+  if (loading) return null;
+
+  const pct = credits.monthlyAllowance > 0
+    ? Math.round((credits.balance / credits.monthlyAllowance) * 100)
+    : 0;
+
+  return (
+    <button
+      onClick={() => navigate("/pricing")}
+      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+        credits.balance === 0
+          ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300"
+          : pct <= 30
+          ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300"
+          : "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300"
+      } ${className}`}
+      title={`${credits.balance} of ${credits.monthlyAllowance} credits remaining this month`}
+    >
+      <Star className="w-3.5 h-3.5" />
+      {credits.balance} credit{credits.balance !== 1 ? "s" : ""}
+    </button>
+  );
+};
+
+// ===================== CREDITS GATE =====================
+
+export const CreditsGate = ({ cost = 1, featureName = "This feature", children }) => {
+  const { hasCredits } = useSubscription();
+  const navigate = useNavigate();
+
+  if (!hasCredits(cost)) {
+    return (
+      <div className="flex flex-col items-center justify-center p-6 text-center">
+        <Star className="w-12 h-12 text-amber-500 mb-3" />
+        <h3 className="text-lg font-serif font-bold text-foreground mb-1">
+          Out of Credits
+        </h3>
+        <p className="text-sm text-muted-foreground mb-4 max-w-sm">
+          {featureName} requires {cost} credit{cost > 1 ? "s" : ""}.
+          Upgrade your plan for more credits each month.
+        </p>
+        <button
+          onClick={() => navigate("/pricing")}
+          className="px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-full text-sm font-medium transition-colors"
+        >
+          Upgrade Plan
         </button>
       </div>
     );
