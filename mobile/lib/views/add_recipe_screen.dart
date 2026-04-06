@@ -15,8 +15,9 @@ import '../widgets/styled_snackbar.dart';
 
 class AddRecipeScreen extends StatefulWidget {
   final Recipe? recipe; // Optional - if provided, we're in edit mode
+  final CreateRecipeRequest? initialDraft;
 
-  const AddRecipeScreen({super.key, this.recipe});
+  const AddRecipeScreen({super.key, this.recipe, this.initialDraft});
 
   @override
   State<AddRecipeScreen> createState() => _AddRecipeScreenState();
@@ -27,24 +28,25 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
   final _titleController = TextEditingController();
   final _instructionsController = TextEditingController();
   final _storyController = TextEditingController();
-  
+
   final List<TextEditingController> _ingredientControllers = [
     TextEditingController(),
   ];
-  
+
   String? _selectedCategory;
   String? _selectedDifficulty = 'Easy';
   int _cookingTime = 30;
   int _servings = 4;
   final List<File> _selectedImages = [];
-  List<String> _remainingExistingPhotos = []; // Track which existing photos to keep
+  List<String> _remainingExistingPhotos =
+      []; // Track which existing photos to keep
   bool _isEditing = false;
 
   @override
   void initState() {
     super.initState();
     _isEditing = widget.recipe != null;
-    
+
     // Initialize form fields if editing
     if (_isEditing && widget.recipe != null) {
       final recipe = widget.recipe!;
@@ -53,18 +55,39 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
       _storyController.text = recipe.story ?? '';
       _selectedCategory = recipe.category;
       _selectedDifficulty = recipe.difficulty?.isNotEmpty == true
-          ? recipe.difficulty![0].toUpperCase() + recipe.difficulty!.substring(1)
+          ? recipe.difficulty![0].toUpperCase() +
+                recipe.difficulty!.substring(1)
           : 'Easy';
       _cookingTime = recipe.cookingTime ?? 30;
       _servings = recipe.servings ?? 4;
       _remainingExistingPhotos = List<String>.from(recipe.photos ?? []);
-      
+
       // Initialize ingredient controllers
       _ingredientControllers.clear();
       for (var ingredient in recipe.ingredients) {
         _ingredientControllers.add(TextEditingController(text: ingredient));
       }
       // Always have at least one empty ingredient field
+      if (_ingredientControllers.isEmpty) {
+        _ingredientControllers.add(TextEditingController());
+      }
+    } else if (widget.initialDraft != null) {
+      final draft = widget.initialDraft!;
+      _titleController.text = draft.title;
+      _instructionsController.text = draft.instructions;
+      _storyController.text = draft.story ?? '';
+      _selectedCategory = draft.category;
+      _selectedDifficulty = draft.difficulty?.isNotEmpty == true
+          ? draft.difficulty![0].toUpperCase() + draft.difficulty!.substring(1)
+          : 'Easy';
+      _cookingTime = draft.cookingTime ?? 30;
+      _servings = draft.servings ?? 4;
+      _remainingExistingPhotos = List<String>.from(draft.photos ?? []);
+
+      _ingredientControllers.clear();
+      for (final ingredient in draft.ingredients) {
+        _ingredientControllers.add(TextEditingController(text: ingredient));
+      }
       if (_ingredientControllers.isEmpty) {
         _ingredientControllers.add(TextEditingController());
       }
@@ -105,12 +128,12 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
           if (await Permission.photos.status.isGranted) {
             return true;
           }
-          
+
           final photosRequest = await Permission.photos.request();
           if (photosRequest.isGranted) {
             return true;
           }
-          
+
           if (photosRequest.isPermanentlyDenied) {
             if (mounted) {
               _showPermissionDeniedDialog(
@@ -118,28 +141,27 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                 'Photo library permission is required to select images.\n\nTo enable:\n1. Tap "Open Settings"\n2. Go to "Permissions"\n3. Enable "Photos and videos"',
               );
             }
-            return false; 
+            return false;
           }
-        } catch (e) {
-        } 
-        
+        } catch (e) {}
+
         final storageStatus = await Permission.storage.status;
         if (storageStatus.isGranted) {
           return true;
         }
-        
+
         final storageRequest = await Permission.storage.request();
         if (storageRequest.isGranted) {
           return true;
         }
-        
+
         if (storageRequest.isPermanentlyDenied) {
           if (mounted) {
             _showPermissionDeniedDialog(
               'Storage Permission',
               'Storage permission is required to select images.\n\nTo enable:\n1. Tap "Open Settings"\n2. Go to "Permissions"\n3. Enable "Storage" or "Files and media"',
             );
-          } 
+          }
         }
         return false;
       } else if (Platform.isIOS) {
@@ -148,12 +170,12 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
         if (status.isGranted) {
           return true;
         }
-        
+
         final requestStatus = await Permission.photos.request();
         if (requestStatus.isGranted) {
           return true;
         }
-        
+
         if (requestStatus.isPermanentlyDenied) {
           if (mounted) {
             _showPermissionDeniedDialog(
@@ -177,7 +199,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
     if (status.isGranted) {
       return true;
     }
-    
+
     if (status.isPermanentlyDenied) {
       if (mounted) {
         _showPermissionDeniedDialog(
@@ -187,7 +209,10 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
       }
     } else if (status.isDenied) {
       if (mounted) {
-        StyledSnackBar.showWarning(context, 'Camera permission is required to take photos');
+        StyledSnackBar.showWarning(
+          context,
+          'Camera permission is required to take photos',
+        );
       }
     }
     return false;
@@ -196,7 +221,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
   void _showPermissionDeniedDialog(String title, String message) {
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     final isDark = themeProvider.isDarkMode;
-    
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -215,7 +240,9 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
           style: TextStyle(
             fontFamily: 'Manrope',
             fontSize: 14,
-            color: isDark ? DarkColors.textSecondary : LightColors.textSecondary,
+            color: isDark
+                ? DarkColors.textSecondary
+                : LightColors.textSecondary,
           ),
         ),
         actions: [
@@ -225,7 +252,9 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
               'Cancel',
               style: TextStyle(
                 fontFamily: 'Manrope',
-                color: isDark ? DarkColors.textSecondary : LightColors.textSecondary,
+                color: isDark
+                    ? DarkColors.textSecondary
+                    : LightColors.textSecondary,
               ),
             ),
           ),
@@ -275,7 +304,9 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
 
       if (images.isNotEmpty) {
         setState(() {
-          _selectedImages.addAll(images.map((xFile) => File(xFile.path)).toList());
+          _selectedImages.addAll(
+            images.map((xFile) => File(xFile.path)).toList(),
+          );
         });
       }
     } catch (e) {
@@ -360,11 +391,11 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
     final base64String = base64Encode(bytes);
     // Determine image type from file extension
     final extension = imageFile.path.split('.').last.toLowerCase();
-    final mimeType = extension == 'png' 
-        ? 'image/png' 
+    final mimeType = extension == 'png'
+        ? 'image/png'
         : extension == 'jpg' || extension == 'jpeg'
-            ? 'image/jpeg'
-            : 'image/jpeg';
+        ? 'image/jpeg'
+        : 'image/jpeg';
     return 'data:$mimeType;base64,$base64String';
   }
 
@@ -409,7 +440,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
           return 'An unexpected error occurred. Please try again.';
       }
     }
-    
+
     // Never expose raw errors; always show a safe user message
     return 'Something went wrong. Please try again.';
   }
@@ -475,7 +506,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
             // Check file size (limit to 5MB per image)
             final fileSize = await imageFile.length();
             const maxSize = 5 * 1024 * 1024; // 5MB
-            
+
             if (fileSize > maxSize) {
               if (mounted) {
                 Navigator.pop(context); // Close loading dialog
@@ -501,13 +532,15 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
             }
           }
         }
-        
+
         if (_selectedImages.isNotEmpty && photoBase64List.isEmpty) {
           if (!mounted) return;
           Navigator.pop(context); // Close loading dialog
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Failed to process images. Please try selecting different images.'),
+              content: Text(
+                'Failed to process images. Please try selecting different images.',
+              ),
               backgroundColor: Colors.orange,
             ),
           );
@@ -524,7 +557,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
         finalPhotos.addAll(_remainingExistingPhotos);
         // Add new photos
         finalPhotos.addAll(photoBase64List);
-        
+
         // Update existing recipe
         final request = UpdateRecipeRequest(
           title: _titleController.text.trim(),
@@ -581,12 +614,12 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
     } catch (e) {
       // Handle errors
       if (!mounted) return;
-      
+
       // Close loading dialog
       if (Navigator.canPop(context)) {
         Navigator.pop(context);
       }
-      
+
       // Show error message
       final errorMessage = _getErrorMessage(e);
       StyledSnackBar.showError(context, errorMessage);
@@ -600,7 +633,9 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
       final isDark = themeProvider.isDarkMode;
 
       return Scaffold(
-        backgroundColor: isDark ? DarkColors.background : LightColors.background,
+        backgroundColor: isDark
+            ? DarkColors.background
+            : LightColors.background,
         appBar: AppBar(
           title: Text(
             _isEditing ? 'Edit Recipe' : 'Share a Recipe',
@@ -611,303 +646,323 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
               color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
             ),
           ),
-          backgroundColor: isDark ? DarkColors.background : LightColors.background,
+          backgroundColor: isDark
+              ? DarkColors.background
+              : LightColors.background,
           elevation: 0,
         ),
         body: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Subtitle
-              Text(
-                _isEditing
-                    ? 'Update your recipe details'
-                    : 'Add a new dish to the family collection',
-                style: TextStyle(
-                  fontFamily: 'Manrope',
-                  fontSize: 14,
-                  color: isDark ? DarkColors.textSecondary : LightColors.textSecondary,
+          key: _formKey,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Subtitle
+                Text(
+                  _isEditing
+                      ? 'Update your recipe details'
+                      : widget.initialDraft != null
+                      ? 'Review the imported recipe, make any edits, and share it to your family collection'
+                      : 'Add a new dish to the family collection',
+                  style: TextStyle(
+                    fontFamily: 'Manrope',
+                    fontSize: 14,
+                    color: isDark
+                        ? DarkColors.textSecondary
+                        : LightColors.textSecondary,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 32),
+                const SizedBox(height: 32),
 
-              // PHOTOS Section
-              _buildSectionLabel('PHOTOS', isDark),
-              const SizedBox(height: 12),
-              // Show all images together (existing + new)
-              if ((_isEditing && _remainingExistingPhotos.isNotEmpty) || _selectedImages.isNotEmpty)
-                _buildAllImagesGrid(isDark),
-              if ((_isEditing && _remainingExistingPhotos.isNotEmpty) || _selectedImages.isNotEmpty)
+                // PHOTOS Section
+                _buildSectionLabel('PHOTOS', isDark),
                 const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    flex: 3,
-                    child: _buildPhotoUploadArea(isDark),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    flex: 2,
-                    child: _buildTakePhotoButton(isDark),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 32),
-
-              // RECIPE TITLE
-              _buildSectionLabel('RECIPE TITLE *', isDark),
-              const SizedBox(height: 12),
-              _buildTextField(
-                controller: _titleController,
-                placeholder: "e.g., Grandma's Special Jollof Rice",
-                isDark: isDark,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Recipe title is required';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 24),
-
-              // CATEGORY & DIFFICULTY
-              Wrap(
-                spacing: 4,
-                runSpacing: 4,  
-                children: [
-                  Container(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildSectionLabel('CATEGORY *', isDark),
-                        const SizedBox(height: 12),
-                        _buildDropdown(
-                          value: _selectedCategory,
-                          placeholder: 'Select category',
-                          items: ['Appetizer', 'Main Course', 'Dessert', 'Beverage', 'Side Dish'],
-                          onChanged: (value) {
-                            setState(() {
-                              _selectedCategory = value;
-                            });
-                          },
-                          isDark: isDark,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Category is required';
-                            }
-                            return null;
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Container(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildSectionLabel('DIFFICULTY', isDark),
-                        const SizedBox(height: 12),
-                        _buildDropdown(
-                          value: _selectedDifficulty,
-                          placeholder: 'Select difficulty',
-                          items: ['Easy', 'Medium', 'Hard'],
-                          onChanged: (value) {
-                            setState(() {
-                              _selectedDifficulty = value;
-                            });
-                          },
-                          isDark: isDark,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-
-              // COOKING TIME & SERVINGS
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildSectionLabel('COOKING TIME\n(MINUTES)', isDark),
-                        const SizedBox(height: 12),
-                        _buildNumberField(
-                          value: _cookingTime,
-                          onChanged: (value) {
-                            setState(() {
-                              _cookingTime = value;
-                            });
-                          },
-                          isDark: isDark,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildSectionLabel('\nSERVINGS', isDark),
-                        const SizedBox(height: 12),
-                        _buildNumberField(
-                          value: _servings,
-                          onChanged: (value) {
-                            setState(() {
-                              _servings = value;
-                            });
-                          },
-                          isDark: isDark,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-
-              // INGREDIENTS
-              _buildSectionLabel('INGREDIENTS *', isDark),
-              const SizedBox(height: 12),
-              ...List.generate(_ingredientControllers.length, (index) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _buildTextField(
-                          controller: _ingredientControllers[index],
-                          placeholder: 'Ingredient ${index + 1}',
-                          isDark: isDark,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Ingredient is required';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                      if (_ingredientControllers.length > 1)
-                        IconButton(
-                          icon: Icon(
-                            Icons.close,
-                            color: isDark ? DarkColors.textMuted : LightColors.textMuted,
-                          ),
-                          onPressed: () => _removeIngredient(index),
-                        ),
-                    ],
-                  ),
-                );
-              }),
-              const SizedBox(height: 8),
-              _buildAddButton(
-                icon: Icons.add,
-                label: 'Add ingredient',
-                onPressed: _addIngredient,
-                isDark: isDark,
-              ),
-              const SizedBox(height: 24),
-
-              // INSTRUCTIONS
-              _buildSectionLabel('INSTRUCTIONS *', isDark),
-              const SizedBox(height: 12),
-              _buildTextArea(
-                controller: _instructionsController,
-                placeholder: 'Write the step-by-step cooking instructions...',
-                isDark: isDark,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Instructions are required';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 24),
-
-              // THE STORY BEHIND THIS RECIPE
-              _buildSectionLabel('THE STORY BEHIND THIS RECIPE (optional)', isDark),
-              const SizedBox(height: 8),
-              Text(
-                'Share the story of this recipe... Where did it come from? Who passed it down? What memories does it hold for your family?',
-                style: TextStyle(
-                  fontFamily: 'Manrope',
-                  fontSize: 12,
-                  color: isDark ? DarkColors.textSecondary : LightColors.textSecondary,
+                // Show all images together (existing + new)
+                if ((_isEditing && _remainingExistingPhotos.isNotEmpty) ||
+                    _selectedImages.isNotEmpty)
+                  _buildAllImagesGrid(isDark),
+                if ((_isEditing && _remainingExistingPhotos.isNotEmpty) ||
+                    _selectedImages.isNotEmpty)
+                  const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(flex: 3, child: _buildPhotoUploadArea(isDark)),
+                    const SizedBox(width: 12),
+                    Expanded(flex: 2, child: _buildTakePhotoButton(isDark)),
+                  ],
                 ),
-              ),
-              const SizedBox(height: 12),
-              _buildTextArea(
-                controller: _storyController,
-                placeholder: 'Tell us about the history, traditions, or special memories connected to this dish.',
-                isDark: isDark,
-                minLines: 4,
-              ),
-              const SizedBox(height: 32),
+                const SizedBox(height: 32),
 
-              // Action Buttons
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        side: BorderSide(
-                          color: isDark ? DarkColors.border : LightColors.border,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                // RECIPE TITLE
+                _buildSectionLabel('RECIPE TITLE *', isDark),
+                const SizedBox(height: 12),
+                _buildTextField(
+                  controller: _titleController,
+                  placeholder: "e.g., Grandma's Special Jollof Rice",
+                  isDark: isDark,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Recipe title is required';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 24),
+
+                // CATEGORY & DIFFICULTY
+                Wrap(
+                  spacing: 4,
+                  runSpacing: 4,
+                  children: [
+                    Container(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSectionLabel('CATEGORY *', isDark),
+                          const SizedBox(height: 12),
+                          _buildDropdown(
+                            value: _selectedCategory,
+                            placeholder: 'Select category',
+                            items: [
+                              'Appetizer',
+                              'Main Course',
+                              'Dessert',
+                              'Beverage',
+                              'Side Dish',
+                            ],
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedCategory = value;
+                              });
+                            },
+                            isDark: isDark,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Category is required';
+                              }
+                              return null;
+                            },
+                          ),
+                        ],
                       ),
-                      child: Text(
-                        'Cancel',
-                        style: TextStyle(
-                          fontFamily: 'Manrope',
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
+                    ),
+                    const SizedBox(width: 4),
+                    Container(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSectionLabel('DIFFICULTY', isDark),
+                          const SizedBox(height: 12),
+                          _buildDropdown(
+                            value: _selectedDifficulty,
+                            placeholder: 'Select difficulty',
+                            items: ['Easy', 'Medium', 'Hard'],
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedDifficulty = value;
+                              });
+                            },
+                            isDark: isDark,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // COOKING TIME & SERVINGS
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSectionLabel('COOKING TIME\n(MINUTES)', isDark),
+                          const SizedBox(height: 12),
+                          _buildNumberField(
+                            value: _cookingTime,
+                            onChanged: (value) {
+                              setState(() {
+                                _cookingTime = value;
+                              });
+                            },
+                            isDark: isDark,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSectionLabel('\nSERVINGS', isDark),
+                          const SizedBox(height: 12),
+                          _buildNumberField(
+                            value: _servings,
+                            onChanged: (value) {
+                              setState(() {
+                                _servings = value;
+                              });
+                            },
+                            isDark: isDark,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
+                // INGREDIENTS
+                _buildSectionLabel('INGREDIENTS *', isDark),
+                const SizedBox(height: 12),
+                ...List.generate(_ingredientControllers.length, (index) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _buildTextField(
+                            controller: _ingredientControllers[index],
+                            placeholder: 'Ingredient ${index + 1}',
+                            isDark: isDark,
+                            validator: (value) {
+                              if (value == null || value.isEmpty) {
+                                return 'Ingredient is required';
+                              }
+                              return null;
+                            },
+                          ),
+                        ),
+                        if (_ingredientControllers.length > 1)
+                          IconButton(
+                            icon: Icon(
+                              Icons.close,
+                              color: isDark
+                                  ? DarkColors.textMuted
+                                  : LightColors.textMuted,
+                            ),
+                            onPressed: () => _removeIngredient(index),
+                          ),
+                      ],
+                    ),
+                  );
+                }),
+                const SizedBox(height: 8),
+                _buildAddButton(
+                  icon: Icons.add,
+                  label: 'Add ingredient',
+                  onPressed: _addIngredient,
+                  isDark: isDark,
+                ),
+                const SizedBox(height: 24),
+
+                // INSTRUCTIONS
+                _buildSectionLabel('INSTRUCTIONS *', isDark),
+                const SizedBox(height: 12),
+                _buildTextArea(
+                  controller: _instructionsController,
+                  placeholder: 'Write the step-by-step cooking instructions...',
+                  isDark: isDark,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Instructions are required';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 24),
+
+                // THE STORY BEHIND THIS RECIPE
+                _buildSectionLabel(
+                  'THE STORY BEHIND THIS RECIPE (optional)',
+                  isDark,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Share the story of this recipe... Where did it come from? Who passed it down? What memories does it hold for your family?',
+                  style: TextStyle(
+                    fontFamily: 'Manrope',
+                    fontSize: 12,
+                    color: isDark
+                        ? DarkColors.textSecondary
+                        : LightColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _buildTextArea(
+                  controller: _storyController,
+                  placeholder:
+                      'Tell us about the history, traditions, or special memories connected to this dish.',
+                  isDark: isDark,
+                  minLines: 4,
+                ),
+                const SizedBox(height: 32),
+
+                // Action Buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          side: BorderSide(
+                            color: isDark
+                                ? DarkColors.border
+                                : LightColors.border,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: Text(
+                          'Cancel',
+                          style: TextStyle(
+                            fontFamily: 'Manrope',
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: isDark
+                                ? DarkColors.textPrimary
+                                : LightColors.textPrimary,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    flex: 2,
-                    child: ElevatedButton(
-                      onPressed: _onShareRecipe,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: brandPrimary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      flex: 2,
+                      child: ElevatedButton(
+                        onPressed: _onShareRecipe,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: brandPrimary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
-                      ),
-                      child: Text(
-                        _isEditing ? 'Update Recipe' : 'Share Recipe',
-                        style: TextStyle(
-                          fontFamily: 'Manrope',
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                        child: Text(
+                          _isEditing ? 'Update Recipe' : 'Share Recipe',
+                          style: TextStyle(
+                            fontFamily: 'Manrope',
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-            ],
+                  ],
+                ),
+                const SizedBox(height: 24),
+              ],
+            ),
           ),
         ),
-      ),
-    );
+      );
     } catch (e, stackTrace) {
       if (kDebugMode) {
         print('Error building AddRecipeScreen: $e');
@@ -916,27 +971,18 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
       // Return a safe fallback UI
       return Scaffold(
         backgroundColor: Colors.grey[100],
-        appBar: AppBar(
-          title: const Text('Share a Recipe'),
-        ),
+        appBar: AppBar(title: const Text('Share a Recipe')),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(
-                  Icons.error_outline,
-                  size: 64,
-                  color: Colors.red,
-                ),
+                const Icon(Icons.error_outline, size: 64, color: Colors.red),
                 const SizedBox(height: 16),
                 const Text(
                   'Something went wrong',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 const Text(
@@ -1196,14 +1242,18 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                     placeholderBuilder: (context) => Icon(
                       Icons.camera_alt,
                       size: 24,
-                      color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
+                      color: isDark
+                          ? DarkColors.textPrimary
+                          : LightColors.textPrimary,
                     ),
                   );
                 } catch (e) {
                   return Icon(
                     Icons.camera_alt,
                     size: 24,
-                    color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
+                    color: isDark
+                        ? DarkColors.textPrimary
+                        : LightColors.textPrimary,
                   );
                 }
               },
@@ -1214,7 +1264,9 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
               style: TextStyle(
                 fontFamily: 'Manrope',
                 fontSize: 14,
-                color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
+                color: isDark
+                    ? DarkColors.textPrimary
+                    : LightColors.textPrimary,
               ),
             ),
           ],
@@ -1258,18 +1310,16 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: brandPrimary,
-            width: 2,
-          ),
+          borderSide: BorderSide(color: brandPrimary, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: Colors.red,
-          ),
+          borderSide: BorderSide(color: Colors.red),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
       ),
     );
   }
@@ -1312,16 +1362,11 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: brandPrimary,
-            width: 2,
-          ),
+          borderSide: BorderSide(color: brandPrimary, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: Colors.red,
-          ),
+          borderSide: BorderSide(color: Colors.red),
         ),
         contentPadding: const EdgeInsets.all(16),
       ),
@@ -1359,18 +1404,16 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: brandPrimary,
-            width: 2,
-          ),
+          borderSide: BorderSide(color: brandPrimary, width: 2),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(
-            color: Colors.red,
-          ),
+          borderSide: BorderSide(color: Colors.red),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
       ),
       style: TextStyle(
         fontFamily: 'Manrope',
@@ -1379,10 +1422,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
       ),
       dropdownColor: isDark ? DarkColors.surface : LightColors.surface,
       items: items.map((String item) {
-        return DropdownMenuItem<String>(
-          value: item,
-          child: Text(item),
-        );
+        return DropdownMenuItem<String>(value: item, child: Text(item));
       }).toList(),
       onChanged: onChanged,
       validator: validator,
@@ -1426,7 +1466,9 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                 fontFamily: 'Manrope',
                 fontSize: 16,
                 fontWeight: FontWeight.w600,
-                color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
+                color: isDark
+                    ? DarkColors.textPrimary
+                    : LightColors.textPrimary,
               ),
               overflow: TextOverflow.ellipsis,
             ),
@@ -1470,9 +1512,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
         side: BorderSide(
           color: isDark ? DarkColors.border : LightColors.border,
         ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       ),
     );

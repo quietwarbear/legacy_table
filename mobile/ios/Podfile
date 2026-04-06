@@ -43,6 +43,10 @@ post_install do |installer|
     # permission_handler requires enabling permissions via preprocessor flags.
     # Only enable the permissions this app actually uses.
     target.build_configurations.each do |config|
+      # Simulator pod frameworks do not need code signing, and disabling it
+      # avoids failures from macOS provenance metadata on downloaded pods.
+      config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
+      config.build_settings['CODE_SIGNING_REQUIRED'] = 'NO'
       config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)']
       config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] << 'PERMISSION_CAMERA=1'
       config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] << 'PERMISSION_PHOTOS=1'

@@ -166,6 +166,22 @@ coverage/₹
 google-services.json
 GoogleService-Info.plist
 
+# Google service account keys and OAuth client secrets
+**/legacy-table-*.json
+**/client_secret_*.json
+**/client_*.plist
+
+# Duplicate / backup folders
+mobile/android 2/
+mobile/build.bak.*/
+mobile/out
+frontend/node_modules_old/
+frontend/android/
+frontend/ios/
+
+# Native asset seeds
+**/ios/Flutter/native_assets_seed/
+
 # Android Profiling
 *.hprof
 

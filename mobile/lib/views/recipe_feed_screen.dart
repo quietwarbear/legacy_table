@@ -4,14 +4,18 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import '../providers/theme_provider.dart';
 import '../config/app_theme.dart';
+import '../models/holiday.dart';
 import '../models/recipe.dart';
 import '../widgets/recipe_card.dart';
 import '../widgets/recipe_card_shimmer.dart';
 import '../services/api_service.dart';
 import '../services/session_manager.dart';
 import '../widgets/family_prompt_widget.dart';
+import 'holiday_recipes_screen.dart';
 import 'recipe_detail_screen.dart';
 import 'notifications_screen.dart';
+import 'save_from_link_screen.dart';
+import 'scan_recipe_screen.dart';
 
 class RecipeFeedScreen extends StatefulWidget {
   const RecipeFeedScreen({super.key});
@@ -26,9 +30,11 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
   List<Category> _categories = [];
   bool _isLoading = false;
   bool _isLoadingCategories = false;
+  bool _isLoadingHolidays = false;
   String _searchQuery = '';
   String? _selectedCategory; // null means "All"
   int _unreadNotificationCount = 0;
+  HolidaySummary? _holidaySummary;
 
   @override
   void initState() {
@@ -36,6 +42,7 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
     _loadCategories();
     _loadRecipes();
     _loadUnreadNotificationCount();
+    _loadHolidaySummary();
   }
 
   Future<void> _loadUnreadNotificationCount() async {
@@ -53,9 +60,7 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
 
   Future<void> _openNotifications() async {
     await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => const NotificationsScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const NotificationsScreen()),
     );
     _loadUnreadNotificationCount();
   }
@@ -70,18 +75,18 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
     if (kDebugMode) {
       print('Loading categories from API...');
     }
-    
+
     setState(() {
       _isLoadingCategories = true;
     });
 
     try {
       final categories = await apiService.recipes.getCategories();
-      
+
       if (kDebugMode) {
         print('Categories loaded: ${categories.length} categories');
       }
-      
+
       setState(() {
         _isLoadingCategories = false;
         _categories = categories;
@@ -100,7 +105,7 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
     if (kDebugMode) {
       print('Loading recipes from API...');
     }
-    
+
     setState(() {
       _isLoading = true;
     });
@@ -109,11 +114,13 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
       final recipes = await apiService.recipes.getRecipes(
         category: _selectedCategory,
       );
-      
+
       if (kDebugMode) {
-        print('Recipes loaded: ${recipes.length} recipes (category: $_selectedCategory)');
+        print(
+          'Recipes loaded: ${recipes.length} recipes (category: $_selectedCategory)',
+        );
       }
-      
+
       setState(() {
         _isLoading = false;
         _recipes = recipes;
@@ -135,6 +142,26 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
           ),
         );
       }
+    }
+  }
+
+  Future<void> _loadHolidaySummary() async {
+    setState(() {
+      _isLoadingHolidays = true;
+    });
+
+    try {
+      final summary = await apiService.holidays.getHolidaySummary();
+      if (!mounted) return;
+      setState(() {
+        _holidaySummary = summary;
+        _isLoadingHolidays = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isLoadingHolidays = false;
+      });
     }
   }
 
@@ -169,8 +196,10 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
     final query = _searchQuery.toLowerCase();
     return _recipes.where((recipe) {
       return recipe.title.toLowerCase().contains(query) ||
-          (recipe.category != null && recipe.category!.toLowerCase().contains(query)) ||
-          (recipe.authorName != null && recipe.authorName!.toLowerCase().contains(query));
+          (recipe.category != null &&
+              recipe.category!.toLowerCase().contains(query)) ||
+          (recipe.authorName != null &&
+              recipe.authorName!.toLowerCase().contains(query));
     }).toList();
   }
 
@@ -186,6 +215,7 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
           onRefresh: () async {
             await _loadRecipes();
             await _loadUnreadNotificationCount();
+            await _loadHolidaySummary();
           },
           color: brandPrimary,
           child: CustomScrollView(
@@ -212,7 +242,9 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                                     fontFamily: 'Playfair Display',
                                     fontSize: 32,
                                     fontWeight: FontWeight.bold,
-                                    color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
+                                    color: isDark
+                                        ? DarkColors.textPrimary
+                                        : LightColors.textPrimary,
                                     height: 1.2,
                                   ),
                                 ),
@@ -222,7 +254,9 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                                   style: TextStyle(
                                     fontFamily: 'Manrope',
                                     fontSize: 14,
-                                    color: isDark ? DarkColors.textSecondary : LightColors.textSecondary,
+                                    color: isDark
+                                        ? DarkColors.textSecondary
+                                        : LightColors.textSecondary,
                                     height: 1.4,
                                   ),
                                 ),
@@ -236,7 +270,9 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                               children: [
                                 Icon(
                                   Icons.notifications_outlined,
-                                  color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
+                                  color: isDark
+                                      ? DarkColors.textPrimary
+                                      : LightColors.textPrimary,
                                   size: 28,
                                 ),
                                 if (_unreadNotificationCount > 0)
@@ -249,7 +285,9 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                                         color: Colors.red,
                                         shape: BoxShape.circle,
                                         border: Border.all(
-                                          color: isDark ? DarkColors.background : LightColors.background,
+                                          color: isDark
+                                              ? DarkColors.background
+                                              : LightColors.background,
                                           width: 2,
                                         ),
                                       ),
@@ -298,12 +336,24 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                 ),
               ),
 
-              const SliverToBoxAdapter(
-                child: SizedBox(height: 24),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+                  child: _buildSmartToolsSection(isDark),
+                ),
               ),
 
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+                  child: _buildHolidaySection(isDark),
+                ),
+              ),
+
+              const SliverToBoxAdapter(child: SizedBox(height: 24)),
+
               // Family Prompt (if user has no family)
-              if (!sessionManager.isLoggedIn || 
+              if (!sessionManager.isLoggedIn ||
                   sessionManager.currentUser?.hasFamily != true)
                 SliverToBoxAdapter(
                   child: FamilyPromptWidget(
@@ -341,41 +391,40 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                 SliverPadding(
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   sliver: SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final recipe = _filteredRecipes[index];
-                        return Padding(
-                          padding: EdgeInsets.only(
-                            bottom: index == _filteredRecipes.length - 1 ? 24 : 20,
-                          ),
-                          child: RecipeCard(
-                            recipe: recipe,
-                            onTap: () async {
-                              final result = await Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (context) => RecipeDetailScreen(
-                                    recipeId: recipe.id,
-                                    recipe: recipe,
-                                  ),
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final recipe = _filteredRecipes[index];
+                      return Padding(
+                        padding: EdgeInsets.only(
+                          bottom: index == _filteredRecipes.length - 1
+                              ? 24
+                              : 20,
+                        ),
+                        child: RecipeCard(
+                          recipe: recipe,
+                          onTap: () async {
+                            final result = await Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => RecipeDetailScreen(
+                                  recipeId: recipe.id,
+                                  recipe: recipe,
                                 ),
-                              );
-                              // If recipe was deleted, refresh the list
-                              if (result == true && mounted) {
-                                _loadRecipes();
-                              }
-                            },
-                          ),
-                        );
-                      },
-                      childCount: _filteredRecipes.length,
-                    ),
+                              ),
+                            );
+                            // If recipe was deleted, refresh the list
+                            if (result == true && mounted) {
+                              _loadRecipes();
+                            }
+                          },
+                        ),
+                      );
+                    }, childCount: _filteredRecipes.length),
                   ),
-                ), 
+                ),
             ],
           ),
         ),
       ),
-    ); 
+    );
   }
 
   Widget _buildSearchBar(bool isDark) {
@@ -429,7 +478,9 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                     icon: Icon(
                       Icons.clear,
                       size: 20,
-                      color: isDark ? DarkColors.textMuted : LightColors.textMuted,
+                      color: isDark
+                          ? DarkColors.textMuted
+                          : LightColors.textMuted,
                     ),
                     onPressed: () {
                       _searchController.clear();
@@ -448,14 +499,14 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(
-              color: brandPrimary,
-              width: 2,
-            ),
+            borderSide: BorderSide(color: brandPrimary, width: 2),
           ),
           filled: true,
           fillColor: isDark ? DarkColors.surface : LightColors.surface,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 16),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 4,
+            vertical: 16,
+          ),
         ),
       ),
     );
@@ -519,9 +570,9 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
         decoration: BoxDecoration(
           color: isSelected
               ? (isDark ? const Color(0xFF396646) : const Color(0xFF396646))
-              : (isDark 
-                  ? DarkColors.surfaceMuted.withValues(alpha: 0.5)
-                  : const Color(0xFFE0F2E5)),
+              : (isDark
+                    ? DarkColors.surfaceMuted.withValues(alpha: 0.5)
+                    : const Color(0xFFE0F2E5)),
           borderRadius: BorderRadius.circular(20),
           border: isSelected
               ? null
@@ -539,9 +590,7 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
               color: isSelected
                   ? Colors.white
-                  : (isDark 
-                      ? DarkColors.textPrimary 
-                      : const Color(0xFF396646)),
+                  : (isDark ? DarkColors.textPrimary : const Color(0xFF396646)),
             ),
           ),
         ),
@@ -562,7 +611,9 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
               shape: BoxShape.circle,
             ),
             child: Icon(
-              _searchQuery.isNotEmpty ? Icons.search_off : Icons.restaurant_menu,
+              _searchQuery.isNotEmpty
+                  ? Icons.search_off
+                  : Icons.restaurant_menu,
               size: 64,
               color: isDark ? DarkColors.textMuted : LightColors.textMuted,
             ),
@@ -587,7 +638,9 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
               fontFamily: 'Manrope',
               fontSize: 16,
               height: 1.5,
-              color: isDark ? DarkColors.textSecondary : LightColors.textSecondary,
+              color: isDark
+                  ? DarkColors.textSecondary
+                  : LightColors.textSecondary,
             ),
           ),
           if (_searchQuery.isNotEmpty) ...[
@@ -600,7 +653,10 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: brandPrimary,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -616,6 +672,317 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
             ),
           ],
         ],
+      ),
+    );
+  }
+
+  Widget _buildSmartToolsSection(bool isDark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Smart Recipe Tools',
+          style: TextStyle(
+            fontFamily: 'Playfair Display',
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Bring recipes in the same way the web app does: scan a card or turn a video link into a draft.',
+          style: TextStyle(
+            fontFamily: 'Manrope',
+            fontSize: 14,
+            color: isDark
+                ? DarkColors.textSecondary
+                : LightColors.textSecondary,
+            height: 1.4,
+          ),
+        ),
+        const SizedBox(height: 14),
+        SizedBox(
+          height: 170,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            children: [
+              _FeatureCard(
+                title: 'Scan Recipe',
+                description:
+                    'Use a photo of a handwritten card or cookbook page.',
+                icon: Icons.document_scanner_outlined,
+                accent: brandPrimary,
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const ScanRecipeScreen()),
+                  );
+                },
+              ),
+              const SizedBox(width: 14),
+              _FeatureCard(
+                title: 'Save From Link',
+                description:
+                    'Turn a TikTok, Instagram, or YouTube link into a draft.',
+                icon: Icons.link_outlined,
+                accent: brandSecondary,
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const SaveFromLinkScreen(),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildHolidaySection(bool isDark) {
+    if (_isLoadingHolidays) {
+      return Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: isDark ? DarkColors.surface : LightColors.surface,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: isDark ? DarkColors.border : LightColors.border,
+          ),
+        ),
+        child: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final summary = _holidaySummary;
+    if (summary == null || summary.upcoming.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isDark ? DarkColors.surface : LightColors.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: isDark ? DarkColors.border : LightColors.border,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: brandAccent.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(Icons.celebration_outlined, color: brandPrimary),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Holiday Headquarters',
+                      style: TextStyle(
+                        fontFamily: 'Playfair Display',
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: isDark
+                            ? DarkColors.textPrimary
+                            : LightColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${_capitalize(summary.season)} season • ${summary.seasonTheme}',
+                      style: TextStyle(
+                        fontFamily: 'Manrope',
+                        fontSize: 13,
+                        color: isDark
+                            ? DarkColors.textSecondary
+                            : LightColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ...summary.upcoming.take(4).map((holiday) {
+            final count = summary.holidayRecipeCounts[holiday.name] ?? 0;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(18),
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          HolidayRecipesScreen(holidayName: holiday.name),
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isDark
+                        ? DarkColors.background
+                        : LightColors.background,
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              holiday.name,
+                              style: TextStyle(
+                                fontFamily: 'Manrope',
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: isDark
+                                    ? DarkColors.textPrimary
+                                    : LightColors.textPrimary,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '${holiday.daysAway ?? 0} days away',
+                              style: TextStyle(
+                                fontFamily: 'Manrope',
+                                fontSize: 13,
+                                color: isDark
+                                    ? DarkColors.textSecondary
+                                    : LightColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: count > 0
+                              ? brandSecondary.withValues(alpha: 0.16)
+                              : brandPrimary.withValues(alpha: 0.10),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          count == 1 ? '1 recipe' : '$count recipes',
+                          style: TextStyle(
+                            fontFamily: 'Manrope',
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: count > 0 ? brandSecondary : brandPrimary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  String _capitalize(String value) {
+    if (value.isEmpty) return value;
+    return value[0].toUpperCase() + value.substring(1);
+  }
+}
+
+class _FeatureCard extends StatelessWidget {
+  final String title;
+  final String description;
+  final IconData icon;
+  final Color accent;
+  final VoidCallback onTap;
+
+  const _FeatureCard({
+    required this.title,
+    required this.description,
+    required this.icon,
+    required this.accent,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 260,
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              accent.withValues(alpha: isDark ? 0.30 : 0.18),
+              isDark ? DarkColors.surface : LightColors.surface,
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: accent.withValues(alpha: 0.32)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: accent.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Icon(icon, color: accent, size: 24),
+            ),
+            const Spacer(),
+            Text(
+              title,
+              style: TextStyle(
+                fontFamily: 'Playfair Display',
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: isDark
+                    ? DarkColors.textPrimary
+                    : LightColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              description,
+              style: TextStyle(
+                fontFamily: 'Manrope',
+                fontSize: 13,
+                color: isDark
+                    ? DarkColors.textSecondary
+                    : LightColors.textSecondary,
+                height: 1.35,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

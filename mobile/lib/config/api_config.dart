@@ -19,12 +19,15 @@ class ApiConfig {
   static String get recipes => '/recipes';
   static String recipeById(String id) => '/recipes/$id';
   static String get categories => '/categories';
+  static String get scanRecipe => '/ai/scan-recipe';
+  static String get saveFromLink => '/ai/save-from-link';
+  static String recipeHolidayTags(String recipeId) =>
+      '/recipes/$recipeId/holiday-tags';
 
   // Comment endpoints (relative paths)
   static String recipeComments(String recipeId) =>
       '/recipes/$recipeId/comments';
-  static String commentById(String commentId) =>
-      '/comments/$commentId';
+  static String commentById(String commentId) => '/comments/$commentId';
 
   // Notification endpoints (relative paths)
   static String get notifications => '/notifications';
@@ -39,7 +42,11 @@ class ApiConfig {
   static String get joinFamily => '/families/join';
   static String familyMembers(String familyId) => '/families/$familyId/members';
   static String leaveFamily(String familyId) => '/families/$familyId/leave';
-  static String transferKeeper(String familyId) => '/families/$familyId/transfer-keeper';
+  static String transferKeeper(String familyId) =>
+      '/families/$familyId/transfer-keeper';
+  static String get holidays => '/holidays';
+  static String holidayRecipes(String holidayName) =>
+      '/holidays/$holidayName/recipes';
 
   // Subscription endpoints (relative paths)
   static String get subscriptionStatus => '/subscriptions/status';
