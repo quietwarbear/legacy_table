@@ -599,6 +599,19 @@ async def login(credentials: UserLogin):
 async def google_auth(body: GoogleAuthRequest):
     """Verify Google ID token and login or register the user."""
     google_client_id = os.environ.get("GOOGLE_CLIENT_ID")
+    google_ios_client_id = os.environ.get("GOOGLE_IOS_CLIENT_ID")
+    allowed_google_client_ids = {
+        client_id
+        for client_id in [google_client_id, google_ios_client_id]
+        if client_id
+    }
+
+    # Legacy Table native iOS client ID fallback so mobile sign-in can work
+    # even if the optional env var has not been added in Railway yet.
+    allowed_google_client_ids.add(
+        "229052236659-h4op49fi71nktbtrtp0vjdemaaputub7.apps.googleusercontent.com"
+    )
+
     if not google_client_id:
         raise HTTPException(status_code=500, detail="Google auth not configured")
 
@@ -612,7 +625,7 @@ async def google_auth(body: GoogleAuthRequest):
 
     google_info = resp.json()
     # Verify audience matches our client ID
-    if google_info.get("aud") != google_client_id:
+    if google_info.get("aud") not in allowed_google_client_ids:
         raise HTTPException(status_code=401, detail="Token audience mismatch")
 
     email = google_info["email"].lower()
@@ -2539,7 +2552,7 @@ def get_upcoming_holidays(count: int = 5) -> list:
 
 @api_router.get("/holidays")
 async def get_holidays(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    """Get upcoming holidays and current season info for Holiday Headquarters."""
+    """Get upcoming holidays and current season info for Celebration Headquarters."""
     user = await get_current_user(credentials)
 
     upcoming = get_upcoming_holidays(6)
