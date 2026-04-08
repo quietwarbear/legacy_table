@@ -45,10 +45,15 @@ echo ">>> Generating iOS build files..."
 flutter build ios --config-only --release --no-codesign
 
 # -------------------------------------------------------
-# 5. Install CocoaPods dependencies
+# 5. Install CocoaPods dependencies (clean install)
 # -------------------------------------------------------
 echo ">>> Installing CocoaPods dependencies..."
 cd ios
-pod install
+
+# Remove stale Pods to avoid broken symlinks / missing headers
+rm -rf Pods
+rm -f Podfile.lock
+
+pod install --repo-update
 
 echo "=== ci_post_clone.sh completed successfully ==="
