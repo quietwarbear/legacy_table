@@ -104,10 +104,10 @@ output-metadata.json
 **/ios/Flutter/flutter_export_environment.sh
 **/ios/ServiceDefinitions.json
 **/ios/Runner/GeneratedPluginRegistrant.*
-**/ios/**/*.xcworkspace
-**/ios/**/*.xcodeproj
 **/ios/**/*.xcuserdata
 **/ios/**/*.xcscmblueprint
+# NOTE: Runner.xcworkspace and Runner.xcodeproj MUST be tracked for Xcode Cloud.
+# Do NOT add **/ios/**/*.xcworkspace or **/ios/**/*.xcodeproj back.
 
 # macOS related
 **/macos/Flutter/GeneratedPluginRegistrant.swift
