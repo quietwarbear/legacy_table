@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../config/app_theme.dart';
-import '../services/api_service.dart';
 import '../widgets/styled_snackbar.dart';
-import 'add_recipe_screen.dart';
 
 class SaveFromLinkScreen extends StatefulWidget {
   const SaveFromLinkScreen({super.key});
@@ -37,12 +35,12 @@ class _SaveFromLinkScreenState extends State<SaveFromLinkScreen> {
     });
 
     try {
-      final draft = await apiService.ai.saveFromLink(url);
+      // TODO: Wire up AI save-from-link API when backend is ready
+      await Future.delayed(const Duration(seconds: 1));
       if (!mounted) return;
-      await Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => AddRecipeScreen(initialDraft: draft),
-        ),
+      StyledSnackBar.showWarning(
+        context,
+        'Save from link is coming soon! The AI service is being set up.',
       );
     } catch (e) {
       if (mounted) {

@@ -6,9 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../config/app_theme.dart';
-import '../services/api_service.dart';
 import '../widgets/styled_snackbar.dart';
-import 'add_recipe_screen.dart';
 
 class ScanRecipeScreen extends StatefulWidget {
   const ScanRecipeScreen({super.key});
@@ -71,14 +69,12 @@ class _ScanRecipeScreenState extends State<ScanRecipeScreen> {
     });
 
     try {
-      final dataUrl = await _encodeImageToDataUrl(_selectedImage!);
-      final draft = await apiService.ai.scanRecipe(dataUrl);
-
+      // TODO: Wire up AI scan API when backend is ready
+      await Future.delayed(const Duration(seconds: 1));
       if (!mounted) return;
-      await Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => AddRecipeScreen(initialDraft: draft),
-        ),
+      StyledSnackBar.showWarning(
+        context,
+        'Recipe scanning is coming soon! The AI service is being set up.',
       );
     } catch (e) {
       if (mounted) {

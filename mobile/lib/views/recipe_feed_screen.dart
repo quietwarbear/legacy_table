@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../providers/theme_provider.dart';
 import '../config/app_theme.dart';
 import '../models/recipe.dart';
+import '../models/holiday.dart';
 import '../widgets/recipe_card.dart';
 import '../widgets/recipe_card_shimmer.dart';
 import '../services/api_service.dart';
@@ -14,6 +15,9 @@ import '../widgets/celebration_headquarters.dart';
 import 'recipe_detail_screen.dart';
 import 'notifications_screen.dart';
 import 'add_recipe_screen.dart';
+import 'scan_recipe_screen.dart';
+import 'save_from_link_screen.dart';
+import 'holiday_recipes_screen.dart';
 
 class RecipeFeedScreen extends StatefulWidget {
   const RecipeFeedScreen({super.key});
@@ -31,6 +35,8 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
   String _searchQuery = '';
   String? _selectedCategory; // null means "All"
   int _unreadNotificationCount = 0;
+  bool _isLoadingHolidaysState = false;
+  HolidaySummary? _holidaySummaryData;
 
   @override
   void initState() {
@@ -175,6 +181,10 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
           (recipe.authorName != null && recipe.authorName!.toLowerCase().contains(query));
     }).toList();
   }
+
+  bool get _isLoadingHolidays => _isLoadingHolidaysState;
+
+  HolidaySummary? get _holidaySummary => _holidaySummaryData;
 
   @override
   Widget build(BuildContext context) {
@@ -696,6 +706,50 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                       : const Color(0xFF396646)),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildQuickAction({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required bool isDark,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: color.withValues(alpha: 0.3),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 18,
+              color: color,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'Manrope',
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
+            ),
+          ],
         ),
       ),
     );

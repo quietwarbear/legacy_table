@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../config/app_theme.dart';
 import '../models/recipe.dart';
-import '../services/api_service.dart';
 import '../widgets/recipe_card.dart';
 import '../widgets/recipe_card_shimmer.dart';
-import 'recipe_detail_screen.dart';
 
 class HolidayRecipesScreen extends StatefulWidget {
   final String holidayName;
@@ -27,24 +25,13 @@ class _HolidayRecipesScreenState extends State<HolidayRecipesScreen> {
   }
 
   Future<void> _loadRecipes() async {
-    try {
-      final recipes = await apiService.holidays.getHolidayRecipes(
-        widget.holidayName,
-      );
-      if (!mounted) return;
-      setState(() {
-        _recipes = recipes;
-        _isLoading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _isLoading = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
-      );
-    }
+    // TODO: Wire up holidays API when backend is ready
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (!mounted) return;
+    setState(() {
+      _recipes = [];
+      _isLoading = false;
+    });
   }
 
   @override
@@ -103,18 +90,8 @@ class _HolidayRecipesScreenState extends State<HolidayRecipesScreen> {
                 final recipe = _recipes[index];
                 return RecipeCard(
                   recipe: recipe,
-                  onTap: () async {
-                    final result = await Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => RecipeDetailScreen(
-                          recipeId: recipe.id,
-                          recipe: recipe,
-                        ),
-                      ),
-                    );
-                    if (result == true && mounted) {
-                      _loadRecipes();
-                    }
+                  onTap: () {
+                    // TODO: Navigate to recipe detail when wired up
                   },
                 );
               },
