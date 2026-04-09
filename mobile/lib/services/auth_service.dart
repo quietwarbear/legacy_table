@@ -40,6 +40,17 @@ class AuthService {
     return loginResponse;
   }
 
+  // Apple Sign-In — send ID token to backend
+  Future<LoginResponse> appleSignIn(String idToken, {String fullName = '', String email = ''}) async {
+    final response = await _apiClient.post(
+      ApiConfig.appleAuth,
+      data: {'id_token': idToken, 'full_name': fullName, 'email': email},
+    );
+    final loginResponse = LoginResponse.fromJson(response.data);
+    _apiClient.setAuthToken(loginResponse.token);
+    return loginResponse;
+  }
+
   // Get current user
   Future<User> getCurrentUser() async {
     final response = await _apiClient.get(ApiConfig.currentUser);

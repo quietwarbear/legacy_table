@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import '../config/app_theme.dart';
 import '../providers/theme_provider.dart';
 import '../services/session_manager.dart';
@@ -29,6 +30,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
   bool _isLoading = false;
   bool _isGoogleLoading = false;
+  bool _isAppleLoading = false;
 
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: ['email', 'profile'],
@@ -135,6 +137,65 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) {
         setState(() {
           _isGoogleLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleAppleSignIn() async {
+    setState(() {
+      _isAppleLoading = true;
+    });
+
+    try {
+      final credential = await SignInWithApple.getAppleIDCredential(
+        scopes: [
+          AppleIDAuthorizationScopes.email,
+          AppleIDAuthorizationScopes.fullName,
+        ],
+      );
+
+      final idToken = credential.identityToken;
+      if (idToken == null) {
+        throw Exception('No identity token');
+      }
+
+      final fullName = [credential.givenName, credential.familyName]
+          .where((s) => s != null)
+          .join(' ');
+
+      final isNewAppleUser = await sessionManager.appleLogin(
+        idToken,
+        fullName: fullName,
+        email: credential.email ?? '',
+      );
+
+      if (isNewAppleUser) {
+        await _storageService.setPendingSubscriptionAfterRegister(true);
+      }
+
+      if (mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          isNewAppleUser ? '/subscription' : '/home',
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        String errorMessage = 'Apple sign-in failed';
+        if (e.toString().contains('Exception:')) {
+          errorMessage = e.toString().replaceFirst('Exception: ', '');
+        }
+        // Check if user cancelled the sign-in
+        if (!errorMessage.toLowerCase().contains('cancel') &&
+            !errorMessage.toLowerCase().contains('user_cancelled')) {
+          StyledSnackBar.showError(context, errorMessage);
+        }
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isAppleLoading = false;
         });
       }
     }
@@ -530,6 +591,59 @@ class _LoginScreenState extends State<LoginScreen> {
                                       color: isDark
                                           ? DarkColors.textPrimary
                                           : LightColors.textPrimary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Apple Sign-In Button
+                      OutlinedButton(
+                        onPressed: (_isLoading || _isAppleLoading)
+                            ? null
+                            : _handleAppleSignIn,
+                        style: OutlinedButton.styleFrom(
+                          backgroundColor: Colors.black,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          side: const BorderSide(
+                            color: Colors.black,
+                            width: 1,
+                          ),
+                        ),
+                        child: _isAppleLoading
+                            ? SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: const AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
+                                ),
+                              )
+                            : Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  // Apple logo
+                                  const Text(
+                                    '\u{F8FF}',
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Text(
+                                    'Continue with Apple',
+                                    style: TextStyle(
+                                      fontFamily: 'Manrope',
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
                                     ),
                                   ),
                                 ],

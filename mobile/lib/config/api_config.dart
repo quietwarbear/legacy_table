@@ -14,6 +14,7 @@ class ApiConfig {
   static String get currentUser => '/auth/me';
   static String get updateProfile => '/auth/profile';
   static String get googleAuth => '/auth/google';
+  static String get appleAuth => '/auth/apple';
 
   // Recipe endpoints (relative paths)
   static String get recipes => '/recipes';

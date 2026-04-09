@@ -17,11 +17,14 @@ from contextlib import asynccontextmanager
 import uuid
 from datetime import datetime, timezone, timedelta
 import jwt
+import jwt as pyjwt
 import bcrypt
 import json
 import httpx
 import base64
 from openai import AsyncOpenAI
+from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicNumbers
+from cryptography.hazmat.backends import default_backend
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -300,6 +303,11 @@ class UserLogin(BaseModel):
 
 class GoogleAuthRequest(BaseModel):
     credential: str  # Google ID token from GSI
+
+class AppleAuthRequest(BaseModel):
+    id_token: str
+    full_name: Optional[str] = ""
+    email: Optional[str] = ""
 
 class UserUpdate(BaseModel):
     nickname: Optional[str] = None
@@ -679,6 +687,147 @@ async def google_auth(body: GoogleAuthRequest):
             avatar=picture,
             family_id=None,
             role=None,
+            credits_balance=initial_credits,
+            credits_refresh_at=credits_refresh,
+            created_at=user_doc["created_at"]
+        )
+
+    return TokenResponse(token=token, user=user_response)
+
+# Apple Auth JWKS Cache
+_apple_jwks_cache = None
+_apple_jwks_cache_time = None
+
+async def get_apple_public_keys():
+    """Fetch and cache Apple's public keys from https://appleid.apple.com/auth/keys"""
+    global _apple_jwks_cache, _apple_jwks_cache_time
+
+    # Cache for 1 hour
+    now = datetime.now(timezone.utc)
+    if _apple_jwks_cache and _apple_jwks_cache_time:
+        if (now - _apple_jwks_cache_time).total_seconds() < 3600:
+            return _apple_jwks_cache
+
+    async with httpx.AsyncClient() as http_client:
+        resp = await http_client.get("https://appleid.apple.com/auth/keys")
+        if resp.status_code != 200:
+            raise HTTPException(status_code=500, detail="Could not fetch Apple public keys")
+
+    keys_data = resp.json()
+    _apple_jwks_cache = keys_data["keys"]
+    _apple_jwks_cache_time = now
+    return _apple_jwks_cache
+
+def get_apple_public_key(kid: str):
+    """Get a specific public key by kid from the cached keys"""
+    for key_data in _apple_jwks_cache or []:
+        if key_data.get("kid") == kid:
+            return key_data
+    return None
+
+async def verify_apple_token(id_token: str):
+    """Verify an Apple identity token and return the claims"""
+    try:
+        # Get the header without verification to extract the kid
+        unverified_header = pyjwt.get_unverified_header(id_token)
+        kid = unverified_header.get("kid")
+        if not kid:
+            raise HTTPException(status_code=401, detail="Invalid Apple token header")
+
+        # Fetch Apple's public keys
+        apple_keys = await get_apple_public_keys()
+
+        # Find the key with matching kid
+        key_data = None
+        for k in apple_keys:
+            if k.get("kid") == kid:
+                key_data = k
+                break
+
+        if not key_data:
+            raise HTTPException(status_code=401, detail="Apple token kid not found")
+
+        # Reconstruct the public key from JWK
+        n = int.from_bytes(base64.urlsafe_b64decode(key_data["n"] + "=="), byteorder="big")
+        e = int.from_bytes(base64.urlsafe_b64decode(key_data["e"] + "=="), byteorder="big")
+        public_numbers = RSAPublicNumbers(e, n)
+        public_key = public_numbers.public_key(default_backend())
+
+        # Verify the token
+        claims = pyjwt.decode(
+            id_token,
+            public_key,
+            algorithms=["RS256"],
+            audience=os.environ.get("APPLE_BUNDLE_ID"),  # e.g., com.example.app
+        )
+
+        return claims
+    except pyjwt.DecodeError as e:
+        raise HTTPException(status_code=401, detail=f"Invalid Apple token: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=401, detail=f"Token verification failed: {str(e)}")
+
+@api_router.post("/auth/apple", response_model=TokenResponse)
+async def apple_auth(body: AppleAuthRequest):
+    """Verify Apple ID token and login or register the user."""
+    # Verify the Apple identity token
+    claims = await verify_apple_token(body.id_token)
+
+    email = claims.get("email", body.email or "").lower()
+    if not email:
+        raise HTTPException(status_code=400, detail="Email not provided by Apple")
+
+    # Use provided full_name or extract from claims sub
+    full_name = body.full_name or claims.get("sub", "")
+
+    # Check if user exists
+    user = await db.users.find_one({"email": email}, {"_id": 0})
+
+    if user:
+        # Existing user — log them in
+        user = await refresh_credits_if_needed(user)
+        token = create_token(user["id"])
+        user_response = UserResponse(
+            id=user["id"],
+            name=user["name"],
+            nickname=user.get("nickname"),
+            email=user["email"],
+            avatar=user.get("avatar"),
+            family_id=user.get("family_id"),
+            role=user.get("role"),
+            subscription_tier=user.get("subscription_tier"),
+            credits_balance=user.get("credits_balance", 0),
+            credits_refresh_at=user.get("credits_refresh_at"),
+            created_at=user["created_at"]
+        )
+    else:
+        # New user — register with Apple info (no password)
+        user_id = str(uuid.uuid4())
+        initial_credits = get_credits_for_tier(None)
+        credits_refresh = next_refresh_date()
+        user_doc = {
+            "id": user_id,
+            "name": full_name or email.split("@")[0],
+            "nickname": None,
+            "email": email,
+            "password_hash": None,  # Apple users have no password
+            "avatar": None,  # Apple does not provide picture
+            "auth_provider": "apple",
+            "credits_balance": initial_credits,
+            "credits_refresh_at": credits_refresh,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }
+        await db.users.insert_one(user_doc)
+        token = create_token(user_id)
+        user_response = UserResponse(
+            id=user_id,
+            name=user_doc["name"],
+            nickname=None,
+            email=email,
+            avatar=None,
+            family_id=None,
+            role=None,
+            subscription_tier=None,
             credits_balance=initial_credits,
             credits_refresh_at=credits_refresh,
             created_at=user_doc["created_at"]

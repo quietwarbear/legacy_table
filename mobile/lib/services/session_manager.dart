@@ -165,6 +165,44 @@ class SessionManager extends ChangeNotifier {
     }
   }
 
+  /// Apple Sign-In
+  Future<bool> appleLogin(String idToken, {String fullName = '', String email = ''}) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final loginResponse = await _authService.appleSignIn(idToken, fullName: fullName, email: email);
+
+      // Save token and user data
+      await _storageService.saveAuthToken(loginResponse.token);
+      await _storageService.saveUserId(loginResponse.user.id);
+      await _storageService.saveUserEmail(loginResponse.user.email);
+      await _storageService.setLoggedIn(true);
+
+      if (loginResponse.user.familyId != null) {
+        await _storageService.saveFamilyId(loginResponse.user.familyId);
+      }
+      if (loginResponse.user.role != null) {
+        await _storageService.saveUserRole(loginResponse.user.role);
+      }
+
+      _apiService.setAuthToken(loginResponse.token);
+      await SubscriptionService.identify(loginResponse.user.id);
+
+      _currentUser = loginResponse.user;
+      _isLoggedIn = true;
+      return _isNewlyCreatedUser(loginResponse.user.createdAt);
+    } catch (e) {
+      if (kDebugMode) {
+        print('Apple login error: $e');
+      }
+      rethrow;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   /// Register user and auto-login
   Future<void> register({
     required String name,
