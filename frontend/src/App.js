@@ -666,6 +666,70 @@ const LoginPage = () => {
     }
   }, [user]);
 
+  // Initialize Apple Sign-In (web)
+  useEffect(() => {
+    if (user) return;
+    const APPLE_SERVICE_ID = "com.htrecipes.familyRecipeApp.signin";
+    const initApple = () => {
+      if (!window.AppleID?.auth) return;
+      try {
+        window.AppleID.auth.init({
+          clientId: APPLE_SERVICE_ID,
+          scope: "name email",
+          redirectURI: window.location.origin + "/",
+          usePopup: true,
+        });
+      } catch (e) {
+        console.warn("Apple SDK init warning:", e);
+      }
+    };
+    if (!document.getElementById("apple-auth-script")) {
+      const script = document.createElement("script");
+      script.id = "apple-auth-script";
+      script.src = "https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js";
+      script.async = true;
+      script.defer = true;
+      script.onload = initApple;
+      document.head.appendChild(script);
+    } else {
+      initApple();
+    }
+  }, [user]);
+
+  const handleAppleSignIn = async () => {
+    if (!window.AppleID?.auth) {
+      toast.error("Apple Sign In is loading. Please try again in a moment.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const result = await window.AppleID.auth.signIn();
+      const idToken = result.authorization?.id_token;
+      const email = result.user?.email || "";
+      const fullName = [result.user?.name?.firstName, result.user?.name?.lastName].filter(Boolean).join(" ");
+      if (!idToken) {
+        toast.error("Apple did not return a valid token.");
+        setLoading(false);
+        return;
+      }
+      const res = await axios.post(`${API}/auth/apple`, {
+        id_token: idToken,
+        email,
+        full_name: fullName,
+      });
+      login(res.data.token, res.data.user);
+      toast.success("Welcome!");
+      navigate("/subscribe");
+    } catch (error) {
+      if (error?.error === "popup_closed_by_user" || error?.code === 1001) {
+        // user cancelled — no toast
+      } else {
+        toast.error(error.response?.data?.detail || "Apple sign-in failed");
+      }
+    }
+    setLoading(false);
+  };
+
   const handleGoogleResponse = async (response) => {
     setLoading(true);
     try {
@@ -770,19 +834,32 @@ const LoginPage = () => {
           </button>
         </p>
 
-        {GOOGLE_CLIENT_ID && (
-          <>
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border/50"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="bg-card px-4 text-muted-foreground">or</span>
-              </div>
+        <>
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border/50"></div>
             </div>
-            <div className="flex justify-center" ref={googleButtonRef}></div>
-          </>
-        )}
+            <div className="relative flex justify-center text-sm">
+              <span className="bg-card px-4 text-muted-foreground">or</span>
+            </div>
+          </div>
+          {GOOGLE_CLIENT_ID && (
+            <div className="flex justify-center mb-3" ref={googleButtonRef}></div>
+          )}
+          <button
+            type="button"
+            onClick={handleAppleSignIn}
+            disabled={loading}
+            data-testid="apple-signin-btn"
+            className="w-full flex items-center justify-center gap-2 bg-black text-white rounded-full py-3 px-6 font-medium hover:bg-neutral-800 transition-colors disabled:opacity-50"
+            style={{ maxWidth: 320, margin: "0 auto" }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.08zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z" />
+            </svg>
+            Continue with Apple
+          </button>
+        </>
       </div>
     </div>
   );

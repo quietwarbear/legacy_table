@@ -753,12 +753,19 @@ async def verify_apple_token(id_token: str):
         public_numbers = RSAPublicNumbers(e, n)
         public_key = public_numbers.public_key(default_backend())
 
-        # Verify the token
+        # Verify the token — accept both native Bundle ID and web Services ID
+        valid_audiences = [
+            a for a in [
+                os.environ.get("APPLE_BUNDLE_ID"),
+                os.environ.get("APPLE_SERVICE_ID"),
+            ] if a
+        ]
         claims = pyjwt.decode(
             id_token,
             public_key,
             algorithms=["RS256"],
-            audience=os.environ.get("APPLE_BUNDLE_ID"),  # e.g., com.example.app
+            audience=valid_audiences or None,
+            issuer="https://appleid.apple.com",
         )
 
         return claims
