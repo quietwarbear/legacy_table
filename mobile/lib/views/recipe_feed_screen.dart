@@ -18,7 +18,7 @@ import 'notifications_screen.dart';
 import 'add_recipe_screen.dart';
 import 'scan_recipe_screen.dart';
 import 'save_from_link_screen.dart';
-import 'voice_recipe_screen.dart';
+// import 'voice_recipe_screen.dart';
 import 'holiday_recipes_screen.dart';
 
 class RecipeFeedScreen extends StatefulWidget {
@@ -453,7 +453,7 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                               onTap: () {
                                 Navigator.of(context).push(
                                   MaterialPageRoute(
-                                    builder: (_) => const VoiceRecipeScreen(),
+                                    builder: (_) => const Scaffold(body: Center(child: Text("Coming soon"))),
                                   ),
                                 );
                               },

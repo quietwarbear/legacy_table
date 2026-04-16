@@ -174,10 +174,27 @@ GoogleService-Info.plist
 # Duplicate / backup folders
 mobile/android 2/
 mobile/build.bak.*/
+mobile/build 2/
 mobile/out
 frontend/node_modules_old/
 frontend/android/
 frontend/ios/
+
+# iCloud duplicate files (space + number suffix)
+**/Flutter 2.podspec
+**/Generated 2.xcconfig
+**/flutter_export_environment 2.sh
+**/LaunchImage 1.imageset/
+**/config 2.xml
+
+# Dev notes and screenshots (local only)
+dev_notes/
+images/
+screenshots/
+
+# Build artifacts and backups
+*.bak
+mobile/ios/ExportOptions.plist
 
 # Native asset seeds
 **/ios/Flutter/native_assets_seed/
