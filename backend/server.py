@@ -1623,10 +1623,29 @@ class SubscriptionStatusResponse(BaseModel):
     monthly_allowance: int = 3
 
 
+# Owner/admin emails that always receive top-tier ("legacy") access
+ADMIN_EMAILS = {
+    "hodari@ubuntu-village.org",
+    "shy@ubuntu-village.org",
+    "quiet927@gmail.com",
+}
+
+
 @api_router.get("/subscriptions/status", response_model=SubscriptionStatusResponse)
 async def get_subscription_status(user: dict = Depends(get_current_user)):
     """Return the current user's subscription tier and credit info."""
     user = await refresh_credits_if_needed(user)
+    email = (user.get("email") or "").lower()
+    # Admin/owner override — always top tier
+    if email in ADMIN_EMAILS or email.endswith("@ubuntu-village.org"):
+        top_tier = "legacy"
+        return SubscriptionStatusResponse(
+            subscription_tier=top_tier,
+            is_active=True,
+            credits_balance=max(user.get("credits_balance", 0), get_credits_for_tier(top_tier)),
+            credits_refresh_at=user.get("credits_refresh_at"),
+            monthly_allowance=get_credits_for_tier(top_tier),
+        )
     tier = user.get("subscription_tier")
     return SubscriptionStatusResponse(
         subscription_tier=tier,
