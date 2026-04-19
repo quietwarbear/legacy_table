@@ -8,7 +8,9 @@ import '../models/family.dart';
 import '../widgets/styled_snackbar.dart';
 
 class JoinFamilyScreen extends StatefulWidget {
-  const JoinFamilyScreen({super.key});
+  final String? prefilledCode;
+
+  const JoinFamilyScreen({super.key, this.prefilledCode});
 
   @override
   State<JoinFamilyScreen> createState() => _JoinFamilyScreenState();
@@ -18,6 +20,14 @@ class _JoinFamilyScreenState extends State<JoinFamilyScreen> {
   final _formKey = GlobalKey<FormState>();
   final _inviteCodeController = TextEditingController();
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.prefilledCode != null && widget.prefilledCode!.isNotEmpty) {
+      _inviteCodeController.text = widget.prefilledCode!;
+    }
+  }
 
   @override
   void dispose() {

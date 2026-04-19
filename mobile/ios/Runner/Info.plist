@@ -34,6 +34,14 @@
 				<string>com.googleusercontent.apps.229052236659-h4op49fi71nktbtrtp0vjdemaaputub7</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>legacytable</string>
+			</array>
+		</dict>
 	</array>
 	<key>GIDClientID</key>
 	<string>229052236659-h4op49fi71nktbtrtp0vjdemaaputub7.apps.googleusercontent.com</string>

@@ -12,6 +12,7 @@ import '../models/user.dart';
 import '../widgets/styled_snackbar.dart';
 import '../views/join_family_screen.dart';
 import '../views/create_family_screen.dart';
+import '../widgets/share_invite_dialog.dart';
 
 /// Family tab that mirrors the website's /family page.
 /// Shows family name, invite code, members list, and join/create actions.
@@ -99,16 +100,11 @@ class _FamilySettingsTabState extends State<FamilySettingsTab> {
   }
 
   Future<void> _shareInviteCode(Family family) async {
-    final descriptionText =
-        family.description != null && family.description!.isNotEmpty
-            ? '\n\n${family.description}'
-            : '';
-
-    final shareText = 'Join my family "${family.name}" on Legacy Table!\n\n'
-        'Invite Code: ${family.inviteCode}'
-        '$descriptionText';
-
-    await Share.share(shareText);
+    if (!mounted) return;
+    showDialog(
+      context: context,
+      builder: (_) => ShareInviteDialog(family: family),
+    );
   }
 
   @override

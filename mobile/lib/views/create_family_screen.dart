@@ -8,6 +8,7 @@ import '../services/api_service.dart';
 import '../services/session_manager.dart';
 import '../models/family.dart';
 import '../widgets/styled_snackbar.dart';
+import '../widgets/share_invite_dialog.dart';
 
 class CreateFamilyScreen extends StatefulWidget {
   const CreateFamilyScreen({super.key});
@@ -500,20 +501,15 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
                 
                 // Share Button
                 ElevatedButton.icon(
-                  onPressed: () async {
-                    final descriptionText = family.description != null && family.description!.isNotEmpty
-                        ? '\n\n${family.description}'
-                        : '';
-                    
-                    final shareText = 'Join my family "${family.name}" on Legacy Table!\n\n'
-                        'Invite Code: ${family.inviteCode}'
-                        '$descriptionText';
-                    
-                    await Share.share(shareText);
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (_) => ShareInviteDialog(family: family),
+                    );
                   },
                   icon: const Icon(Icons.share, size: 20),
                   label: const Text(
-                    'Share Invite Code',
+                    'Share Invite',
                     style: TextStyle(
                       fontFamily: 'Manrope',
                       fontSize: 16,

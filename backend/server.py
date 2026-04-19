@@ -4,7 +4,7 @@ from fastapi.exception_handlers import request_validation_exception_handler
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
-from starlette.responses import JSONResponse
+from starlette.responses import JSONResponse, HTMLResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo.errors import PyMongoError
@@ -2839,6 +2839,144 @@ async def root():
 @api_router.get("/health")
 async def health():
     return {"status": "healthy"}
+
+# ===================== INVITE LANDING PAGE =====================
+
+INVITE_HTML_TEMPLATE = """<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Join {family_name} on Legacy Table</title>
+  <meta property="og:title" content="Join {family_name} on Legacy Table" />
+  <meta property="og:description" content="You've been invited to join a family on Legacy Table — the app for preserving recipes, photos, and food traditions across generations." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://api.legacytable.app/invite/{code}" />
+  <style>
+    * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+    body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+           background: linear-gradient(135deg, #FFF7ED, #FEF3C7); min-height: 100vh;
+           display: flex; align-items: center; justify-content: center; padding: 24px; }}
+    .card {{ background: white; border-radius: 20px; padding: 40px 32px; max-width: 400px;
+             width: 100%; text-align: center; box-shadow: 0 8px 30px rgba(0,0,0,0.08); }}
+    .icon {{ width: 72px; height: 72px; background: #FFF7ED; border-radius: 50%;
+             display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;
+             font-size: 32px; }}
+    h1 {{ font-family: Georgia, 'Times New Roman', serif; font-size: 24px; color: #1a1a1a; margin-bottom: 8px; }}
+    .family-name {{ font-size: 18px; color: #92400E; font-weight: 600; margin-bottom: 16px; }}
+    p {{ color: #6b7280; font-size: 15px; line-height: 1.5; margin-bottom: 24px; }}
+    .code-box {{ background: #F9FAFB; border: 2px dashed #D1D5DB; border-radius: 12px;
+                 padding: 16px; margin-bottom: 24px; }}
+    .code-label {{ font-size: 11px; color: #9CA3AF; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }}
+    .code {{ font-size: 28px; font-weight: 700; letter-spacing: 3px; color: #1a1a1a; font-family: monospace; }}
+    .btn {{ display: block; width: 100%; padding: 14px; border-radius: 12px; font-size: 16px;
+            font-weight: 600; text-decoration: none; margin-bottom: 12px; transition: opacity 0.2s; }}
+    .btn:hover {{ opacity: 0.9; }}
+    .btn-ios {{ background: #000; color: #fff; }}
+    .btn-android {{ background: #16A34A; color: #fff; }}
+    .or {{ color: #9CA3AF; font-size: 13px; margin-bottom: 12px; }}
+    .footer {{ color: #9CA3AF; font-size: 12px; margin-top: 20px; }}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="icon">&#127858;</div>
+    <h1>You're Invited!</h1>
+    <div class="family-name">{family_name}</div>
+    <p>Join this family on Legacy Table to share recipes, photos, and food traditions across generations.</p>
+    <div class="code-box">
+      <div class="code-label">Invite Code</div>
+      <div class="code">{code}</div>
+    </div>
+    <div class="or">Download the app and enter the code above</div>
+    <a href="https://apps.apple.com/app/legacy-table/id6759821009" class="btn btn-ios">Download on App Store</a>
+    <a href="https://play.google.com/store/apps/details?id=com.htrecipes.family_recipe_app" class="btn btn-android">Get on Google Play</a>
+    <div class="footer">Legacy Table by Ubuntu Market LLC</div>
+  </div>
+  <script>
+    // Try to open the app via deep link
+    var code = "{code}";
+    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    var isAndroid = /Android/.test(navigator.userAgent);
+    if (isIOS || isAndroid) {{
+      var deepLink = "legacytable://invite/" + code;
+      var timeout = setTimeout(function() {{ /* app not installed, stay on page */ }}, 1500);
+      window.location.href = deepLink;
+      window.addEventListener("blur", function() {{ clearTimeout(timeout); }});
+    }}
+  </script>
+</body>
+</html>"""
+
+INVITE_NOT_FOUND_HTML = """<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Legacy Table</title>
+  <style>
+    * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+    body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+           background: linear-gradient(135deg, #FFF7ED, #FEF3C7); min-height: 100vh;
+           display: flex; align-items: center; justify-content: center; padding: 24px; }}
+    .card {{ background: white; border-radius: 20px; padding: 40px 32px; max-width: 400px;
+             width: 100%; text-align: center; box-shadow: 0 8px 30px rgba(0,0,0,0.08); }}
+    h1 {{ font-family: Georgia, 'Times New Roman', serif; font-size: 24px; color: #1a1a1a; margin-bottom: 16px; }}
+    p {{ color: #6b7280; font-size: 15px; line-height: 1.5; margin-bottom: 24px; }}
+    .btn {{ display: block; width: 100%; padding: 14px; border-radius: 12px; font-size: 16px;
+            font-weight: 600; text-decoration: none; background: #92400E; color: #fff; }}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Invite Not Found</h1>
+    <p>This invite code doesn't match any family. It may have been changed or the family was removed.</p>
+    <a href="https://legacytable.app" class="btn">Visit Legacy Table</a>
+  </div>
+</body>
+</html>"""
+
+@app.get("/invite/{code}", response_class=HTMLResponse)
+async def invite_landing(code: str):
+    """Public landing page for invite links — no auth required."""
+    code = code.strip().upper()
+    family = await db.families.find_one({"invite_code": code}, {"_id": 0, "name": 1, "invite_code": 1})
+    if not family:
+        return HTMLResponse(content=INVITE_NOT_FOUND_HTML, status_code=404)
+
+    html = INVITE_HTML_TEMPLATE.replace("{family_name}", family["name"]).replace("{code}", family["invite_code"])
+    return HTMLResponse(content=html)
+
+
+# Well-known files for deep link verification
+@app.get("/.well-known/apple-app-site-association")
+async def apple_app_site_association():
+    return JSONResponse(content={
+        "applinks": {
+            "apps": [],
+            "details": [
+                {
+                    "appID": "H543QXDYUW.com.htrecipes.familyRecipeApp",
+                    "paths": ["/invite/*"]
+                }
+            ]
+        }
+    }, headers={"Content-Type": "application/json"})
+
+
+@app.get("/.well-known/assetlinks.json")
+async def android_asset_links():
+    return JSONResponse(content=[
+        {
+            "relation": ["delegate_permission/common.handle_all_urls"],
+            "target": {
+                "namespace": "android_app",
+                "package_name": "com.htrecipes.family_recipe_app",
+                "sha256_cert_fingerprints": ["05:6D:7E:FD:59:2C:A9:7E:F4:5C:9F:D7:7F:FF:58:93:18:1C:F5:0E:4C:48:89:18:92:F4:45:E1:7C:06:2F:83"]
+            }
+        }
+    ])
+
 
 # Include router
 app.include_router(api_router)
