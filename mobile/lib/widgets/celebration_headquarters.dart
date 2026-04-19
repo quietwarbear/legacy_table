@@ -190,7 +190,7 @@ class _CelebrationHeadquartersState extends State<CelebrationHeadquarters> {
 
           // Upcoming holidays cards
           SizedBox(
-            height: 80,
+            height: 95,
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: upcoming.length > 3 ? 3 : upcoming.length,
