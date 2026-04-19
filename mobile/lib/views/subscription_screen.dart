@@ -657,8 +657,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
     final success = await sub.purchase(package);
     if (success && mounted) {
+      final messenger = ScaffoldMessenger.of(context);
       _exitScreen(true);
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         const SnackBar(
           content: Text('Welcome to Legacy Table Premium!'),
           backgroundColor: brandSecondary,
@@ -672,11 +673,13 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     final restored = await sub.restore();
     if (!mounted) return;
 
+    final messenger = ScaffoldMessenger.of(context);
+
     if (restored && !widget.fromGate) {
       _exitScreen(true);
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
+    messenger.showSnackBar(
       SnackBar(
         content: Text(
           restored

@@ -70,7 +70,6 @@ class CookbookRecipeCard extends StatelessWidget {
                 ),
               ],
             ),
-Spacer(),
             // Recipe Content
             Align(child:Container(
               child: Padding(
@@ -168,7 +167,6 @@ Spacer(),
                 ),
               ),
             ),),
-            Spacer(),
           ],
         ),
       ),

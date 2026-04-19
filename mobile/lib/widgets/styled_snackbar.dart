@@ -48,7 +48,8 @@ class StyledSnackBar {
     Duration duration = const Duration(seconds: 4),
     VoidCallback? onDismiss,
   }) {
-    ScaffoldMessenger.of(context).showSnackBar(
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(
       SnackBar(
         content: Row(
           children: [
@@ -83,7 +84,7 @@ class StyledSnackBar {
           label: 'Dismiss',
           textColor: Colors.white,
           onPressed: () {
-            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+            messenger.hideCurrentSnackBar();
             onDismiss?.call();
           },
         ),
