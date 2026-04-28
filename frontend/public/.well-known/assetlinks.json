@@ -1,0 +1,13 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.htrecipes.family_recipe_app",
+      "sha256_cert_fingerprints": [
+        "8E:D9:1A:CC:90:4E:E0:88:E6:28:31:A3:99:E5:0D:50:19:30:FB:3F:44:0C:EA:AF:47:EA:44:A6:69:70:CC:69",
+        "05:6D:7E:FD:59:2C:A9:7E:F4:5C:9F:D7:7F:FF:58:93:18:1C:F5:0E:4C:48:89:18:92:F4:45:E1:7C:06:2F:83"
+      ]
+    }
+  }
+]

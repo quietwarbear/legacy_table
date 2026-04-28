@@ -20,6 +20,9 @@ class ApiConfig {
   static String get recipes => '/recipes';
   static String recipeById(String id) => '/recipes/$id';
   static String get categories => '/categories';
+  static String get holidays => '/holidays';
+  static String holidayRecipes(String holidayName) =>
+      '/holidays/$holidayName/recipes';
 
   // Comment endpoints (relative paths)
   static String recipeComments(String recipeId) =>

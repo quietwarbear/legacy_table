@@ -1,0 +1,15 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["H543QXDYUW.com.htrecipes.familyRecipeApp"],
+        "components": [
+          {
+            "/": "/invite/*",
+            "comment": "Matches /invite/* paths and opens them in the Legacy Table iOS app via Universal Links"
+          }
+        ]
+      }
+    ]
+  }
+}

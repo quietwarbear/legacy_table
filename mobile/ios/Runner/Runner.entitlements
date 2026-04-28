@@ -8,7 +8,8 @@
 	</array>
 	<key>com.apple.developer.associated-domains</key>
 	<array>
-		<string>applinks:api.legacytable.app</string>
+		<string>applinks:legacytable.app</string>
+		<string>applinks:www.legacytable.app</string>
 	</array>
 </dict>
 </plist>

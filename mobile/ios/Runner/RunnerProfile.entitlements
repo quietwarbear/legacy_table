@@ -6,5 +6,10 @@
 	<array>
 		<string>Default</string>
 	</array>
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:legacytable.app</string>
+		<string>applinks:www.legacytable.app</string>
+	</array>
 </dict>
 </plist>
