@@ -5990,6 +5990,75 @@ const DeleteAccountPage = () => {
   );
 };
 
+// Invite Landing Page
+// Displayed when the App Link verification has not auto-opened the app
+// (e.g., desktop browser, app not installed, or first install before verification).
+// On Android with verified App Links, Android opens the app directly and this page is never seen.
+const InviteLandingPage = () => {
+  const { code } = useParams();
+
+  // Auto-attempt to deep-link into the app via the custom scheme.
+  // If the app is installed, this opens it. If not, the browser stays here.
+  React.useEffect(() => {
+    if (code) {
+      window.location.href = `legacytable://invite/${code}`;
+    }
+  }, [code]);
+
+  const tryOpenApp = () => {
+    if (code) window.location.href = `legacytable://invite/${code}`;
+  };
+
+  return (
+    <div className="min-h-screen bg-background flex flex-col" data-testid="invite-landing-page">
+      <header className="border-b border-border/50 bg-card/50 sticky top-0 z-30">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+          <FamilyLogo size="sm" showText={true} />
+        </div>
+      </header>
+      <main className="flex-1 flex items-center justify-center px-4 py-12">
+        <div className="max-w-md w-full text-center space-y-6">
+          <h1 className="text-3xl font-bold">You've been invited to a Legacy Table</h1>
+          <p className="text-muted-foreground">
+            Open the Legacy Table app to view this invite. If you don't have the app yet,
+            install it first and the invite will be waiting for you.
+          </p>
+          <div className="space-y-3">
+            <Button onClick={tryOpenApp} className="w-full" data-testid="invite-open-app-btn">
+              Open in Legacy Table
+            </Button>
+            <div className="flex gap-3 justify-center pt-4">
+              <a
+                href="https://play.google.com/store/apps/details?id=com.htrecipes.family_recipe_app"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm font-medium text-primary hover:underline"
+                data-testid="invite-play-store-link"
+              >
+                Get it on Google Play
+              </a>
+              <a
+                href="https://apps.apple.com/app/legacy-table"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm font-medium text-primary hover:underline"
+                data-testid="invite-app-store-link"
+              >
+                Download on the App Store
+              </a>
+            </div>
+          </div>
+          {code && (
+            <p className="text-xs text-muted-foreground pt-6">
+              Invite code: <span className="font-mono">{code}</span>
+            </p>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+};
+
 // Privacy Policy Page
 const PrivacyPolicyPage = () => {
   const navigate = useNavigate();
@@ -6139,6 +6208,7 @@ function App() {
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
                 <Route path="/delete-account" element={<DeleteAccountPage />} />
+                <Route path="/invite/:code" element={<InviteLandingPage />} />
                 <Route path="/subscribe" element={<ProtectedRoute><PricingPage /></ProtectedRoute>} />
                 <Route path="/subscription-success" element={<ProtectedRoute><SubscriptionSuccessPage /></ProtectedRoute>} />
                 <Route path="/" element={<LandingPage />} />

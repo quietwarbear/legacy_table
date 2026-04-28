@@ -2983,37 +2983,10 @@ async def invite_landing(code: str):
     return HTMLResponse(content=html)
 
 
-# Well-known files for deep link verification
-@app.get("/.well-known/apple-app-site-association")
-async def apple_app_site_association():
-    return JSONResponse(content={
-        "applinks": {
-            "apps": [],
-            "details": [
-                {
-                    "appID": "H543QXDYUW.com.htrecipes.familyRecipeApp",
-                    "paths": ["/invite/*"]
-                }
-            ]
-        }
-    }, headers={"Content-Type": "application/json"})
-
-
-@app.get("/.well-known/assetlinks.json")
-async def android_asset_links():
-    return JSONResponse(content=[
-        {
-            "relation": ["delegate_permission/common.handle_all_urls"],
-            "target": {
-                "namespace": "android_app",
-                "package_name": "com.htrecipes.family_recipe_app",
-                "sha256_cert_fingerprints": [
-                    "8E:D9:1A:CC:90:4E:E0:88:E6:28:31:A3:99:E5:0D:50:19:30:FB:3F:44:0C:EA:AF:47:EA:44:A6:69:70:CC:69",
-                    "05:6D:7E:FD:59:2C:A9:7E:F4:5C:9F:D7:7F:FF:58:93:18:1C:F5:0E:4C:48:89:18:92:F4:45:E1:7C:06:2F:83"
-                ]
-            }
-        }
-    ])
+# Note: deep link well-known files (apple-app-site-association, assetlinks.json) used to be
+# served from this API (api.legacytable.app). They were moved to the brand domain (legacytable.app),
+# served by the Vercel-hosted frontend at frontend/public/.well-known/. The api.* subdomain now
+# only handles API requests, as it should.
 
 
 TERMS_HTML = """<!DOCTYPE html>
