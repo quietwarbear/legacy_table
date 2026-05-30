@@ -344,13 +344,13 @@ const LandingPage = () => {
               </p>
             </div>
             <div className="flex justify-center lg:justify-end">
-              {/* TODO(PR 3): replace this placeholder with the real founder
-                  photo. Keeping a styled placeholder rather than a broken
-                  <img> so the alt text doesn't render as visible body copy. */}
-              <div className="w-full max-w-sm aspect-[4/5] rounded-2xl bg-gradient-to-br from-primary/10 via-muted to-secondary/20 shadow-xl flex items-center justify-center">
-                <p className="text-muted-foreground/60 text-sm">
-                  Founder photo — coming soon
-                </p>
+              <div className="w-full max-w-md rounded-2xl overflow-hidden shadow-xl">
+                <img
+                  src={`${process.env.PUBLIC_URL || ""}/founders.jpg`}
+                  alt="Hodari and Shylah Touré, founders of Legacy Table"
+                  className="w-full h-auto block"
+                  loading="lazy"
+                />
               </div>
             </div>
           </div>
