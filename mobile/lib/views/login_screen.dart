@@ -70,23 +70,29 @@ class _LoginScreenState extends State<LoginScreen> {
       final status = e.response?.statusCode;
       final body = e.response?.data;
       debugPrint('[$flow] DioException URL=$url status=$status body=$body');
-      switch (e.type) {
-        case DioExceptionType.connectionError:
-        case DioExceptionType.connectionTimeout:
-          return "$flow failed: can't reach ${ApiConfig.apiBaseUrl}. "
-              "Check internet / VPN, or verify the backend is up.";
-        case DioExceptionType.sendTimeout:
-        case DioExceptionType.receiveTimeout:
-          return "$flow failed: backend timed out (${e.type.name}).";
-        case DioExceptionType.badCertificate:
-          return "$flow failed: TLS/cert problem reaching ${ApiConfig.apiBaseUrl}.";
-        case DioExceptionType.badResponse:
-          return "$flow failed: backend returned $status. ${body ?? ''}";
-        case DioExceptionType.cancel:
-          return "$flow cancelled.";
-        case DioExceptionType.unknown:
-          return "$flow failed: ${e.message ?? 'unknown network error'}";
+      // Use if/else rather than switch — older Dart toolchains reject
+      // enum-value cases as "not a constant expression" in classic switch.
+      final type = e.type;
+      if (type == DioExceptionType.connectionError ||
+          type == DioExceptionType.connectionTimeout) {
+        return "$flow failed: can't reach ${ApiConfig.apiBaseUrl}. "
+            "Check internet / VPN, or verify the backend is up.";
       }
+      if (type == DioExceptionType.sendTimeout ||
+          type == DioExceptionType.receiveTimeout) {
+        return "$flow failed: backend timed out (${type.name}).";
+      }
+      if (type == DioExceptionType.badCertificate) {
+        return "$flow failed: TLS/cert problem reaching ${ApiConfig.apiBaseUrl}.";
+      }
+      if (type == DioExceptionType.badResponse) {
+        return "$flow failed: backend returned $status. ${body ?? ''}";
+      }
+      if (type == DioExceptionType.cancel) {
+        return "$flow cancelled.";
+      }
+      // DioExceptionType.unknown or anything else
+      return "$flow failed: ${e.message ?? 'unknown network error'}";
     }
 
     if (e is PlatformException) {

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io' show Platform;
 import 'package:app_links/app_links.dart';
 import 'package:facebook_app_events/facebook_app_events.dart';
 import 'package:flutter/foundation.dart';
@@ -41,16 +40,12 @@ void main() async {
     debugPrintStack(stackTrace: stackTrace);
   }
 
-  // Meta App Events — log activation so installs/opens attribute correctly to
-  // Meta ad campaigns. iOS only for now (Info.plist holds the FB config);
-  // Android wiring will land in a separate PR if/when needed.
-  if (!kIsWeb && Platform.isIOS) {
-    try {
-      await facebookAppEvents.logActivatedApp();
-    } catch (e) {
-      debugPrint('Facebook App Events activation failed: $e');
-    }
-  }
+  // Meta App Events — the iOS SDK auto-activates from the FacebookAppID /
+  // FacebookClientToken keys in Info.plist on launch, so we don't need
+  // an explicit logActivatedApp() call here (that method only exists in
+  // facebook_app_events ^0.28; we're pinned to 0.20.1 via pubspec.lock).
+  // Custom events (e.g. fb_mobile_login on successful auth) still fire
+  // through `facebookAppEvents.logEvent(...)` from the login screen.
 
   runApp(const MyApp());
 }
