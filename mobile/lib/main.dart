@@ -1,5 +1,8 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 import 'package:app_links/app_links.dart';
+import 'package:facebook_app_events/facebook_app_events.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'config/app_theme.dart';
@@ -14,6 +17,11 @@ import 'views/register_screen.dart';
 import 'views/subscription_screen.dart';
 import 'views/join_family_screen.dart';
 
+/// Singleton instance of Facebook App Events for ad attribution.
+/// Use this everywhere events are logged (sign-up, purchase, etc.) rather
+/// than constructing a new FacebookAppEvents() per call.
+final facebookAppEvents = FacebookAppEvents();
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -22,6 +30,17 @@ void main() async {
   } catch (e, stackTrace) {
     debugPrint('Subscription initialization failed: $e');
     debugPrintStack(stackTrace: stackTrace);
+  }
+
+  // Meta App Events — log activation so installs/opens attribute correctly to
+  // Meta ad campaigns. iOS only for now (Info.plist holds the FB config);
+  // Android wiring will land in a separate PR if/when needed.
+  if (!kIsWeb && Platform.isIOS) {
+    try {
+      await facebookAppEvents.logActivatedApp();
+    } catch (e) {
+      debugPrint('Facebook App Events activation failed: $e');
+    }
   }
 
   runApp(const MyApp());

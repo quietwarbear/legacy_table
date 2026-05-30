@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import '../config/app_theme.dart';
+import '../main.dart' show facebookAppEvents;
 import '../providers/theme_provider.dart';
 import '../services/session_manager.dart';
 import '../services/storage_service.dart';
@@ -31,6 +33,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   bool _isGoogleLoading = false;
   bool _isAppleLoading = false;
+  bool _isFacebookLoading = false;
 
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: ['email', 'profile'],
@@ -137,6 +140,76 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) {
         setState(() {
           _isGoogleLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleFacebookSignIn() async {
+    setState(() {
+      _isFacebookLoading = true;
+    });
+
+    try {
+      // Triggers the Facebook Login dialog (in-app SDK on iOS).
+      final result = await FacebookAuth.instance.login(
+        permissions: const ['email', 'public_profile'],
+      );
+
+      switch (result.status) {
+        case LoginStatus.success:
+          final accessToken = result.accessToken;
+          if (accessToken == null) {
+            throw Exception('Facebook returned no access token');
+          }
+
+          // Fire App Event so Meta attributes the sign-up to the right ad.
+          await facebookAppEvents.logEvent(
+            name: 'fb_mobile_login',
+            parameters: {'method': 'facebook'},
+          );
+
+          // TODO(backend): wire to sessionManager.facebookLogin once the
+          // FastAPI /auth/facebook endpoint exists. The endpoint should
+          // call Facebook Graph API (debug_token + /me?fields=id,email,name)
+          // to verify the access token and return our own session token.
+          //
+          // For now, surface the token in debug logs and tell the user
+          // that backend wiring is still pending.
+          debugPrint('[FacebookSignIn] tokenString length=${accessToken.tokenString.length}');
+          if (mounted) {
+            StyledSnackBar.showError(
+              context,
+              'Facebook auth succeeded on device — backend hookup is in the next PR.',
+            );
+          }
+          break;
+
+        case LoginStatus.cancelled:
+          // User dismissed the sheet — silent, matches Google/Apple behavior.
+          break;
+
+        case LoginStatus.failed:
+          throw Exception(result.message ?? 'Facebook login failed');
+
+        case LoginStatus.operationInProgress:
+          // Another FB auth call is already in flight; ignore the duplicate tap.
+          break;
+      }
+    } catch (e, stackTrace) {
+      debugPrint('[FacebookSignIn] error: $e');
+      debugPrint('[FacebookSignIn] stack: $stackTrace');
+      if (mounted) {
+        String errorMessage = 'Facebook sign-in failed';
+        if (e.toString().contains('Exception:')) {
+          errorMessage = e.toString().replaceFirst('Exception: ', '');
+        }
+        StyledSnackBar.showError(context, errorMessage);
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isFacebookLoading = false;
         });
       }
     }
@@ -641,6 +714,66 @@ class _LoginScreenState extends State<LoginScreen> {
                                   const SizedBox(width: 10),
                                   Text(
                                     'Continue with Apple',
+                                    style: TextStyle(
+                                      fontFamily: 'Manrope',
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Facebook Sign-In Button
+                      OutlinedButton(
+                        onPressed: (_isLoading || _isFacebookLoading)
+                            ? null
+                            : _handleFacebookSignIn,
+                        style: OutlinedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1877F2),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          side: const BorderSide(
+                            color: Color(0xFF1877F2),
+                            width: 1,
+                          ),
+                        ),
+                        child: _isFacebookLoading
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
+                                ),
+                              )
+                            : Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  // Facebook "f" mark
+                                  Container(
+                                    width: 20,
+                                    height: 20,
+                                    alignment: Alignment.center,
+                                    child: const Text(
+                                      'f',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w900,
+                                        color: Colors.white,
+                                        fontFamily: 'Helvetica',
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  const Text(
+                                    'Continue with Facebook',
                                     style: TextStyle(
                                       fontFamily: 'Manrope',
                                       fontSize: 16,

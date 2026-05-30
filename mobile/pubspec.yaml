@@ -52,6 +52,12 @@ dependencies:
   purchases_flutter: ^9.15.0
   google_sign_in: ^6.2.1
   sign_in_with_apple: ^6.1.0
+  # Meta SDK (iOS): Facebook Login + App Events for ad attribution.
+  # Configuration lives in ios/Runner/Info.plist (FacebookAppID,
+  # FacebookClientToken, FacebookDisplayName, fb<APP_ID> URL scheme,
+  # LSApplicationQueriesSchemes, NSUserTrackingUsageDescription).
+  flutter_facebook_auth: ^7.1.1
+  facebook_app_events: ^0.20.1
 
 dev_dependencies:
   flutter_launcher_icons: ^0.14.4
