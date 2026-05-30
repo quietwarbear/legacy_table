@@ -5,6 +5,8 @@ import 'package:facebook_app_events/facebook_app_events.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'config/api_config.dart';
+import 'config/app_config.dart';
 import 'config/app_theme.dart';
 import 'providers/theme_provider.dart';
 import 'providers/subscription_provider.dart';
@@ -24,6 +26,13 @@ final facebookAppEvents = FacebookAppEvents();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Print the active API base URL once at startup so it's easy to confirm
+  // (via `flutter logs` or device console) which backend the build is
+  // pointing at. Critical for debugging "auth fails on Android" — a
+  // wrong base URL or unreachable host accounts for most of those.
+  debugPrint('[Boot] API base URL: ${ApiConfig.apiBaseUrl}');
+  debugPrint('[Boot] isProduction: ${AppConfig.isProduction}');
 
   try {
     await SubscriptionService.initialize();

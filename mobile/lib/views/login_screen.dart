@@ -1,9 +1,13 @@
+import 'package:dio/dio.dart' show DioException;
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show PlatformException;
 import 'package:provider/provider.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+import '../config/api_config.dart';
+import '../config/app_config.dart';
 import '../config/app_theme.dart';
 import '../main.dart' show facebookAppEvents;
 import '../providers/theme_provider.dart';
@@ -50,6 +54,53 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  /// Build a single descriptive error message from any thrown error.
+  ///
+  /// The default Dart try/catch swallows error TYPES; this preserves them.
+  /// Critically, this handles DioException (network/HTTP errors thrown by
+  /// the api_client when the backend is unreachable, returns 4xx/5xx, or
+  /// times out) which previously fell through the generic catch and showed
+  /// a meaningless "Google sign-in failed".
+  String _describeAuthError(String flow, Object e) {
+    // Always log full detail so `flutter logs` shows it for debugging.
+    debugPrint('[$flow] ${e.runtimeType}: $e');
+
+    if (e is DioException) {
+      final url = e.requestOptions.baseUrl + e.requestOptions.path;
+      final status = e.response?.statusCode;
+      final body = e.response?.data;
+      debugPrint('[$flow] DioException URL=$url status=$status body=$body');
+      switch (e.type) {
+        case DioExceptionType.connectionError:
+        case DioExceptionType.connectionTimeout:
+          return "$flow failed: can't reach ${ApiConfig.apiBaseUrl}. "
+              "Check internet / VPN, or verify the backend is up.";
+        case DioExceptionType.sendTimeout:
+        case DioExceptionType.receiveTimeout:
+          return "$flow failed: backend timed out (${e.type.name}).";
+        case DioExceptionType.badCertificate:
+          return "$flow failed: TLS/cert problem reaching ${ApiConfig.apiBaseUrl}.";
+        case DioExceptionType.badResponse:
+          return "$flow failed: backend returned $status. ${body ?? ''}";
+        case DioExceptionType.cancel:
+          return "$flow cancelled.";
+        case DioExceptionType.unknown:
+          return "$flow failed: ${e.message ?? 'unknown network error'}";
+      }
+    }
+
+    if (e is PlatformException) {
+      final detail = e.message ?? e.details?.toString() ?? 'no detail';
+      return "$flow failed [${e.code}]: $detail";
+    }
+
+    if (e.toString().startsWith('Exception:')) {
+      return e.toString().replaceFirst('Exception: ', '');
+    }
+
+    return "$flow failed: $e";
+  }
+
   Future<void> _handleLogin() async {
     // Dismiss keyboard safely
     final currentFocus = FocusScope.of(context);
@@ -76,15 +127,13 @@ class _LoginScreenState extends State<LoginScreen> {
           context,
         ).pushNamedAndRemoveUntil('/home', (route) => false);
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('[EmailLogin] stack: $stackTrace');
       if (mounted) {
-        String errorMessage = 'Login failed';
-        if (e.toString().contains('Exception:')) {
-          errorMessage = e.toString().replaceFirst('Exception: ', '');
-        } else {
-          errorMessage = e.toString();
-        }
-        StyledSnackBar.showError(context, errorMessage);
+        StyledSnackBar.showError(
+          context,
+          _describeAuthError('Login', e),
+        );
       }
     } finally {
       if (mounted) {
@@ -128,13 +177,13 @@ class _LoginScreenState extends State<LoginScreen> {
           (route) => false,
         );
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('[GoogleSignIn] stack: $stackTrace');
       if (mounted) {
-        String errorMessage = 'Google sign-in failed';
-        if (e.toString().contains('Exception:')) {
-          errorMessage = e.toString().replaceFirst('Exception: ', '');
-        }
-        StyledSnackBar.showError(context, errorMessage);
+        StyledSnackBar.showError(
+          context,
+          _describeAuthError('Google sign-in', e),
+        );
       }
     } finally {
       if (mounted) {
@@ -197,14 +246,12 @@ class _LoginScreenState extends State<LoginScreen> {
           break;
       }
     } catch (e, stackTrace) {
-      debugPrint('[FacebookSignIn] error: $e');
       debugPrint('[FacebookSignIn] stack: $stackTrace');
       if (mounted) {
-        String errorMessage = 'Facebook sign-in failed';
-        if (e.toString().contains('Exception:')) {
-          errorMessage = e.toString().replaceFirst('Exception: ', '');
-        }
-        StyledSnackBar.showError(context, errorMessage);
+        StyledSnackBar.showError(
+          context,
+          _describeAuthError('Facebook sign-in', e),
+        );
       }
     } finally {
       if (mounted) {
