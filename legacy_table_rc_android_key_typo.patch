@@ -1,0 +1,49 @@
+From 22a3e4b2c92ff3a42f4fc35a9defd22532c6c0e2 Mon Sep 17 00:00:00 2001
+From: Claude <claude@anthropic.com>
+Date: Sat, 30 May 2026 16:28:02 -0700
+Subject: [PATCH] fix(android): correct RevenueCat Play Store API key typo
+ (digit 0 -> letter O)
+
+The hardcoded _androidApiKey in subscription_service.dart had
+'goog_ZxxXVaTzAedcvvJ0EUHtjYuUyVE' (digit zero at position 23) when the
+actual RevenueCat Play Store key is 'goog_ZxxXVaTzAedcvvJOEUHtjYuUyVE'
+(capital letter O at position 23). Single-character transcription error.
+
+Symptoms this fix resolves on Android:
+  - Every RevenueCat call returns InvalidCredentialsError
+  - Offerings fetch fails on launch
+  - Customer info fetch fails on launch
+  - Purchases.logIn (called from SessionManager after Google/Apple
+    sign-in) throws PlatformException(11), bubbling up to the auth
+    flow and showing 'Google sign-in failed' even though the actual
+    Google auth + backend response both succeeded
+
+iOS is unaffected (uses _appleApiKey which is correct).
+
+Follow-up worth considering (not in this PR):
+  Move the API keys out of the committed source. They're public SDK
+  keys so this isn't critical, but using --dart-define at build time
+  (or a gitignored config file loaded at runtime) makes rotation
+  easier and avoids ever shipping the wrong key again.
+
+Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
+---
+ mobile/lib/services/subscription_service.dart | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/mobile/lib/services/subscription_service.dart b/mobile/lib/services/subscription_service.dart
+index f5a8183..12f16a8 100644
+--- a/mobile/lib/services/subscription_service.dart
++++ b/mobile/lib/services/subscription_service.dart
+@@ -5,7 +5,7 @@ import '../config/app_config.dart';
+ class SubscriptionService {
+   // RevenueCat API keys — one per platform
+   static const String _appleApiKey = 'appl_ESkZxQXdLyJjZGPyXwhMtegGhoC';
+-  static const String _androidApiKey = 'goog_ZxxXVaTzAedcvvJ0EUHtjYuUyVE';
++  static const String _androidApiKey = 'goog_ZxxXVaTzAedcvvJOEUHtjYuUyVE';
+ 
+   // Entitlement identifiers (must match RevenueCat dashboard)
+   static const String entitlementHeritage = 'heritage_access';
+-- 
+2.34.1
+

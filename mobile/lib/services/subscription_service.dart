@@ -5,7 +5,7 @@ import '../config/app_config.dart';
 class SubscriptionService {
   // RevenueCat API keys — one per platform
   static const String _appleApiKey = 'appl_ESkZxQXdLyJjZGPyXwhMtegGhoC';
-  static const String _androidApiKey = 'goog_ZxxXVaTzAedcvvJ0EUHtjYuUyVE';
+  static const String _androidApiKey = 'goog_ZxxXVaTzAedcvvJOEUHtjYuUyVE';
 
   // Entitlement identifiers (must match RevenueCat dashboard)
   static const String entitlementHeritage = 'heritage_access';
