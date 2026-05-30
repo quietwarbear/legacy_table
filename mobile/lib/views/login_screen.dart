@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show PlatformException;
 import 'package:provider/provider.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
@@ -125,11 +126,23 @@ class _LoginScreenState extends State<LoginScreen> {
           (route) => false,
         );
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      // Surface the real error so the cause is debuggable. The previous
+      // catch swallowed PlatformException (the most common Google Sign-In
+      // failure mode) because its toString() does not begin with "Exception:".
+      debugPrint('[GoogleSignIn] error: $e');
+      debugPrint('[GoogleSignIn] stack: $stackTrace');
       if (mounted) {
         String errorMessage = 'Google sign-in failed';
-        if (e.toString().contains('Exception:')) {
+        if (e is PlatformException) {
+          // Code is the diagnostic: e.g. "sign_in_failed" with details
+          // wrapping an Android ApiException status code (10, 12500, 7, ...)
+          final detail = e.message ?? e.details?.toString() ?? 'no detail';
+          errorMessage = 'Google sign-in failed [${e.code}]: $detail';
+        } else if (e.toString().contains('Exception:')) {
           errorMessage = e.toString().replaceFirst('Exception: ', '');
+        } else {
+          errorMessage = 'Google sign-in failed: $e';
         }
         StyledSnackBar.showError(context, errorMessage);
       }

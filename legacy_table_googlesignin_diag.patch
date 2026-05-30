@@ -1,0 +1,77 @@
+From 183f7e0ee399e4fcde00bd73c753ac55467e7894 Mon Sep 17 00:00:00 2001
+From: Claude <claude@anthropic.com>
+Date: Sat, 30 May 2026 13:21:27 -0700
+Subject: [PATCH] fix(auth): surface real PlatformException so Google Sign-In
+ errors are diagnosable
+
+Symptom: users hit "Google sign-in failed" with no further detail and no
+way to tell whether it's DEVELOPER_ERROR (10), NETWORK_ERROR (7),
+SIGN_IN_CANCELLED (12501), API not available (12500), etc.
+
+Root cause: the existing catch block in _handleGoogleSignIn checks
+`e.toString().contains('Exception:')` to decide whether to show the real
+message, but the google_sign_in plugin throws PlatformException, whose
+toString begins with `PlatformException(...)` not `Exception:`. The check
+always fails and the generic fallback string is shown.
+
+Fix:
+- Add explicit `e is PlatformException` branch that surfaces the error
+  code (e.g. "sign_in_failed") and the underlying detail (which carries
+  the Android ApiException status code).
+- Add `debugPrint` so the full error + stack hits flutter logs even when
+  the snackbar truncates.
+- Add a final `else` branch so non-Exception non-Platform errors also
+  get visible.
+
+Net diff: import 'package:flutter/services.dart' show PlatformException
+plus an expanded catch.
+
+Next step (separate work): once the real error code shows up, the
+likely fix is to register the Android signing keystore SHA-1 in Google
+Cloud Console under the project 229052236659 Android OAuth client.
+
+Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
+---
+ mobile/lib/views/login_screen.dart | 17 +++++++++++++++--
+ 1 file changed, 15 insertions(+), 2 deletions(-)
+
+diff --git a/mobile/lib/views/login_screen.dart b/mobile/lib/views/login_screen.dart
+index b7c422e..a9ba1b5 100644
+--- a/mobile/lib/views/login_screen.dart
++++ b/mobile/lib/views/login_screen.dart
+@@ -1,5 +1,6 @@
+ import 'package:flutter/material.dart';
+ import 'package:flutter/foundation.dart';
++import 'package:flutter/services.dart' show PlatformException;
+ import 'package:provider/provider.dart';
+ import 'package:google_sign_in/google_sign_in.dart';
+ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
+@@ -125,11 +126,23 @@ class _LoginScreenState extends State<LoginScreen> {
+           (route) => false,
+         );
+       }
+-    } catch (e) {
++    } catch (e, stackTrace) {
++      // Surface the real error so the cause is debuggable. The previous
++      // catch swallowed PlatformException (the most common Google Sign-In
++      // failure mode) because its toString() does not begin with "Exception:".
++      debugPrint('[GoogleSignIn] error: $e');
++      debugPrint('[GoogleSignIn] stack: $stackTrace');
+       if (mounted) {
+         String errorMessage = 'Google sign-in failed';
+-        if (e.toString().contains('Exception:')) {
++        if (e is PlatformException) {
++          // Code is the diagnostic: e.g. "sign_in_failed" with details
++          // wrapping an Android ApiException status code (10, 12500, 7, ...)
++          final detail = e.message ?? e.details?.toString() ?? 'no detail';
++          errorMessage = 'Google sign-in failed [${e.code}]: $detail';
++        } else if (e.toString().contains('Exception:')) {
+           errorMessage = e.toString().replaceFirst('Exception: ', '');
++        } else {
++          errorMessage = 'Google sign-in failed: $e';
+         }
+         StyledSnackBar.showError(context, errorMessage);
+       }
+-- 
+2.34.1
+
