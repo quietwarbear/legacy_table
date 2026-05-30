@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../App";
 import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
@@ -13,24 +13,77 @@ import {
   Menu,
 } from "lucide-react";
 
-// Single source of truth for the "get the app" destination.
-// Replaced in PR 2 with a platform-aware <GetTheApp /> component that:
-//   - on iOS Safari: deep-links straight to the App Store listing
-//   - on desktop: opens a modal with a QR code + "text me the link"
-//   - on Android: swaps to "Notify me when Android launches" + email capture
+// ----------------------------------------------------------------------------
+// Store URLs — source of truth for download links.
+// ----------------------------------------------------------------------------
 const APP_STORE_URL =
   "https://apps.apple.com/us/app/legacy-table/id6759821009";
+const PLAY_STORE_URL =
+  "https://play.google.com/store/apps/details?id=com.htrecipes.family_recipe_app";
 
-const openAppStore = () => {
-  window.location.href = APP_STORE_URL;
-};
+// Official badge assets from Apple + Google. Both are explicitly licensed for
+// hotlinking in marketing contexts. If the live site needs deterministic
+// uptime, swap these for /public copies later.
+const APP_STORE_BADGE =
+  "https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83";
+const PLAY_STORE_BADGE =
+  "https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png";
 
 const scrollToId = (id) => {
   const el = document.getElementById(id);
   if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
 };
 
-/** Sticky top navigation — visible on every section, primary CTA always reachable. */
+// ----------------------------------------------------------------------------
+// Shared <StoreBadges /> — App Store + Google Play badges side by side.
+// Used in the hero and the final CTA. One component = one place to fix when
+// the badge URLs or click targets change.
+// ----------------------------------------------------------------------------
+const StoreBadges = ({ size = "default", align = "start", className = "" }) => {
+  const heights =
+    size === "large" ? "h-14 sm:h-16" : size === "small" ? "h-10" : "h-12";
+  const alignClass =
+    align === "center" ? "justify-center" : "justify-start";
+
+  return (
+    <div className={`flex flex-wrap items-center gap-3 ${alignClass} ${className}`}>
+      <a
+        href={APP_STORE_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Download Legacy Table on the App Store"
+        className="inline-block transition-transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-primary rounded-md"
+      >
+        <img
+          src={APP_STORE_BADGE}
+          alt="Download on the App Store"
+          className={`${heights} w-auto`}
+        />
+      </a>
+      <a
+        href={PLAY_STORE_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Get Legacy Table on Google Play"
+        className="inline-block transition-transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-primary rounded-md"
+      >
+        <img
+          src={PLAY_STORE_BADGE}
+          alt="Get it on Google Play"
+          className={`${heights} w-auto`}
+        />
+      </a>
+    </div>
+  );
+};
+
+// ----------------------------------------------------------------------------
+// Sticky top navigation. Reachable: How it works, Why, Sign in (existing
+// users -> /login), Sign up free (new users -> scrolls to the download
+// section since accounts are created inside the app on first launch).
+// Pricing is intentionally NOT in the nav — subscriptions live in the app
+// (App Store / Play Store handle billing).
+// ----------------------------------------------------------------------------
 const TopNav = () => {
   const [open, setOpen] = React.useState(false);
 
@@ -49,25 +102,32 @@ const TopNav = () => {
         </button>
 
         {/* Desktop nav */}
-        <nav className="hidden md:flex items-center gap-8">
+        <nav className="hidden md:flex items-center gap-7">
           <button onClick={() => scrollToId("how-it-works")} className={linkClass}>
             How it works
           </button>
           <button onClick={() => scrollToId("why")} className={linkClass}>
             Why
           </button>
-          <button onClick={() => scrollToId("pricing")} className={linkClass}>
+          <Link to="/pricing" className={linkClass}>
             Pricing
-          </button>
+          </Link>
         </nav>
 
         <div className="flex items-center gap-3">
+          <Link
+            to="/login"
+            className={`${linkClass} hidden sm:inline-flex`}
+            aria-label="Sign in to your Legacy Table account"
+          >
+            Sign in
+          </Link>
           <Button
             size="sm"
             className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full hidden sm:inline-flex"
-            onClick={openAppStore}
+            onClick={() => scrollToId("get-the-app")}
           >
-            Get the app
+            Sign up free
           </Button>
           {/* Mobile menu toggle */}
           <button
@@ -102,24 +162,29 @@ const TopNav = () => {
             >
               Why
             </button>
-            <button
-              onClick={() => {
-                setOpen(false);
-                scrollToId("pricing");
-              }}
-              className={`${linkClass} text-left py-2`}
+            <Link
+              to="/pricing"
+              onClick={() => setOpen(false)}
+              className={`${linkClass} py-2`}
             >
               Pricing
-            </button>
+            </Link>
+            <Link
+              to="/login"
+              onClick={() => setOpen(false)}
+              className={`${linkClass} py-2`}
+            >
+              Sign in
+            </Link>
             <Button
               size="sm"
-              className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full sm:hidden"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full"
               onClick={() => {
                 setOpen(false);
-                openAppStore();
+                scrollToId("get-the-app");
               }}
             >
-              Get the app
+              Sign up free
             </Button>
           </div>
         </div>
@@ -157,14 +222,10 @@ const LandingPage = () => {
               Capture the recipes, the stories, and the voices that teach them.
               Build your family's cookbook together — privately.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 mb-8">
-              <Button
-                size="lg"
-                className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full"
-                onClick={openAppStore}
-              >
-                Get the app
-              </Button>
+
+            {/* Primary CTA: store badges. Secondary: jump to features. */}
+            <StoreBadges size="large" align="start" className="mb-4" />
+            <div className="flex flex-col sm:flex-row gap-4 items-start">
               <Button
                 size="lg"
                 variant="outline"
@@ -173,6 +234,12 @@ const LandingPage = () => {
               >
                 What it does
               </Button>
+              <Link
+                to="/login"
+                className="text-sm font-semibold text-foreground/70 hover:text-foreground transition-colors self-center sm:self-auto sm:py-3"
+              >
+                Already have an account? Sign in →
+              </Link>
             </div>
           </div>
 
@@ -290,8 +357,7 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Trust Section — moved BEFORE pricing to handle objections before
-          asking for money. */}
+      {/* Trust Section */}
       <section className="py-20 md:py-24 px-4 md:px-6 lg:px-8 bg-background border-t border-border/50">
         <div className="max-w-7xl mx-auto">
           <p className="text-sm uppercase tracking-widest text-primary font-semibold mb-12 text-center">
@@ -328,130 +394,34 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Pricing Section
-          Each tier now ends with an actual CTA. Family Plus gets a "Most
-          popular" badge + accent border because it's the natural anchor of
-          the three-tier set. */}
+      {/* Final CTA / Get The App Section
+          No pricing on the landing page — subscriptions live in the app
+          (App Store / Play Store handle billing). Visitors download free,
+          subscribe inside the app if they want a paid tier. */}
       <section
-        id="pricing"
-        className="py-20 md:py-24 px-4 md:px-6 lg:px-8 bg-muted scroll-mt-16"
+        id="get-the-app"
+        className="py-20 md:py-32 px-4 md:px-6 lg:px-8 bg-secondary text-secondary-foreground scroll-mt-16"
       >
-        <div className="max-w-7xl mx-auto">
-          <p className="text-sm uppercase tracking-widest text-primary font-semibold mb-4 text-center">
-            PRICING
-          </p>
-          <h3 className="font-serif text-3xl md:text-4xl font-bold text-center mb-12">
-            Free for one family. Paid plans when you grow.
-          </h3>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
-            {/* Free */}
-            <Card className="border border-border bg-card rounded-lg overflow-hidden shadow-sm flex flex-col">
-              <CardContent className="p-6 flex flex-col flex-1">
-                <h4 className="font-semibold text-lg text-foreground mb-1">
-                  Free
-                </h4>
-                <p className="font-serif text-3xl font-bold text-foreground mb-1">
-                  $0
-                </p>
-                <p className="text-sm text-muted-foreground mb-6">
-                  1 family · unlimited recipes · 1 cook on voice notes
-                </p>
-                <div className="mt-auto">
-                  <Button
-                    variant="outline"
-                    className="w-full rounded-full"
-                    onClick={openAppStore}
-                  >
-                    Get the free app
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Family Plus — featured */}
-            <Card className="border-2 border-primary bg-card rounded-lg overflow-hidden shadow-lg flex flex-col relative md:-translate-y-2">
-              <div className="bg-primary text-primary-foreground text-xs font-semibold uppercase tracking-widest text-center py-1.5">
-                Most popular
-              </div>
-              <CardContent className="p-6 flex flex-col flex-1">
-                <h4 className="font-semibold text-lg text-foreground mb-1">
-                  Family Plus
-                </h4>
-                <p className="font-serif text-3xl font-bold text-foreground mb-1">
-                  $4.99
-                  <span className="text-base font-normal text-muted-foreground">
-                    {" "}
-                    / mo
-                  </span>
-                </p>
-                <p className="text-sm text-muted-foreground mb-6">
-                  Unlimited members · unlimited exports · 5 cooks on voice notes
-                </p>
-                <div className="mt-auto">
-                  <Button
-                    className="w-full rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
-                    onClick={openAppStore}
-                  >
-                    Choose Family Plus →
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Heirloom */}
-            <Card className="border border-border bg-card rounded-lg overflow-hidden shadow-sm flex flex-col">
-              <CardContent className="p-6 flex flex-col flex-1">
-                <h4 className="font-semibold text-lg text-foreground mb-1">
-                  Heirloom
-                </h4>
-                <p className="font-serif text-3xl font-bold text-foreground mb-1">
-                  $4.08
-                  <span className="text-base font-normal text-muted-foreground">
-                    {" "}
-                    / mo
-                  </span>
-                </p>
-                <p className="text-xs text-primary font-semibold mb-2">
-                  Billed $49/yr — save 32%
-                </p>
-                <p className="text-sm text-muted-foreground mb-6">
-                  Everything in Family Plus · AI voice transcription · priority
-                  support
-                </p>
-                <div className="mt-auto">
-                  <Button
-                    variant="outline"
-                    className="w-full rounded-full"
-                    onClick={openAppStore}
-                  >
-                    Choose Heirloom →
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
-
-      {/* Final CTA Section */}
-      <section className="py-20 md:py-32 px-4 md:px-6 lg:px-8 bg-secondary text-secondary-foreground">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="font-serif text-4xl md:text-5xl font-bold mb-4">
             Start your family's cookbook today.
           </h2>
-          <p className="text-lg md:text-xl mb-8 opacity-90">
-            Free on iOS. The Family Plus and Heirloom plans unlock when you're
-            ready to invite the whole family.
+          <p className="text-lg md:text-xl mb-10 opacity-90">
+            Free to download on iOS and Android. Subscribe in-app whenever
+            your family is ready.
           </p>
 
-          <Button
-            size="lg"
-            className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full mb-12"
-            onClick={openAppStore}
-          >
-            Get the app
-          </Button>
+          <StoreBadges size="large" align="center" className="mb-6" />
+
+          <p className="text-sm opacity-75 mb-12">
+            Already have an account?{" "}
+            <Link
+              to="/login"
+              className="underline hover:no-underline font-medium"
+            >
+              Sign in
+            </Link>
+          </p>
 
           <div className="text-xs opacity-75 space-y-1">
             <p>

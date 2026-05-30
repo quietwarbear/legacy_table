@@ -1,0 +1,960 @@
+From 1677e8ebc1b33b69059ad5226b32bc6031c6af8f Mon Sep 17 00:00:00 2001
+From: Claude <claude@anthropic.com>
+Date: Sat, 30 May 2026 14:36:45 -0700
+Subject: [PATCH] feat(landing): App Store + Play Store badges, Sign in nav,
+ dedicated /pricing page
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Addresses three pieces of Doc's feedback after PR 1:
+
+1. Sign in / Sign up surfaced on the landing page.
+   - New TopNav now has "Sign in" (text link → /login) and "Sign up free"
+     (pill button → scrolls to #get-the-app store badges).
+   - Hero also has a "Already have an account? Sign in →" secondary link.
+   - No /register route exists on web — sign-up happens inside the iOS /
+     Android app on first launch — so the "Sign up free" button intentionally
+     scrolls to the download badges rather than a non-existent web form.
+
+2. App Store and Google Play are now visually separated as official store
+   badges. Replaces every previous "App Store" pill button (which was a
+   misleading single-CTA that linked only to Apple). New <StoreBadges />
+   component renders both badges side-by-side, used in:
+     - Hero (large)
+     - Final CTA section (large, centered)
+   Also fixes the "Android coming soon" line — Android has been live for a
+   while; updated copy to "Free to download on iOS and Android."
+
+3. Pricing removed from the landing page entirely (per Doc's "should not
+   show any subscriptions, mimic the app"). Subscriptions are sold inside
+   the app via the App Store / Play Store IAP flow; the landing page just
+   gets people to the download. Cleaner, less to maintain, no risk of
+   drift between the landing page and the actual store prices.
+
+4. New /pricing public route at frontend/src/landing/PricingPage.jsx.
+   - Three-tier comparison: Free + Heritage Keeper + Legacy Collection
+     ("Most popular"). Sourced from frontend/src/subscription.js (the
+     in-app PricingPage) so both stay aligned.
+   - Monthly / Annual toggle.
+   - Each tier ends with both store badges (subscribers buy in-app).
+   - FAQ block answering the standard subscription questions (where
+     billed, how to cancel, family sharing, what's an AI credit, do
+     prices change).
+   - In dev only (NODE_ENV !== "production"), renders a yellow banner
+     reminding the team to verify the PRICES const against actual Play
+     Console / App Store Connect numbers — Doc flagged that the
+     subscription.js prices may not match what's live, and this banner
+     keeps the TODO visible until the canonical source is confirmed.
+   - Logged-in users get redirected to /subscribe (the in-app upgrade
+     page), so /pricing serves only prospective/anonymous visitors.
+
+5. App.js routes /pricing -> PublicPricingPage. The existing in-app
+   PricingPage from ./subscription.js is unchanged and still routes from
+   /subscribe (ProtectedRoute, requires login).
+
+Not in this PR (intentional):
+- Verifying the actual store prices (Doc to confirm; one-line PRICES
+  edit when known).
+- Extracting shared <StoreBadges /> and tier data into a /landing/shared/
+  module — both landing pages currently duplicate them. Worth doing if a
+  third page needs the badges.
+- Replacing the founder-photo placeholder with a real photo (PR 3).
+- Terms of Service page (PR 3).
+
+Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
+---
+ frontend/src/App.js                  |   2 +
+ frontend/src/landing/LandingPage.jsx | 272 +++++++--------
+ frontend/src/landing/PricingPage.jsx | 490 +++++++++++++++++++++++++++
+ 3 files changed, 613 insertions(+), 151 deletions(-)
+ create mode 100644 frontend/src/landing/PricingPage.jsx
+
+diff --git a/frontend/src/App.js b/frontend/src/App.js
+index d51a59c..ec61220 100644
+--- a/frontend/src/App.js
++++ b/frontend/src/App.js
+@@ -26,6 +26,7 @@ import {
+ 
+ import { SubscriptionProvider, useSubscription, PricingPage, SubscriptionSuccessPage, CreditsBadge, CreditsGate } from "./subscription";
+ import LandingPage from "./landing/LandingPage";
++import PublicPricingPage from "./landing/PricingPage";
+ 
+ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "";
+ const API = `${BACKEND_URL}/api`;
+@@ -6212,6 +6213,7 @@ function App() {
+                 <Route path="/subscribe" element={<ProtectedRoute><PricingPage /></ProtectedRoute>} />
+                 <Route path="/subscription-success" element={<ProtectedRoute><SubscriptionSuccessPage /></ProtectedRoute>} />
+                 <Route path="/" element={<LandingPage />} />
++                <Route path="/pricing" element={<PublicPricingPage />} />
+                 <Route path="/home" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
+                 <Route path="/add-recipe" element={<ProtectedRoute><AddRecipePage /></ProtectedRoute>} />
+                 <Route path="/scan-recipe" element={<ProtectedRoute><ScanRecipePage /></ProtectedRoute>} />
+diff --git a/frontend/src/landing/LandingPage.jsx b/frontend/src/landing/LandingPage.jsx
+index fc1d8c9..2f471f1 100644
+--- a/frontend/src/landing/LandingPage.jsx
++++ b/frontend/src/landing/LandingPage.jsx
+@@ -1,5 +1,5 @@
+ import React, { useEffect } from "react";
+-import { useNavigate } from "react-router-dom";
++import { Link, useNavigate } from "react-router-dom";
+ import { useAuth } from "../App";
+ import { Button } from "../components/ui/button";
+ import { Card, CardContent } from "../components/ui/card";
+@@ -13,24 +13,77 @@ import {
+   Menu,
+ } from "lucide-react";
+ 
+-// Single source of truth for the "get the app" destination.
+-// Replaced in PR 2 with a platform-aware <GetTheApp /> component that:
+-//   - on iOS Safari: deep-links straight to the App Store listing
+-//   - on desktop: opens a modal with a QR code + "text me the link"
+-//   - on Android: swaps to "Notify me when Android launches" + email capture
++// ----------------------------------------------------------------------------
++// Store URLs — source of truth for download links.
++// ----------------------------------------------------------------------------
+ const APP_STORE_URL =
+   "https://apps.apple.com/us/app/legacy-table/id6759821009";
++const PLAY_STORE_URL =
++  "https://play.google.com/store/apps/details?id=com.htrecipes.family_recipe_app";
+ 
+-const openAppStore = () => {
+-  window.location.href = APP_STORE_URL;
+-};
++// Official badge assets from Apple + Google. Both are explicitly licensed for
++// hotlinking in marketing contexts. If the live site needs deterministic
++// uptime, swap these for /public copies later.
++const APP_STORE_BADGE =
++  "https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83";
++const PLAY_STORE_BADGE =
++  "https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png";
+ 
+ const scrollToId = (id) => {
+   const el = document.getElementById(id);
+   if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+ };
+ 
+-/** Sticky top navigation — visible on every section, primary CTA always reachable. */
++// ----------------------------------------------------------------------------
++// Shared <StoreBadges /> — App Store + Google Play badges side by side.
++// Used in the hero and the final CTA. One component = one place to fix when
++// the badge URLs or click targets change.
++// ----------------------------------------------------------------------------
++const StoreBadges = ({ size = "default", align = "start", className = "" }) => {
++  const heights =
++    size === "large" ? "h-14 sm:h-16" : size === "small" ? "h-10" : "h-12";
++  const alignClass =
++    align === "center" ? "justify-center" : "justify-start";
++
++  return (
++    <div className={`flex flex-wrap items-center gap-3 ${alignClass} ${className}`}>
++      <a
++        href={APP_STORE_URL}
++        target="_blank"
++        rel="noopener noreferrer"
++        aria-label="Download Legacy Table on the App Store"
++        className="inline-block transition-transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-primary rounded-md"
++      >
++        <img
++          src={APP_STORE_BADGE}
++          alt="Download on the App Store"
++          className={`${heights} w-auto`}
++        />
++      </a>
++      <a
++        href={PLAY_STORE_URL}
++        target="_blank"
++        rel="noopener noreferrer"
++        aria-label="Get Legacy Table on Google Play"
++        className="inline-block transition-transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-primary rounded-md"
++      >
++        <img
++          src={PLAY_STORE_BADGE}
++          alt="Get it on Google Play"
++          className={`${heights} w-auto`}
++        />
++      </a>
++    </div>
++  );
++};
++
++// ----------------------------------------------------------------------------
++// Sticky top navigation. Reachable: How it works, Why, Sign in (existing
++// users -> /login), Sign up free (new users -> scrolls to the download
++// section since accounts are created inside the app on first launch).
++// Pricing is intentionally NOT in the nav — subscriptions live in the app
++// (App Store / Play Store handle billing).
++// ----------------------------------------------------------------------------
+ const TopNav = () => {
+   const [open, setOpen] = React.useState(false);
+ 
+@@ -49,25 +102,32 @@ const TopNav = () => {
+         </button>
+ 
+         {/* Desktop nav */}
+-        <nav className="hidden md:flex items-center gap-8">
++        <nav className="hidden md:flex items-center gap-7">
+           <button onClick={() => scrollToId("how-it-works")} className={linkClass}>
+             How it works
+           </button>
+           <button onClick={() => scrollToId("why")} className={linkClass}>
+             Why
+           </button>
+-          <button onClick={() => scrollToId("pricing")} className={linkClass}>
++          <Link to="/pricing" className={linkClass}>
+             Pricing
+-          </button>
++          </Link>
+         </nav>
+ 
+         <div className="flex items-center gap-3">
++          <Link
++            to="/login"
++            className={`${linkClass} hidden sm:inline-flex`}
++            aria-label="Sign in to your Legacy Table account"
++          >
++            Sign in
++          </Link>
+           <Button
+             size="sm"
+             className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full hidden sm:inline-flex"
+-            onClick={openAppStore}
++            onClick={() => scrollToId("get-the-app")}
+           >
+-            Get the app
++            Sign up free
+           </Button>
+           {/* Mobile menu toggle */}
+           <button
+@@ -102,24 +162,29 @@ const TopNav = () => {
+             >
+               Why
+             </button>
+-            <button
+-              onClick={() => {
+-                setOpen(false);
+-                scrollToId("pricing");
+-              }}
+-              className={`${linkClass} text-left py-2`}
++            <Link
++              to="/pricing"
++              onClick={() => setOpen(false)}
++              className={`${linkClass} py-2`}
+             >
+               Pricing
+-            </button>
++            </Link>
++            <Link
++              to="/login"
++              onClick={() => setOpen(false)}
++              className={`${linkClass} py-2`}
++            >
++              Sign in
++            </Link>
+             <Button
+               size="sm"
+-              className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full sm:hidden"
++              className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full"
+               onClick={() => {
+                 setOpen(false);
+-                openAppStore();
++                scrollToId("get-the-app");
+               }}
+             >
+-              Get the app
++              Sign up free
+             </Button>
+           </div>
+         </div>
+@@ -157,14 +222,10 @@ const LandingPage = () => {
+               Capture the recipes, the stories, and the voices that teach them.
+               Build your family's cookbook together — privately.
+             </p>
+-            <div className="flex flex-col sm:flex-row gap-4 mb-8">
+-              <Button
+-                size="lg"
+-                className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full"
+-                onClick={openAppStore}
+-              >
+-                Get the app
+-              </Button>
++
++            {/* Primary CTA: store badges. Secondary: jump to features. */}
++            <StoreBadges size="large" align="start" className="mb-4" />
++            <div className="flex flex-col sm:flex-row gap-4 items-start">
+               <Button
+                 size="lg"
+                 variant="outline"
+@@ -173,6 +234,12 @@ const LandingPage = () => {
+               >
+                 What it does
+               </Button>
++              <Link
++                to="/login"
++                className="text-sm font-semibold text-foreground/70 hover:text-foreground transition-colors self-center sm:self-auto sm:py-3"
++              >
++                Already have an account? Sign in →
++              </Link>
+             </div>
+           </div>
+ 
+@@ -290,8 +357,7 @@ const LandingPage = () => {
+         </div>
+       </section>
+ 
+-      {/* Trust Section — moved BEFORE pricing to handle objections before
+-          asking for money. */}
++      {/* Trust Section */}
+       <section className="py-20 md:py-24 px-4 md:px-6 lg:px-8 bg-background border-t border-border/50">
+         <div className="max-w-7xl mx-auto">
+           <p className="text-sm uppercase tracking-widest text-primary font-semibold mb-12 text-center">
+@@ -328,130 +394,34 @@ const LandingPage = () => {
+         </div>
+       </section>
+ 
+-      {/* Pricing Section
+-          Each tier now ends with an actual CTA. Family Plus gets a "Most
+-          popular" badge + accent border because it's the natural anchor of
+-          the three-tier set. */}
++      {/* Final CTA / Get The App Section
++          No pricing on the landing page — subscriptions live in the app
++          (App Store / Play Store handle billing). Visitors download free,
++          subscribe inside the app if they want a paid tier. */}
+       <section
+-        id="pricing"
+-        className="py-20 md:py-24 px-4 md:px-6 lg:px-8 bg-muted scroll-mt-16"
++        id="get-the-app"
++        className="py-20 md:py-32 px-4 md:px-6 lg:px-8 bg-secondary text-secondary-foreground scroll-mt-16"
+       >
+-        <div className="max-w-7xl mx-auto">
+-          <p className="text-sm uppercase tracking-widest text-primary font-semibold mb-4 text-center">
+-            PRICING
+-          </p>
+-          <h3 className="font-serif text-3xl md:text-4xl font-bold text-center mb-12">
+-            Free for one family. Paid plans when you grow.
+-          </h3>
+-
+-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+-            {/* Free */}
+-            <Card className="border border-border bg-card rounded-lg overflow-hidden shadow-sm flex flex-col">
+-              <CardContent className="p-6 flex flex-col flex-1">
+-                <h4 className="font-semibold text-lg text-foreground mb-1">
+-                  Free
+-                </h4>
+-                <p className="font-serif text-3xl font-bold text-foreground mb-1">
+-                  $0
+-                </p>
+-                <p className="text-sm text-muted-foreground mb-6">
+-                  1 family · unlimited recipes · 1 cook on voice notes
+-                </p>
+-                <div className="mt-auto">
+-                  <Button
+-                    variant="outline"
+-                    className="w-full rounded-full"
+-                    onClick={openAppStore}
+-                  >
+-                    Get the free app
+-                  </Button>
+-                </div>
+-              </CardContent>
+-            </Card>
+-
+-            {/* Family Plus — featured */}
+-            <Card className="border-2 border-primary bg-card rounded-lg overflow-hidden shadow-lg flex flex-col relative md:-translate-y-2">
+-              <div className="bg-primary text-primary-foreground text-xs font-semibold uppercase tracking-widest text-center py-1.5">
+-                Most popular
+-              </div>
+-              <CardContent className="p-6 flex flex-col flex-1">
+-                <h4 className="font-semibold text-lg text-foreground mb-1">
+-                  Family Plus
+-                </h4>
+-                <p className="font-serif text-3xl font-bold text-foreground mb-1">
+-                  $4.99
+-                  <span className="text-base font-normal text-muted-foreground">
+-                    {" "}
+-                    / mo
+-                  </span>
+-                </p>
+-                <p className="text-sm text-muted-foreground mb-6">
+-                  Unlimited members · unlimited exports · 5 cooks on voice notes
+-                </p>
+-                <div className="mt-auto">
+-                  <Button
+-                    className="w-full rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+-                    onClick={openAppStore}
+-                  >
+-                    Choose Family Plus →
+-                  </Button>
+-                </div>
+-              </CardContent>
+-            </Card>
+-
+-            {/* Heirloom */}
+-            <Card className="border border-border bg-card rounded-lg overflow-hidden shadow-sm flex flex-col">
+-              <CardContent className="p-6 flex flex-col flex-1">
+-                <h4 className="font-semibold text-lg text-foreground mb-1">
+-                  Heirloom
+-                </h4>
+-                <p className="font-serif text-3xl font-bold text-foreground mb-1">
+-                  $4.08
+-                  <span className="text-base font-normal text-muted-foreground">
+-                    {" "}
+-                    / mo
+-                  </span>
+-                </p>
+-                <p className="text-xs text-primary font-semibold mb-2">
+-                  Billed $49/yr — save 32%
+-                </p>
+-                <p className="text-sm text-muted-foreground mb-6">
+-                  Everything in Family Plus · AI voice transcription · priority
+-                  support
+-                </p>
+-                <div className="mt-auto">
+-                  <Button
+-                    variant="outline"
+-                    className="w-full rounded-full"
+-                    onClick={openAppStore}
+-                  >
+-                    Choose Heirloom →
+-                  </Button>
+-                </div>
+-              </CardContent>
+-            </Card>
+-          </div>
+-        </div>
+-      </section>
+-
+-      {/* Final CTA Section */}
+-      <section className="py-20 md:py-32 px-4 md:px-6 lg:px-8 bg-secondary text-secondary-foreground">
+         <div className="max-w-4xl mx-auto text-center">
+           <h2 className="font-serif text-4xl md:text-5xl font-bold mb-4">
+             Start your family's cookbook today.
+           </h2>
+-          <p className="text-lg md:text-xl mb-8 opacity-90">
+-            Free on iOS. The Family Plus and Heirloom plans unlock when you're
+-            ready to invite the whole family.
++          <p className="text-lg md:text-xl mb-10 opacity-90">
++            Free to download on iOS and Android. Subscribe in-app whenever
++            your family is ready.
+           </p>
+ 
+-          <Button
+-            size="lg"
+-            className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full mb-12"
+-            onClick={openAppStore}
+-          >
+-            Get the app
+-          </Button>
++          <StoreBadges size="large" align="center" className="mb-6" />
++
++          <p className="text-sm opacity-75 mb-12">
++            Already have an account?{" "}
++            <Link
++              to="/login"
++              className="underline hover:no-underline font-medium"
++            >
++              Sign in
++            </Link>
++          </p>
+ 
+           <div className="text-xs opacity-75 space-y-1">
+             <p>
+diff --git a/frontend/src/landing/PricingPage.jsx b/frontend/src/landing/PricingPage.jsx
+new file mode 100644
+index 0000000..4fed762
+--- /dev/null
++++ b/frontend/src/landing/PricingPage.jsx
+@@ -0,0 +1,490 @@
++import React, { useEffect, useState } from "react";
++import { Link, useNavigate } from "react-router-dom";
++import { useAuth } from "../App";
++import { Card, CardContent } from "../components/ui/card";
++import { Button } from "../components/ui/button";
++import { Check, Menu } from "lucide-react";
++
++// ----------------------------------------------------------------------------
++// Store URLs and badge assets — kept here in addition to LandingPage so this
++// page is self-contained. When we extract a shared <StoreBadges /> module,
++// both pages will switch over.
++// ----------------------------------------------------------------------------
++const APP_STORE_URL =
++  "https://apps.apple.com/us/app/legacy-table/id6759821009";
++const PLAY_STORE_URL =
++  "https://play.google.com/store/apps/details?id=com.htrecipes.family_recipe_app";
++const APP_STORE_BADGE =
++  "https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us?size=250x83";
++const PLAY_STORE_BADGE =
++  "https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png";
++
++// ----------------------------------------------------------------------------
++// PRICES — these mirror what frontend/src/subscription.js currently shows
++// in-app. Doc flagged that they may not match what's live in the App Store
++// and Google Play. Verify against:
++//   - Play Console → Monetize → Products → Subscriptions
++//   - App Store Connect → My Apps → Legacy Table → Monetization → Subscriptions
++// and update in one place when the canonical numbers are confirmed.
++//
++// TODO(pricing-verification): replace these with the real store prices.
++// ----------------------------------------------------------------------------
++const PRICES = {
++  heritage: { monthly: 9.99, annual: 99.99 },
++  legacy: { monthly: 19.99, annual: 199.99 },
++};
++
++const StoreBadges = ({ size = "default", align = "center", className = "" }) => {
++  const heights =
++    size === "large" ? "h-14 sm:h-16" : size === "small" ? "h-10" : "h-12";
++  const alignClass =
++    align === "center" ? "justify-center" : "justify-start";
++
++  return (
++    <div className={`flex flex-wrap items-center gap-3 ${alignClass} ${className}`}>
++      <a
++        href={APP_STORE_URL}
++        target="_blank"
++        rel="noopener noreferrer"
++        aria-label="Download Legacy Table on the App Store"
++        className="inline-block transition-transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-primary rounded-md"
++      >
++        <img
++          src={APP_STORE_BADGE}
++          alt="Download on the App Store"
++          className={`${heights} w-auto`}
++        />
++      </a>
++      <a
++        href={PLAY_STORE_URL}
++        target="_blank"
++        rel="noopener noreferrer"
++        aria-label="Get Legacy Table on Google Play"
++        className="inline-block transition-transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-primary rounded-md"
++      >
++        <img
++          src={PLAY_STORE_BADGE}
++          alt="Get it on Google Play"
++          className={`${heights} w-auto`}
++        />
++      </a>
++    </div>
++  );
++};
++
++// Lightweight nav mirroring LandingPage's TopNav so /pricing matches the
++// branded chrome without depending on the LandingPage component.
++const TopNav = () => {
++  const [open, setOpen] = useState(false);
++  const linkClass =
++    "text-sm font-semibold text-foreground/80 hover:text-foreground transition-colors";
++
++  return (
++    <header className="sticky top-0 z-50 w-full bg-background/85 backdrop-blur border-b border-border">
++      <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 h-16 flex items-center justify-between">
++        <Link
++          to="/"
++          className="font-serif text-xl font-bold text-foreground"
++          aria-label="Legacy Table — home"
++        >
++          Legacy Table
++        </Link>
++
++        <nav className="hidden md:flex items-center gap-7">
++          <Link to="/#how-it-works" className={linkClass}>
++            How it works
++          </Link>
++          <Link to="/#why" className={linkClass}>
++            Why
++          </Link>
++          <Link to="/pricing" className={`${linkClass} text-foreground`}>
++            Pricing
++          </Link>
++        </nav>
++
++        <div className="flex items-center gap-3">
++          <Link
++            to="/login"
++            className={`${linkClass} hidden sm:inline-flex`}
++          >
++            Sign in
++          </Link>
++          <a
++            href="#get-the-app"
++            className="hidden sm:inline-flex"
++          >
++            <Button
++              size="sm"
++              className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-full"
++            >
++              Sign up free
++            </Button>
++          </a>
++          <button
++            className="md:hidden p-2 -mr-2"
++            aria-label="Open menu"
++            onClick={() => setOpen((v) => !v)}
++          >
++            <Menu className="w-5 h-5" />
++          </button>
++        </div>
++      </div>
++
++      {open && (
++        <div className="md:hidden border-t border-border bg-background">
++          <div className="max-w-7xl mx-auto px-4 py-3 flex flex-col gap-3">
++            <Link to="/" onClick={() => setOpen(false)} className={`${linkClass} py-2`}>
++              Home
++            </Link>
++            <Link to="/pricing" onClick={() => setOpen(false)} className={`${linkClass} py-2`}>
++              Pricing
++            </Link>
++            <Link to="/login" onClick={() => setOpen(false)} className={`${linkClass} py-2`}>
++              Sign in
++            </Link>
++          </div>
++        </div>
++      )}
++    </header>
++  );
++};
++
++// ----------------------------------------------------------------------------
++// Pricing tier card
++// ----------------------------------------------------------------------------
++const TierCard = ({
++  name,
++  tagline,
++  priceMonthly,
++  priceAnnual,
++  isAnnual,
++  features,
++  featured = false,
++  freeTier = false,
++}) => {
++  const displayPrice = isAnnual ? priceAnnual : priceMonthly;
++  const monthlyEquivalent =
++    isAnnual && priceAnnual ? (priceAnnual / 12).toFixed(2) : null;
++  const savingsPct =
++    isAnnual && priceAnnual && priceMonthly
++      ? Math.round(100 - (priceAnnual / (priceMonthly * 12)) * 100)
++      : null;
++
++  return (
++    <Card
++      className={`flex flex-col h-full rounded-xl overflow-hidden ${
++        featured
++          ? "border-2 border-primary shadow-lg md:-translate-y-2"
++          : "border border-border shadow-sm"
++      }`}
++    >
++      {featured && (
++        <div className="bg-primary text-primary-foreground text-xs font-semibold uppercase tracking-widest text-center py-1.5">
++          Most popular
++        </div>
++      )}
++      <CardContent className="p-6 flex flex-col flex-1">
++        <h3 className="font-serif text-2xl font-bold text-foreground mb-1">
++          {name}
++        </h3>
++        <p className="text-sm text-muted-foreground mb-5">{tagline}</p>
++
++        {freeTier ? (
++          <div className="mb-5">
++            <span className="font-serif text-4xl font-bold text-foreground">
++              $0
++            </span>
++            <span className="text-muted-foreground"> forever</span>
++          </div>
++        ) : (
++          <div className="mb-5">
++            <span className="font-serif text-4xl font-bold text-foreground">
++              ${displayPrice}
++            </span>
++            <span className="text-muted-foreground">
++              {" "}
++              / {isAnnual ? "year" : "month"}
++            </span>
++            {isAnnual && monthlyEquivalent && (
++              <p className="text-xs text-muted-foreground mt-1">
++                ≈ ${monthlyEquivalent}/mo
++                {savingsPct ? ` · save ${savingsPct}%` : ""}
++              </p>
++            )}
++          </div>
++        )}
++
++        <ul className="space-y-2.5 mb-6 flex-1">
++          {features.map((f, i) => (
++            <li key={i} className="flex items-start gap-2 text-sm">
++              <Check
++                className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
++                  featured ? "text-primary" : "text-muted-foreground"
++                }`}
++              />
++              <span className="text-muted-foreground">{f}</span>
++            </li>
++          ))}
++        </ul>
++
++        <div className="mt-auto">
++          <StoreBadges size="small" align="center" />
++          <p className="text-xs text-muted-foreground text-center mt-3">
++            {freeTier
++              ? "Download the app to start"
++              : "Subscribe inside the app"}
++          </p>
++        </div>
++      </CardContent>
++    </Card>
++  );
++};
++
++const PricingPage = () => {
++  const { user } = useAuth();
++  const navigate = useNavigate();
++  const [isAnnual, setIsAnnual] = useState(true);
++
++  // Logged-in users go to the in-app subscription manager instead of seeing
++  // marketing tier copy.
++  useEffect(() => {
++    if (user) {
++      navigate("/subscribe", { replace: true });
++    }
++  }, [user, navigate]);
++
++  return (
++    <div className="min-h-screen bg-background text-foreground">
++      <TopNav />
++
++      {/* Hero */}
++      <section className="py-16 md:py-24 px-4 md:px-6 lg:px-8 max-w-7xl mx-auto text-center">
++        <p className="text-sm uppercase tracking-widest text-primary font-semibold mb-4">
++          PRICING
++        </p>
++        <h1 className="font-serif text-4xl md:text-5xl font-bold text-foreground mb-4">
++          Start free. Upgrade when your family does.
++        </h1>
++        <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-2">
++          Every Legacy Table account is free. Paid plans unlock AI features
++          and bigger families.
++        </p>
++        <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
++          Subscriptions are billed through the App Store or Google Play.
++          Cancel anytime from your phone's account settings.
++        </p>
++
++        {/* Annual / Monthly toggle */}
++        <div className="mt-10 inline-flex items-center gap-3 bg-muted rounded-full p-1">
++          <button
++            onClick={() => setIsAnnual(false)}
++            className={`px-5 py-2 text-sm font-semibold rounded-full transition-colors ${
++              !isAnnual
++                ? "bg-background text-foreground shadow"
++                : "text-muted-foreground"
++            }`}
++            aria-pressed={!isAnnual}
++          >
++            Monthly
++          </button>
++          <button
++            onClick={() => setIsAnnual(true)}
++            className={`px-5 py-2 text-sm font-semibold rounded-full transition-colors ${
++              isAnnual
++                ? "bg-background text-foreground shadow"
++                : "text-muted-foreground"
++            }`}
++            aria-pressed={isAnnual}
++          >
++            Annual <span className="text-primary ml-1">save ~17%</span>
++          </button>
++        </div>
++      </section>
++
++      {/* Tier cards */}
++      <section className="px-4 md:px-6 lg:px-8 max-w-7xl mx-auto pb-20">
++        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
++          <TierCard
++            name="Free"
++            tagline="Try every recipe feature, then decide"
++            freeTier
++            features={[
++              "3 AI credits per month",
++              "Unlimited family recipe storage",
++              "1 family · share with up to 4 members",
++              "Photo uploads for every recipe",
++              "Export your cookbook anytime",
++            ]}
++          />
++          <TierCard
++            name="Heritage Keeper"
++            tagline="Perfect for getting started"
++            priceMonthly={PRICES.heritage.monthly}
++            priceAnnual={PRICES.heritage.annual}
++            isAnnual={isAnnual}
++            features={[
++              "15 AI credits per month",
++              "Everything in Free",
++              "Family sharing (up to 10 members)",
++              "Recipe categories & tags",
++              "Export & print recipe books",
++            ]}
++          />
++          <TierCard
++            name="Legacy Collection"
++            tagline="For the whole family"
++            priceMonthly={PRICES.legacy.monthly}
++            priceAnnual={PRICES.legacy.annual}
++            isAnnual={isAnnual}
++            featured
++            features={[
++              "50 AI credits per month",
++              "Everything in Heritage Keeper",
++              "Unlimited family members",
++              "Advanced recipe organization",
++              "Priority customer support",
++              "Early access to new features",
++              "Custom family cookbook themes",
++            ]}
++          />
++        </div>
++
++        {/* Verify-prices banner (visible only in dev so prices that may be
++            stale don't surprise the team). Production builds set
++            NODE_ENV=production so this won't render. */}
++        {process.env.NODE_ENV !== "production" && (
++          <div className="mt-10 max-w-3xl mx-auto bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 text-sm">
++            <p className="font-semibold text-yellow-900 dark:text-yellow-200 mb-1">
++              ⚠ Verify these prices before launch
++            </p>
++            <p className="text-yellow-800 dark:text-yellow-300">
++              The prices in this file (PRICES const) mirror{" "}
++              <code>frontend/src/subscription.js</code>, which may be out of
++              sync with the live App Store and Google Play. Confirm against
++              App Store Connect → Monetization → Subscriptions and Play
++              Console → Monetize → Products → Subscriptions, then update
++              both files in lockstep.
++            </p>
++          </div>
++        )}
++      </section>
++
++      {/* FAQ */}
++      <section className="px-4 md:px-6 lg:px-8 py-16 md:py-20 bg-muted">
++        <div className="max-w-3xl mx-auto">
++          <h2 className="font-serif text-3xl font-bold text-center mb-12">
++            Common questions
++          </h2>
++          <dl className="space-y-8">
++            <div>
++              <dt className="font-semibold text-foreground mb-2">
++                Where does the subscription get charged?
++              </dt>
++              <dd className="text-muted-foreground">
++                Through your App Store or Google Play account, depending on
++                where you downloaded the app. We don't see or store your
++                payment information.
++              </dd>
++            </div>
++            <div>
++              <dt className="font-semibold text-foreground mb-2">
++                How do I cancel?
++              </dt>
++              <dd className="text-muted-foreground">
++                On iOS, open Settings → tap your name → Subscriptions →
++                Legacy Table → Cancel. On Android, open Google Play → tap
++                your profile → Payments &amp; subscriptions → Subscriptions →
++                Legacy Table → Cancel. The cancellation takes effect at the
++                end of your current billing period.
++              </dd>
++            </div>
++            <div>
++              <dt className="font-semibold text-foreground mb-2">
++                Can I share one subscription with my family?
++              </dt>
++              <dd className="text-muted-foreground">
++                Yes. Subscriptions cover everyone you invite into your
++                Legacy Table family (up to 4 on Free, 10 on Heritage Keeper,
++                unlimited on Legacy Collection). Each member gets full
++                access without paying separately.
++              </dd>
++            </div>
++            <div>
++              <dt className="font-semibold text-foreground mb-2">
++                What's an "AI credit"?
++              </dt>
++              <dd className="text-muted-foreground">
++                Credits power the AI helpers — scanning a handwritten recipe
++                card, turning a voice memo into a recipe, generating a
++                share-ready image. Each AI action costs 1–2 credits. Free
++                accounts get 3/month, Heritage Keeper gets 15, Legacy
++                Collection gets 50. Credits refresh at the start of each
++                billing cycle.
++              </dd>
++            </div>
++            <div>
++              <dt className="font-semibold text-foreground mb-2">
++                Does the price ever change?
++              </dt>
++              <dd className="text-muted-foreground">
++                If we ever change a subscription price, existing subscribers
++                stay on their current price for the remainder of their term
++                and we'll notify you before the next renewal. New
++                subscribers see the current price.
++              </dd>
++            </div>
++          </dl>
++        </div>
++      </section>
++
++      {/* Get the app section */}
++      <section
++        id="get-the-app"
++        className="py-20 md:py-32 px-4 md:px-6 lg:px-8 bg-secondary text-secondary-foreground"
++      >
++        <div className="max-w-4xl mx-auto text-center">
++          <h2 className="font-serif text-4xl md:text-5xl font-bold mb-4">
++            Start your family's cookbook today.
++          </h2>
++          <p className="text-lg md:text-xl mb-10 opacity-90">
++            Free to download on iOS and Android. Subscribe in-app whenever
++            your family is ready.
++          </p>
++
++          <StoreBadges size="large" align="center" className="mb-6" />
++
++          <p className="text-sm opacity-75 mb-12">
++            Already have an account?{" "}
++            <Link
++              to="/login"
++              className="underline hover:no-underline font-medium"
++            >
++              Sign in
++            </Link>
++          </p>
++
++          <div className="text-xs opacity-75 space-y-1">
++            <p>
++              © 2026 Ubuntu Markets LLC · legacytable.app ·
++              contact@ubuntu-markets.org
++            </p>
++            <div className="flex justify-center gap-4 text-xs">
++              <a href="/privacy-policy" className="hover:underline">
++                Privacy Policy
++              </a>
++              <span>·</span>
++              <a
++                href="#"
++                className="hover:underline opacity-50 cursor-not-allowed"
++              >
++                Terms of Service
++              </a>
++            </div>
++          </div>
++        </div>
++      </section>
++    </div>
++  );
++};
++
++export default PricingPage;
+-- 
+2.34.1
+
