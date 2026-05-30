@@ -1,0 +1,113 @@
+From ba37e1b6c8cd4a9911838065a62fadd109d01e1d Mon Sep 17 00:00:00 2001
+From: Claude <claude@anthropic.com>
+Date: Sat, 30 May 2026 15:36:42 -0700
+Subject: [PATCH] fix(build): two compile fixes blocking Android debug build
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+1. facebook_app_events 0.20.1 doesn't have logActivatedApp() — that
+   method was added in 0.28. The iOS SDK auto-activates from
+   FacebookAppID/FacebookClientToken in Info.plist on launch, so the
+   explicit call wasn't doing anything visible anyway. Removing it
+   unblocks the Android build (pubspec.lock keeps 0.20.1).
+2. The DioException switch used enum-value cases (case
+   DioExceptionType.connectionError:), which this Dart toolchain
+   flags as 'Not a constant expression'. Replaced with if/else
+   matching on the same enum values — equivalent behavior, compiles
+   on every Dart version.
+
+Also drops the now-unused 'dart:io' Platform import.
+
+Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
+---
+ mobile/lib/main.dart               | 17 +++++--------
+ mobile/lib/views/login_screen.dart | 38 +++++++++++++++++-------------
+ 2 files changed, 28 insertions(+), 27 deletions(-)
+
+diff --git a/mobile/lib/main.dart b/mobile/lib/main.dart
+index c88fb78..2363a6f 100644
+--- a/mobile/lib/main.dart
++++ b/mobile/lib/main.dart
+@@ -1,5 +1,4 @@
+ import 'dart:async';
+-import 'dart:io' show Platform;
+ import 'package:app_links/app_links.dart';
+ import 'package:facebook_app_events/facebook_app_events.dart';
+ import 'package:flutter/foundation.dart';
+@@ -41,16 +40,12 @@ void main() async {
+     debugPrintStack(stackTrace: stackTrace);
+   }
+ 
+-  // Meta App Events — log activation so installs/opens attribute correctly to
+-  // Meta ad campaigns. iOS only for now (Info.plist holds the FB config);
+-  // Android wiring will land in a separate PR if/when needed.
+-  if (!kIsWeb && Platform.isIOS) {
+-    try {
+-      await facebookAppEvents.logActivatedApp();
+-    } catch (e) {
+-      debugPrint('Facebook App Events activation failed: $e');
+-    }
+-  }
++  // Meta App Events — the iOS SDK auto-activates from the FacebookAppID /
++  // FacebookClientToken keys in Info.plist on launch, so we don't need
++  // an explicit logActivatedApp() call here (that method only exists in
++  // facebook_app_events ^0.28; we're pinned to 0.20.1 via pubspec.lock).
++  // Custom events (e.g. fb_mobile_login on successful auth) still fire
++  // through `facebookAppEvents.logEvent(...)` from the login screen.
+ 
+   runApp(const MyApp());
+ }
+diff --git a/mobile/lib/views/login_screen.dart b/mobile/lib/views/login_screen.dart
+index 13d0905..a34aec6 100644
+--- a/mobile/lib/views/login_screen.dart
++++ b/mobile/lib/views/login_screen.dart
+@@ -70,23 +70,29 @@ class _LoginScreenState extends State<LoginScreen> {
+       final status = e.response?.statusCode;
+       final body = e.response?.data;
+       debugPrint('[$flow] DioException URL=$url status=$status body=$body');
+-      switch (e.type) {
+-        case DioExceptionType.connectionError:
+-        case DioExceptionType.connectionTimeout:
+-          return "$flow failed: can't reach ${ApiConfig.apiBaseUrl}. "
+-              "Check internet / VPN, or verify the backend is up.";
+-        case DioExceptionType.sendTimeout:
+-        case DioExceptionType.receiveTimeout:
+-          return "$flow failed: backend timed out (${e.type.name}).";
+-        case DioExceptionType.badCertificate:
+-          return "$flow failed: TLS/cert problem reaching ${ApiConfig.apiBaseUrl}.";
+-        case DioExceptionType.badResponse:
+-          return "$flow failed: backend returned $status. ${body ?? ''}";
+-        case DioExceptionType.cancel:
+-          return "$flow cancelled.";
+-        case DioExceptionType.unknown:
+-          return "$flow failed: ${e.message ?? 'unknown network error'}";
++      // Use if/else rather than switch — older Dart toolchains reject
++      // enum-value cases as "not a constant expression" in classic switch.
++      final type = e.type;
++      if (type == DioExceptionType.connectionError ||
++          type == DioExceptionType.connectionTimeout) {
++        return "$flow failed: can't reach ${ApiConfig.apiBaseUrl}. "
++            "Check internet / VPN, or verify the backend is up.";
+       }
++      if (type == DioExceptionType.sendTimeout ||
++          type == DioExceptionType.receiveTimeout) {
++        return "$flow failed: backend timed out (${type.name}).";
++      }
++      if (type == DioExceptionType.badCertificate) {
++        return "$flow failed: TLS/cert problem reaching ${ApiConfig.apiBaseUrl}.";
++      }
++      if (type == DioExceptionType.badResponse) {
++        return "$flow failed: backend returned $status. ${body ?? ''}";
++      }
++      if (type == DioExceptionType.cancel) {
++        return "$flow cancelled.";
++      }
++      // DioExceptionType.unknown or anything else
++      return "$flow failed: ${e.message ?? 'unknown network error'}";
+     }
+ 
+     if (e is PlatformException) {
+-- 
+2.34.1
+

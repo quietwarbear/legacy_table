@@ -1,10 +1,11 @@
 import 'dart:async';
-import 'dart:io' show Platform;
 import 'package:app_links/app_links.dart';
 import 'package:facebook_app_events/facebook_app_events.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'config/api_config.dart';
+import 'config/app_config.dart';
 import 'config/app_theme.dart';
 import 'providers/theme_provider.dart';
 import 'providers/subscription_provider.dart';
@@ -25,6 +26,13 @@ final facebookAppEvents = FacebookAppEvents();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Print the active API base URL once at startup so it's easy to confirm
+  // (via `flutter logs` or device console) which backend the build is
+  // pointing at. Critical for debugging "auth fails on Android" — a
+  // wrong base URL or unreachable host accounts for most of those.
+  debugPrint('[Boot] API base URL: ${ApiConfig.apiBaseUrl}');
+  debugPrint('[Boot] isProduction: ${AppConfig.isProduction}');
+
   try {
     await SubscriptionService.initialize();
   } catch (e, stackTrace) {
@@ -32,16 +40,12 @@ void main() async {
     debugPrintStack(stackTrace: stackTrace);
   }
 
-  // Meta App Events — log activation so installs/opens attribute correctly to
-  // Meta ad campaigns. iOS only for now (Info.plist holds the FB config);
-  // Android wiring will land in a separate PR if/when needed.
-  if (!kIsWeb && Platform.isIOS) {
-    try {
-      await facebookAppEvents.logActivatedApp();
-    } catch (e) {
-      debugPrint('Facebook App Events activation failed: $e');
-    }
-  }
+  // Meta App Events — the iOS SDK auto-activates from the FacebookAppID /
+  // FacebookClientToken keys in Info.plist on launch, so we don't need
+  // an explicit logActivatedApp() call here (that method only exists in
+  // facebook_app_events ^0.28; we're pinned to 0.20.1 via pubspec.lock).
+  // Custom events (e.g. fb_mobile_login on successful auth) still fire
+  // through `facebookAppEvents.logEvent(...)` from the login screen.
 
   runApp(const MyApp());
 }
