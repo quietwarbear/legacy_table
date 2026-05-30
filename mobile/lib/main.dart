@@ -32,16 +32,6 @@ void main() async {
     debugPrintStack(stackTrace: stackTrace);
   }
 
-  // Meta App Events — log activation so installs/opens attribute correctly to
-  // Meta ad campaigns. iOS only for now (Info.plist holds the FB config);
-  // Android wiring will land in a separate PR if/when needed.
-  if (!kIsWeb && Platform.isIOS) {
-    try {
-      await facebookAppEvents.logActivatedApp();
-    } catch (e) {
-      debugPrint('Facebook App Events activation failed: $e');
-    }
-  }
 
   runApp(const MyApp());
 }
