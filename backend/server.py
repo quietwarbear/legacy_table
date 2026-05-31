@@ -309,6 +309,9 @@ class AppleAuthRequest(BaseModel):
     full_name: Optional[str] = ""
     email: Optional[str] = ""
 
+class FacebookAuthRequest(BaseModel):
+    access_token: str  # Facebook short-lived access token from the iOS SDK
+
 class UserUpdate(BaseModel):
     nickname: Optional[str] = None
     avatar: Optional[str] = None  # Base64 encoded image
@@ -693,6 +696,146 @@ async def google_auth(body: GoogleAuthRequest):
         )
 
     return TokenResponse(token=token, user=user_response)
+
+
+@api_router.post("/auth/facebook", response_model=TokenResponse)
+async def facebook_auth(body: FacebookAuthRequest):
+    """Verify a Facebook access token and login or register the user.
+
+    Pattern mirrors /auth/google:
+      1. Validate the user-supplied access_token against Facebook's
+         debug_token endpoint using our app's APP_ID|APP_SECRET app
+         token. This guards against tokens minted for OTHER Facebook
+         apps being replayed against us.
+      2. Fetch the user's identity from /me?fields=id,email,name with
+         the validated user token.
+      3. Find-or-create the user record using their Facebook email.
+      4. Return a Legacy Table session token (same TokenResponse the
+         email/Google/Apple flows return).
+
+    Env vars required (set in Railway):
+      FACEBOOK_APP_ID      — public, e.g. 898895229882962
+      FACEBOOK_APP_SECRET  — secret, never commit to repo
+    """
+    facebook_app_id = os.environ.get("FACEBOOK_APP_ID")
+    facebook_app_secret = os.environ.get("FACEBOOK_APP_SECRET")
+
+    if not facebook_app_id or not facebook_app_secret:
+        raise HTTPException(
+            status_code=500,
+            detail="Facebook auth not configured (missing FACEBOOK_APP_ID or FACEBOOK_APP_SECRET)",
+        )
+
+    user_token = body.access_token
+    app_access_token = f"{facebook_app_id}|{facebook_app_secret}"
+
+    async with httpx.AsyncClient(timeout=10.0) as http_client:
+        # Step 1 — verify the token is real, unexpired, and minted for OUR app.
+        debug_resp = await http_client.get(
+            "https://graph.facebook.com/debug_token",
+            params={
+                "input_token": user_token,
+                "access_token": app_access_token,
+            },
+        )
+        if debug_resp.status_code != 200:
+            raise HTTPException(status_code=401, detail="Invalid Facebook token (debug_token failed)")
+
+        debug_data = debug_resp.json().get("data", {})
+        if not debug_data.get("is_valid"):
+            error_msg = debug_data.get("error", {}).get("message", "token invalid or expired")
+            raise HTTPException(status_code=401, detail=f"Invalid Facebook token: {error_msg}")
+
+        if str(debug_data.get("app_id")) != str(facebook_app_id):
+            raise HTTPException(status_code=401, detail="Facebook token app_id mismatch")
+
+        # Step 2 — fetch the user's identity using the now-validated token.
+        me_resp = await http_client.get(
+            "https://graph.facebook.com/me",
+            params={
+                "fields": "id,email,name",
+                "access_token": user_token,
+            },
+        )
+
+    if me_resp.status_code != 200:
+        raise HTTPException(status_code=401, detail="Could not fetch Facebook profile")
+
+    fb_info = me_resp.json()
+    fb_id = fb_info.get("id")
+    email = fb_info.get("email")
+    name = fb_info.get("name") or (email.split("@")[0] if email else "Facebook user")
+
+    if not email:
+        # Facebook lets users hide their email. Without one we can't
+        # find-or-create on the existing schema (which is email-keyed).
+        # Apple Sign-In has the same problem and the existing apple flow
+        # also requires email — staying consistent.
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Facebook did not return an email. Please grant email "
+                "permission, or sign in with another provider."
+            ),
+        )
+
+    email = email.lower()
+
+    # Step 3 — find-or-create the user (mirror of /auth/google).
+    user = await db.users.find_one({"email": email}, {"_id": 0})
+
+    if user:
+        # Existing user — log them in.
+        user = await refresh_credits_if_needed(user)
+        token = create_token(user["id"])
+        user_response = UserResponse(
+            id=user["id"],
+            name=user["name"],
+            nickname=user.get("nickname"),
+            email=user["email"],
+            avatar=user.get("avatar"),
+            family_id=user.get("family_id"),
+            role=user.get("role"),
+            subscription_tier=user.get("subscription_tier"),
+            credits_balance=user.get("credits_balance", 0),
+            credits_refresh_at=user.get("credits_refresh_at"),
+            created_at=user["created_at"],
+        )
+    else:
+        # New user — register with Facebook info (no password).
+        user_id = str(uuid.uuid4())
+        initial_credits = get_credits_for_tier(None)
+        credits_refresh = next_refresh_date()
+        user_doc = {
+            "id": user_id,
+            "name": name,
+            "nickname": None,
+            "email": email,
+            "password_hash": None,
+            "avatar": None,
+            "auth_provider": "facebook",
+            "facebook_id": fb_id,
+            "credits_balance": initial_credits,
+            "credits_refresh_at": credits_refresh,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+        await db.users.insert_one(user_doc)
+        token = create_token(user_id)
+        user_response = UserResponse(
+            id=user_id,
+            name=name,
+            nickname=None,
+            email=email,
+            avatar=None,
+            family_id=None,
+            role=None,
+            credits_balance=initial_credits,
+            credits_refresh_at=credits_refresh,
+            created_at=user_doc["created_at"],
+        )
+
+    return TokenResponse(token=token, user=user_response)
+
 
 # Apple Auth JWKS Cache
 _apple_jwks_cache = None

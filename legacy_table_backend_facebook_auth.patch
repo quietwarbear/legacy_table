@@ -1,0 +1,344 @@
+From 133fb7a5c17f4699e8cc41526577890e7feff799 Mon Sep 17 00:00:00 2001
+From: Claude <claude@anthropic.com>
+Date: Sat, 30 May 2026 17:54:50 -0700
+Subject: [PATCH] feat(auth): wire Facebook Login end-to-end (backend endpoint
+ + Flutter session manager)
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Backend (FastAPI):
+- New FacebookAuthRequest model with access_token: str.
+- New POST /api/auth/facebook endpoint that:
+    1. Verifies the user-supplied access_token via Facebook's
+       https://graph.facebook.com/debug_token endpoint, using
+       APP_ID|APP_SECRET as the app access token. Confirms the token
+       is valid AND was minted for OUR Facebook app (defense against
+       cross-app token replay).
+    2. Fetches /me?fields=id,email,name with the validated token.
+    3. Find-or-creates the user keyed on email (mirrors /auth/google).
+       New users get the same initial credit allocation as Google
+       sign-ups (auth_provider = 'facebook', facebook_id stored for
+       future linking).
+    4. Returns the standard TokenResponse with a Legacy Table session
+       JWT, so the rest of the app treats the session identically to
+       Google/Apple sign-ins.
+- Requires two env vars (Doc to set in Railway):
+    FACEBOOK_APP_ID      — 898895229882962 (public)
+    FACEBOOK_APP_SECRET  — set in Railway only, NEVER committed
+- Returns 400 if Facebook doesn't surface an email (FB lets users hide
+  it). Matches existing Apple flow which has the same requirement.
+
+Mobile (Flutter):
+- api_config.dart: add facebookAuth endpoint path constant.
+- auth_service.dart: new facebookSignIn(accessToken) method mirroring
+  googleSignIn / appleSignIn.
+- session_manager.dart: new facebookLogin(accessToken) that calls
+  AuthService.facebookSignIn, persists the session token, identifies
+  the user with RevenueCat, and returns isNewlyCreatedUser (so the
+  caller can route new users to /subscription).
+- login_screen.dart: _handleFacebookSignIn now calls
+  sessionManager.facebookLogin instead of just showing a placeholder
+  snackbar. New Facebook users land on /subscription, returning users
+  on /home — same routing as Google.
+
+End-to-end on iOS after this lands + Railway env vars set:
+  Tap Continue with Facebook → Meta SDK dialog → I agree
+    → backend verifies token → user found/created
+    → returned to /home (or /subscription for new accounts)
+
+Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
+---
+ backend/server.py                        | 143 +++++++++++++++++++++++
+ mobile/lib/config/api_config.dart        |   1 +
+ mobile/lib/services/auth_service.dart    |  14 +++
+ mobile/lib/services/session_manager.dart |  38 ++++++
+ mobile/lib/views/login_screen.dart       |  24 ++--
+ 5 files changed, 209 insertions(+), 11 deletions(-)
+
+diff --git a/backend/server.py b/backend/server.py
+index 05374da..989b04f 100644
+--- a/backend/server.py
++++ b/backend/server.py
+@@ -309,6 +309,9 @@ class AppleAuthRequest(BaseModel):
+     full_name: Optional[str] = ""
+     email: Optional[str] = ""
+ 
++class FacebookAuthRequest(BaseModel):
++    access_token: str  # Facebook short-lived access token from the iOS SDK
++
+ class UserUpdate(BaseModel):
+     nickname: Optional[str] = None
+     avatar: Optional[str] = None  # Base64 encoded image
+@@ -694,6 +697,146 @@ async def google_auth(body: GoogleAuthRequest):
+ 
+     return TokenResponse(token=token, user=user_response)
+ 
++
++@api_router.post("/auth/facebook", response_model=TokenResponse)
++async def facebook_auth(body: FacebookAuthRequest):
++    """Verify a Facebook access token and login or register the user.
++
++    Pattern mirrors /auth/google:
++      1. Validate the user-supplied access_token against Facebook's
++         debug_token endpoint using our app's APP_ID|APP_SECRET app
++         token. This guards against tokens minted for OTHER Facebook
++         apps being replayed against us.
++      2. Fetch the user's identity from /me?fields=id,email,name with
++         the validated user token.
++      3. Find-or-create the user record using their Facebook email.
++      4. Return a Legacy Table session token (same TokenResponse the
++         email/Google/Apple flows return).
++
++    Env vars required (set in Railway):
++      FACEBOOK_APP_ID      — public, e.g. 898895229882962
++      FACEBOOK_APP_SECRET  — secret, never commit to repo
++    """
++    facebook_app_id = os.environ.get("FACEBOOK_APP_ID")
++    facebook_app_secret = os.environ.get("FACEBOOK_APP_SECRET")
++
++    if not facebook_app_id or not facebook_app_secret:
++        raise HTTPException(
++            status_code=500,
++            detail="Facebook auth not configured (missing FACEBOOK_APP_ID or FACEBOOK_APP_SECRET)",
++        )
++
++    user_token = body.access_token
++    app_access_token = f"{facebook_app_id}|{facebook_app_secret}"
++
++    async with httpx.AsyncClient(timeout=10.0) as http_client:
++        # Step 1 — verify the token is real, unexpired, and minted for OUR app.
++        debug_resp = await http_client.get(
++            "https://graph.facebook.com/debug_token",
++            params={
++                "input_token": user_token,
++                "access_token": app_access_token,
++            },
++        )
++        if debug_resp.status_code != 200:
++            raise HTTPException(status_code=401, detail="Invalid Facebook token (debug_token failed)")
++
++        debug_data = debug_resp.json().get("data", {})
++        if not debug_data.get("is_valid"):
++            error_msg = debug_data.get("error", {}).get("message", "token invalid or expired")
++            raise HTTPException(status_code=401, detail=f"Invalid Facebook token: {error_msg}")
++
++        if str(debug_data.get("app_id")) != str(facebook_app_id):
++            raise HTTPException(status_code=401, detail="Facebook token app_id mismatch")
++
++        # Step 2 — fetch the user's identity using the now-validated token.
++        me_resp = await http_client.get(
++            "https://graph.facebook.com/me",
++            params={
++                "fields": "id,email,name",
++                "access_token": user_token,
++            },
++        )
++
++    if me_resp.status_code != 200:
++        raise HTTPException(status_code=401, detail="Could not fetch Facebook profile")
++
++    fb_info = me_resp.json()
++    fb_id = fb_info.get("id")
++    email = fb_info.get("email")
++    name = fb_info.get("name") or (email.split("@")[0] if email else "Facebook user")
++
++    if not email:
++        # Facebook lets users hide their email. Without one we can't
++        # find-or-create on the existing schema (which is email-keyed).
++        # Apple Sign-In has the same problem and the existing apple flow
++        # also requires email — staying consistent.
++        raise HTTPException(
++            status_code=400,
++            detail=(
++                "Facebook did not return an email. Please grant email "
++                "permission, or sign in with another provider."
++            ),
++        )
++
++    email = email.lower()
++
++    # Step 3 — find-or-create the user (mirror of /auth/google).
++    user = await db.users.find_one({"email": email}, {"_id": 0})
++
++    if user:
++        # Existing user — log them in.
++        user = await refresh_credits_if_needed(user)
++        token = create_token(user["id"])
++        user_response = UserResponse(
++            id=user["id"],
++            name=user["name"],
++            nickname=user.get("nickname"),
++            email=user["email"],
++            avatar=user.get("avatar"),
++            family_id=user.get("family_id"),
++            role=user.get("role"),
++            subscription_tier=user.get("subscription_tier"),
++            credits_balance=user.get("credits_balance", 0),
++            credits_refresh_at=user.get("credits_refresh_at"),
++            created_at=user["created_at"],
++        )
++    else:
++        # New user — register with Facebook info (no password).
++        user_id = str(uuid.uuid4())
++        initial_credits = get_credits_for_tier(None)
++        credits_refresh = next_refresh_date()
++        user_doc = {
++            "id": user_id,
++            "name": name,
++            "nickname": None,
++            "email": email,
++            "password_hash": None,
++            "avatar": None,
++            "auth_provider": "facebook",
++            "facebook_id": fb_id,
++            "credits_balance": initial_credits,
++            "credits_refresh_at": credits_refresh,
++            "created_at": datetime.now(timezone.utc).isoformat(),
++        }
++        await db.users.insert_one(user_doc)
++        token = create_token(user_id)
++        user_response = UserResponse(
++            id=user_id,
++            name=name,
++            nickname=None,
++            email=email,
++            avatar=None,
++            family_id=None,
++            role=None,
++            credits_balance=initial_credits,
++            credits_refresh_at=credits_refresh,
++            created_at=user_doc["created_at"],
++        )
++
++    return TokenResponse(token=token, user=user_response)
++
++
+ # Apple Auth JWKS Cache
+ _apple_jwks_cache = None
+ _apple_jwks_cache_time = None
+diff --git a/mobile/lib/config/api_config.dart b/mobile/lib/config/api_config.dart
+index 7afbdaa..6e64066 100644
+--- a/mobile/lib/config/api_config.dart
++++ b/mobile/lib/config/api_config.dart
+@@ -15,6 +15,7 @@ class ApiConfig {
+   static String get updateProfile => '/auth/profile';
+   static String get googleAuth => '/auth/google';
+   static String get appleAuth => '/auth/apple';
++  static String get facebookAuth => '/auth/facebook';
+ 
+   // Recipe endpoints (relative paths)
+   static String get recipes => '/recipes';
+diff --git a/mobile/lib/services/auth_service.dart b/mobile/lib/services/auth_service.dart
+index 2e0028f..4404abf 100644
+--- a/mobile/lib/services/auth_service.dart
++++ b/mobile/lib/services/auth_service.dart
+@@ -51,6 +51,20 @@ class AuthService {
+     return loginResponse;
+   }
+ 
++  // Facebook Sign-In — send access token to backend.
++  // The backend re-verifies the token with Facebook's debug_token endpoint
++  // (using FACEBOOK_APP_SECRET) and fetches /me?fields=id,email,name to
++  // find or create the user.
++  Future<LoginResponse> facebookSignIn(String accessToken) async {
++    final response = await _apiClient.post(
++      ApiConfig.facebookAuth,
++      data: {'access_token': accessToken},
++    );
++    final loginResponse = LoginResponse.fromJson(response.data);
++    _apiClient.setAuthToken(loginResponse.token);
++    return loginResponse;
++  }
++
+   // Get current user
+   Future<User> getCurrentUser() async {
+     final response = await _apiClient.get(ApiConfig.currentUser);
+diff --git a/mobile/lib/services/session_manager.dart b/mobile/lib/services/session_manager.dart
+index 2259dad..cbe0830 100644
+--- a/mobile/lib/services/session_manager.dart
++++ b/mobile/lib/services/session_manager.dart
+@@ -165,6 +165,44 @@ class SessionManager extends ChangeNotifier {
+     }
+   }
+ 
++  /// Facebook Sign-In
++  Future<bool> facebookLogin(String accessToken) async {
++    _isLoading = true;
++    notifyListeners();
++
++    try {
++      final loginResponse = await _authService.facebookSignIn(accessToken);
++
++      // Save token and user data
++      await _storageService.saveAuthToken(loginResponse.token);
++      await _storageService.saveUserId(loginResponse.user.id);
++      await _storageService.saveUserEmail(loginResponse.user.email);
++      await _storageService.setLoggedIn(true);
++
++      if (loginResponse.user.familyId != null) {
++        await _storageService.saveFamilyId(loginResponse.user.familyId);
++      }
++      if (loginResponse.user.role != null) {
++        await _storageService.saveUserRole(loginResponse.user.role);
++      }
++
++      _apiService.setAuthToken(loginResponse.token);
++      await SubscriptionService.identify(loginResponse.user.id);
++
++      _currentUser = loginResponse.user;
++      _isLoggedIn = true;
++      return _isNewlyCreatedUser(loginResponse.user.createdAt);
++    } catch (e) {
++      if (kDebugMode) {
++        print('Facebook login error: $e');
++      }
++      rethrow;
++    } finally {
++      _isLoading = false;
++      notifyListeners();
++    }
++  }
++
+   /// Apple Sign-In
+   Future<bool> appleLogin(String idToken, {String fullName = '', String email = ''}) async {
+     _isLoading = true;
+diff --git a/mobile/lib/views/login_screen.dart b/mobile/lib/views/login_screen.dart
+index 2a8a6d4..0626198 100644
+--- a/mobile/lib/views/login_screen.dart
++++ b/mobile/lib/views/login_screen.dart
+@@ -224,18 +224,20 @@ class _LoginScreenState extends State<LoginScreen> {
+             parameters: {'method': 'facebook'},
+           );
+ 
+-          // TODO(backend): wire to sessionManager.facebookLogin once the
+-          // FastAPI /auth/facebook endpoint exists. The endpoint should
+-          // call Facebook Graph API (debug_token + /me?fields=id,email,name)
+-          // to verify the access token and return our own session token.
+-          //
+-          // For now, surface the token in debug logs and tell the user
+-          // that backend wiring is still pending.
+-          debugPrint('[FacebookSignIn] tokenString length=${accessToken.tokenString.length}');
++          // Hand off to backend /auth/facebook — same pattern as Google/Apple.
++          // Backend verifies the access token with Facebook's debug_token
++          // endpoint and returns our own session token.
++          final isNewFacebookUser =
++              await sessionManager.facebookLogin(accessToken.tokenString);
++
++          if (isNewFacebookUser) {
++            await _storageService.setPendingSubscriptionAfterRegister(true);
++          }
++
+           if (mounted) {
+-            StyledSnackBar.showError(
+-              context,
+-              'Facebook auth succeeded on device — backend hookup is in the next PR.',
++            Navigator.of(context).pushNamedAndRemoveUntil(
++              isNewFacebookUser ? '/subscription' : '/home',
++              (route) => false,
+             );
+           }
+           break;
+-- 
+2.34.1
+

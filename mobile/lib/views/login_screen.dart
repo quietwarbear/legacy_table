@@ -224,18 +224,20 @@ class _LoginScreenState extends State<LoginScreen> {
             parameters: {'method': 'facebook'},
           );
 
-          // TODO(backend): wire to sessionManager.facebookLogin once the
-          // FastAPI /auth/facebook endpoint exists. The endpoint should
-          // call Facebook Graph API (debug_token + /me?fields=id,email,name)
-          // to verify the access token and return our own session token.
-          //
-          // For now, surface the token in debug logs and tell the user
-          // that backend wiring is still pending.
-          debugPrint('[FacebookSignIn] tokenString length=${accessToken.tokenString.length}');
+          // Hand off to backend /auth/facebook — same pattern as Google/Apple.
+          // Backend verifies the access token with Facebook's debug_token
+          // endpoint and returns our own session token.
+          final isNewFacebookUser =
+              await sessionManager.facebookLogin(accessToken.tokenString);
+
+          if (isNewFacebookUser) {
+            await _storageService.setPendingSubscriptionAfterRegister(true);
+          }
+
           if (mounted) {
-            StyledSnackBar.showError(
-              context,
-              'Facebook auth succeeded on device — backend hookup is in the next PR.',
+            Navigator.of(context).pushNamedAndRemoveUntil(
+              isNewFacebookUser ? '/subscription' : '/home',
+              (route) => false,
             );
           }
           break;
