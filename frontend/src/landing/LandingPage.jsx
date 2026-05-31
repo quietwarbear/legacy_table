@@ -433,13 +433,9 @@ const LandingPage = () => {
                 Privacy Policy
               </a>
               <span>·</span>
-              {/* TODO(PR 3): point at /terms once the page ships */}
-              <a
-                href="#"
-                className="hover:underline opacity-50 cursor-not-allowed"
-              >
+              <Link to="/terms" className="hover:underline">
                 Terms of Service
-              </a>
+              </Link>
             </div>
           </div>
         </div>
