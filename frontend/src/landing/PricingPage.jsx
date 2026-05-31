@@ -473,12 +473,9 @@ const PricingPage = () => {
                 Privacy Policy
               </a>
               <span>·</span>
-              <a
-                href="#"
-                className="hover:underline opacity-50 cursor-not-allowed"
-              >
+              <Link to="/terms" className="hover:underline">
                 Terms of Service
-              </a>
+              </Link>
             </div>
           </div>
         </div>
