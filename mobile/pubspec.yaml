@@ -61,6 +61,7 @@ dependencies:
 
 dev_dependencies:
   flutter_launcher_icons: ^0.14.4
+  flutter_native_splash: ^2.4.4
   flutter_test:
     sdk: flutter
 
@@ -158,3 +159,23 @@ flutter_launcher_icons:
   image_path: "assets/images/app-icon.png"
   adaptive_icon_background: "#000000"
   adaptive_icon_foreground: "assets/images/app-icon.png"
+
+# Native splash / launch screen.
+# Run `dart run flutter_native_splash:create` after editing this block to
+# regenerate the iOS LaunchImage.imageset + LaunchScreen.storyboard and
+# the Android drawable-* splash assets from the source image below.
+#
+# Without this, iOS ships with the default 68-byte stub PNGs in
+# Runner/Assets.xcassets/LaunchImage.imageset and Xcode rejects the
+# archive with "missing launch image."
+flutter_native_splash:
+  # Warm parchment background — matches the Legacy Table brand palette.
+  color: "#FAF6F0"
+  # Centered logo. Same source asset Flutter ships from elsewhere in the
+  # app, so the splash and the in-app brand mark match exactly.
+  image: assets/images/app-logo.png
+  # Platforms — generate for both. (Android also currently uses default
+  # placeholders; this fixes both in one pass.)
+  ios: true
+  android: true
+  web: false
