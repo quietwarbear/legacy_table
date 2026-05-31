@@ -51,6 +51,20 @@ class AuthService {
     return loginResponse;
   }
 
+  // Facebook Sign-In — send access token to backend.
+  // The backend re-verifies the token with Facebook's debug_token endpoint
+  // (using FACEBOOK_APP_SECRET) and fetches /me?fields=id,email,name to
+  // find or create the user.
+  Future<LoginResponse> facebookSignIn(String accessToken) async {
+    final response = await _apiClient.post(
+      ApiConfig.facebookAuth,
+      data: {'access_token': accessToken},
+    );
+    final loginResponse = LoginResponse.fromJson(response.data);
+    _apiClient.setAuthToken(loginResponse.token);
+    return loginResponse;
+  }
+
   // Get current user
   Future<User> getCurrentUser() async {
     final response = await _apiClient.get(ApiConfig.currentUser);
