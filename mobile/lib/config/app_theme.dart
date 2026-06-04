@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 
-// Brand / Shared Colors
-const Color brandPrimary = Color(0xFFF26B3A); // Warm orange (CTA)
-const Color brandSecondary = Color(0xFF6C8B74); // Sage green
-const Color brandAccent = Color(0xFFD9B88C); // Gold / heritage accent
+// Brand / Shared Colors — palette V2 (May 2026)
+// Deeper, richer reconciliation of the parchment-toned originals with
+// the deeper values already in frontend/src/index.css. See the canonical
+// Legacy Table Brand Book for usage rules.
+const Color brandPrimary = Color(0xFFF26B3A); // Heritage Orange — primary CTAs
+const Color brandSecondary = Color(0xFF436E55); // Forest Sage — calm, family, growth
+const Color brandAccent = Color(0xFFF0C24D); // Heritage Gold — premium, ceremony
 
 // Light Theme Colors
 class LightColors {
