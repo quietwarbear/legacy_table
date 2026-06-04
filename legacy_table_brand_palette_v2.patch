@@ -1,0 +1,64 @@
+From 3076ae873dcd6b520d155d2c7e29b4ae2b75765c Mon Sep 17 00:00:00 2001
+From: Claude <claude@anthropic.com>
+Date: Wed, 3 Jun 2026 19:16:27 -0500
+Subject: [PATCH] chore(brand): reconcile mobile app theme to the deeper,
+ richer brand palette
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Three brand color constants in mobile/lib/config/app_theme.dart are
+updated to match the canonical brand book (May 2026 V2 palette). The
+new values align with the deeper, richer color theme already present
+in frontend/src/index.css, so mobile + web finally agree on a single
+source of truth.
+
+Before vs after:
+  brandPrimary    #F26B3A → #F26B3A   (unchanged — Heritage Orange)
+  brandSecondary  #6C8B74 → #436E55   (parchment sage → forest sage)
+  brandAccent     #D9B88C → #F0C24D   (parchment gold → heritage gold)
+
+The chipBackground tints (LightColors.chipBackground and
+DarkColors.chipBackground) are deliberately left alone — they're
+soft sage-toned wash colors that read fine against either sage
+hue, and minimizing the visual diff here de-risks shipping.
+
+Visual impact in the app:
+  - Floating-action buttons + primary chips that read as sage now
+    read as forest green (more grounded, less washed-out).
+  - Premium tier badges and gold accents now read brighter / richer
+    instead of parchment beige.
+  - Heritage Orange CTAs are unchanged.
+
+If a follow-up regression is needed, revert this commit and the app
+returns to the parchment-toned palette V1.
+
+Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>
+---
+ mobile/lib/config/app_theme.dart | 11 +++++++----
+ 1 file changed, 7 insertions(+), 4 deletions(-)
+
+diff --git a/mobile/lib/config/app_theme.dart b/mobile/lib/config/app_theme.dart
+index 95df876..b7b0fb8 100644
+--- a/mobile/lib/config/app_theme.dart
++++ b/mobile/lib/config/app_theme.dart
+@@ -1,9 +1,12 @@
+ import 'package:flutter/material.dart';
+ 
+-// Brand / Shared Colors
+-const Color brandPrimary = Color(0xFFF26B3A); // Warm orange (CTA)
+-const Color brandSecondary = Color(0xFF6C8B74); // Sage green
+-const Color brandAccent = Color(0xFFD9B88C); // Gold / heritage accent
++// Brand / Shared Colors — palette V2 (May 2026)
++// Deeper, richer reconciliation of the parchment-toned originals with
++// the deeper values already in frontend/src/index.css. See the canonical
++// Legacy Table Brand Book for usage rules.
++const Color brandPrimary = Color(0xFFF26B3A); // Heritage Orange — primary CTAs
++const Color brandSecondary = Color(0xFF436E55); // Forest Sage — calm, family, growth
++const Color brandAccent = Color(0xFFF0C24D); // Heritage Gold — premium, ceremony
+ 
+ // Light Theme Colors
+ class LightColors {
+-- 
+2.34.1
+
