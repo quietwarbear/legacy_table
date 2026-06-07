@@ -1,13 +1,12 @@
 import 'package:dio/dio.dart' show DioException, DioExceptionType;
-import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show PlatformException;
 import 'package:provider/provider.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import '../config/api_config.dart';
-import '../config/app_config.dart';
 import '../config/app_theme.dart';
 import '../main.dart' show facebookAppEvents;
 import '../providers/theme_provider.dart';
@@ -136,10 +135,7 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (e, stackTrace) {
       debugPrint('[EmailLogin] stack: $stackTrace');
       if (mounted) {
-        StyledSnackBar.showError(
-          context,
-          _describeAuthError('Login', e),
-        );
+        StyledSnackBar.showError(context, _describeAuthError('Login', e));
       }
     } finally {
       if (mounted) {
@@ -227,8 +223,9 @@ class _LoginScreenState extends State<LoginScreen> {
           // Hand off to backend /auth/facebook — same pattern as Google/Apple.
           // Backend verifies the access token with Facebook's debug_token
           // endpoint and returns our own session token.
-          final isNewFacebookUser =
-              await sessionManager.facebookLogin(accessToken.tokenString);
+          final isNewFacebookUser = await sessionManager.facebookLogin(
+            accessToken.tokenString,
+          );
 
           if (isNewFacebookUser) {
             await _storageService.setPendingSubscriptionAfterRegister(true);
@@ -288,9 +285,10 @@ class _LoginScreenState extends State<LoginScreen> {
         throw Exception('No identity token');
       }
 
-      final fullName = [credential.givenName, credential.familyName]
-          .where((s) => s != null)
-          .join(' ');
+      final fullName = [
+        credential.givenName,
+        credential.familyName,
+      ].where((s) => s != null).join(' ');
 
       final isNewAppleUser = await sessionManager.appleLogin(
         idToken,
@@ -331,10 +329,74 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Widget _buildProviderButton({
+    required String label,
+    required Widget icon,
+    required bool isLoading,
+    required VoidCallback? onPressed,
+    required Color backgroundColor,
+    required Color foregroundColor,
+    required Color borderColor,
+  }) {
+    return Expanded(
+      child: SizedBox(
+        height: 48,
+        child: OutlinedButton(
+          onPressed: isLoading ? null : onPressed,
+          style: OutlinedButton.styleFrom(
+            backgroundColor: backgroundColor,
+            disabledBackgroundColor: backgroundColor,
+            foregroundColor: foregroundColor,
+            disabledForegroundColor: foregroundColor.withValues(alpha: 0.55),
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            minimumSize: const Size(0, 48),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            side: BorderSide(color: borderColor, width: 1),
+          ),
+          child: isLoading
+              ? SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(foregroundColor),
+                  ),
+                )
+              : FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      icon,
+                      const SizedBox(width: 6),
+                      Text(
+                        label,
+                        maxLines: 1,
+                        style: TextStyle(
+                          fontFamily: 'Manrope',
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: foregroundColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
+    final isAnySocialLoading =
+        _isGoogleLoading || _isAppleLoading || _isFacebookLoading;
 
     return GestureDetector(
       onTap: () {
@@ -348,10 +410,10 @@ class _LoginScreenState extends State<LoginScreen> {
         body: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Container(
                 constraints: const BoxConstraints(maxWidth: 400),
-                padding: const EdgeInsets.all(32.0),
+                padding: const EdgeInsets.all(24.0),
                 decoration: BoxDecoration(
                   color: isDark ? DarkColors.surface : LightColors.surface,
                   borderRadius: BorderRadius.circular(24),
@@ -377,8 +439,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           isDark
                               ? 'assets/images/app-logo-white.png'
                               : 'assets/images/app-logo.png',
-                          width: 120,
-                          height: 120,
+                          width: 92,
+                          height: 92,
                           fit: BoxFit.contain,
                         ),
                       ),
@@ -391,7 +453,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         style: TextStyle(
                           fontFamily: 'Dancing Script',
                           // fontFamily: 'Playfair Display',
-                          fontSize: 32,
+                          fontSize: 30,
                           fontWeight: FontWeight.bold,
                           color: isDark
                               ? DarkColors.textPrimary
@@ -406,13 +468,13 @@ class _LoginScreenState extends State<LoginScreen> {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontFamily: 'Manrope',
-                          fontSize: 16,
+                          fontSize: 15,
                           color: isDark
                               ? DarkColors.textSecondary
                               : LightColors.textSecondary,
                         ),
                       ),
-                      const SizedBox(height: 40),
+                      const SizedBox(height: 24),
 
                       // Email Field
                       Text(
@@ -490,7 +552,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 16),
 
                       // Password Field
                       Text(
@@ -590,7 +652,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 24),
 
                       // Sign In Button
                       ElevatedButton(
@@ -598,7 +660,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: brandPrimary,
                           foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -625,7 +687,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 14),
 
                       // Divider
                       Row(
@@ -661,185 +723,74 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       const SizedBox(height: 16),
 
-                      // Google Sign-In Button
-                      OutlinedButton(
-                        onPressed: (_isLoading || _isGoogleLoading)
-                            ? null
-                            : _handleGoogleSignIn,
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          side: BorderSide(
-                            color: isDark
+                      // Social sign-in buttons
+                      Row(
+                        children: [
+                          _buildProviderButton(
+                            label: 'Google',
+                            icon: const Text(
+                              'G',
+                              style: TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF4285F4),
+                              ),
+                            ),
+                            isLoading: _isGoogleLoading,
+                            onPressed: (_isLoading || isAnySocialLoading)
+                                ? null
+                                : _handleGoogleSignIn,
+                            backgroundColor: isDark
+                                ? DarkColors.surfaceMuted
+                                : Colors.white,
+                            foregroundColor: isDark
+                                ? DarkColors.textPrimary
+                                : LightColors.textPrimary,
+                            borderColor: isDark
                                 ? DarkColors.border
                                 : LightColors.border,
-                            width: 1,
                           ),
-                        ),
-                        child: _isGoogleLoading
-                            ? SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    isDark
-                                        ? DarkColors.textPrimary
-                                        : LightColors.textPrimary,
-                                  ),
-                                ),
-                              )
-                            : Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  // Google "G" logo
-                                  Container(
-                                    width: 20,
-                                    height: 20,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(2),
-                                    ),
-                                    child: Text(
-                                      'G',
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: const Color(0xFF4285F4),
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Text(
-                                    'Continue with Google',
-                                    style: TextStyle(
-                                      fontFamily: 'Manrope',
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: isDark
-                                          ? DarkColors.textPrimary
-                                          : LightColors.textPrimary,
-                                    ),
-                                  ),
-                                ],
+                          const SizedBox(width: 10),
+                          _buildProviderButton(
+                            label: 'Apple',
+                            icon: const Text(
+                              '\u{F8FF}',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.white,
                               ),
-                      ),
-                      const SizedBox(height: 12),
-
-                      // Apple Sign-In Button
-                      OutlinedButton(
-                        onPressed: (_isLoading || _isAppleLoading)
-                            ? null
-                            : _handleAppleSignIn,
-                        style: OutlinedButton.styleFrom(
-                          backgroundColor: Colors.black,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            ),
+                            isLoading: _isAppleLoading,
+                            onPressed: (_isLoading || isAnySocialLoading)
+                                ? null
+                                : _handleAppleSignIn,
+                            backgroundColor: Colors.black,
+                            foregroundColor: Colors.white,
+                            borderColor: Colors.black,
                           ),
-                          side: const BorderSide(
-                            color: Colors.black,
-                            width: 1,
-                          ),
-                        ),
-                        child: _isAppleLoading
-                            ? SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: const AlwaysStoppedAnimation<Color>(
-                                    Colors.white,
-                                  ),
-                                ),
-                              )
-                            : Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  // Apple logo
-                                  const Text(
-                                    '\u{F8FF}',
-                                    style: TextStyle(
-                                      fontSize: 20,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Text(
-                                    'Continue with Apple',
-                                    style: TextStyle(
-                                      fontFamily: 'Manrope',
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ],
+                          const SizedBox(width: 10),
+                          _buildProviderButton(
+                            label: 'Facebook',
+                            icon: const Text(
+                              'f',
+                              style: TextStyle(
+                                fontSize: 17,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.white,
+                                fontFamily: 'Helvetica',
                               ),
-                      ),
-                      const SizedBox(height: 12),
-
-                      // Facebook Sign-In Button
-                      OutlinedButton(
-                        onPressed: (_isLoading || _isFacebookLoading)
-                            ? null
-                            : _handleFacebookSignIn,
-                        style: OutlinedButton.styleFrom(
-                          backgroundColor: const Color(0xFF1877F2),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            ),
+                            isLoading: _isFacebookLoading,
+                            onPressed: (_isLoading || isAnySocialLoading)
+                                ? null
+                                : _handleFacebookSignIn,
+                            backgroundColor: const Color(0xFF1877F2),
+                            foregroundColor: Colors.white,
+                            borderColor: const Color(0xFF1877F2),
                           ),
-                          side: const BorderSide(
-                            color: Color(0xFF1877F2),
-                            width: 1,
-                          ),
-                        ),
-                        child: _isFacebookLoading
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(
-                                    Colors.white,
-                                  ),
-                                ),
-                              )
-                            : Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  // Facebook "f" mark
-                                  Container(
-                                    width: 20,
-                                    height: 20,
-                                    alignment: Alignment.center,
-                                    child: const Text(
-                                      'f',
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w900,
-                                        color: Colors.white,
-                                        fontFamily: 'Helvetica',
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  const Text(
-                                    'Continue with Facebook',
-                                    style: TextStyle(
-                                      fontFamily: 'Manrope',
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                        ],
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 20),
 
                       // Create Account Link
                       Row(
