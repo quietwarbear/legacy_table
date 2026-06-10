@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../config/app_theme.dart';
+import '../l10n/app_localizations.dart';
 import '../services/api_service.dart';
 import '../widgets/styled_snackbar.dart';
 import 'add_recipe_screen.dart';
@@ -31,9 +32,10 @@ class _ScanRecipeScreenState extends State<ScanRecipeScreen> {
       final granted = await _requestCameraPermission();
       if (!granted) {
         if (mounted) {
+          final l10n = AppLocalizations.of(context);
           StyledSnackBar.showWarning(
             context,
-            'Camera permission is required to scan a recipe',
+            l10n.scanRecipeCameraPermission,
           );
         }
         return;
@@ -76,11 +78,13 @@ class _ScanRecipeScreenState extends State<ScanRecipeScreen> {
 
       if (!mounted) return;
 
+      final l10n = AppLocalizations.of(context);
+
       // Show success with credits remaining
       if (result.creditsRemaining != null) {
         StyledSnackBar.showSuccess(
           context,
-          'Recipe scanned! ${result.creditsRemaining} credits remaining.',
+          l10n.scanRecipeScannedSuccess(result.creditsRemaining!),
         );
       }
 
@@ -120,17 +124,18 @@ class _ScanRecipeScreenState extends State<ScanRecipeScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(title: const Text('Scan Recipe')),
+      appBar: AppBar(title: Text(l10n.scanRecipeTitle)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Turn a handwritten card or cookbook page into an editable recipe draft.',
+              l10n.scanRecipeIntro,
               style: theme.textTheme.bodyLarge?.copyWith(
                 color: isDark
                     ? DarkColors.textSecondary
@@ -149,7 +154,7 @@ class _ScanRecipeScreenState extends State<ScanRecipeScreen> {
                   Icon(Icons.auto_awesome, size: 16, color: brandPrimary),
                   const SizedBox(width: 8),
                   Text(
-                    'Uses 1 AI credit',
+                    l10n.scanRecipeCreditCost,
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: brandPrimary,
                       fontWeight: FontWeight.w600,
@@ -180,7 +185,7 @@ class _ScanRecipeScreenState extends State<ScanRecipeScreen> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'Add a recipe photo to scan',
+                          l10n.scanRecipeEmptyTitle,
                           style: theme.textTheme.titleMedium?.copyWith(
                             fontFamily: 'Manrope',
                             fontWeight: FontWeight.w700,
@@ -190,7 +195,7 @@ class _ScanRecipeScreenState extends State<ScanRecipeScreen> {
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 24),
                           child: Text(
-                            'Best results come from a clear, well-lit photo with the full recipe visible.',
+                            l10n.scanRecipeEmptyHint,
                             textAlign: TextAlign.center,
                             style: theme.textTheme.bodyMedium,
                           ),
@@ -209,7 +214,7 @@ class _ScanRecipeScreenState extends State<ScanRecipeScreen> {
                   child: OutlinedButton.icon(
                     onPressed: _isScanning ? null : () => _pickImage(ImageSource.gallery),
                     icon: const Icon(Icons.photo_library_outlined),
-                    label: const Text('Choose Photo'),
+                    label: Text(l10n.scanRecipeChoosePhoto),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -217,7 +222,7 @@ class _ScanRecipeScreenState extends State<ScanRecipeScreen> {
                   child: ElevatedButton.icon(
                     onPressed: _isScanning ? null : () => _pickImage(ImageSource.camera),
                     icon: const Icon(Icons.camera_alt_outlined),
-                    label: const Text('Take Photo'),
+                    label: Text(l10n.scanRecipeTakePhoto),
                   ),
                 ),
               ],
@@ -239,7 +244,7 @@ class _ScanRecipeScreenState extends State<ScanRecipeScreen> {
                         ),
                       )
                     : const Icon(Icons.auto_awesome_outlined),
-                label: Text(_isScanning ? 'Scanning with AI...' : 'Scan Into Draft'),
+                label: Text(_isScanning ? l10n.scanRecipeScanning : l10n.scanRecipeScanButton),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),

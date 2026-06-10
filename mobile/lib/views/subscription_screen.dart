@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../config/app_theme.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/subscription_provider.dart';
 import '../services/storage_service.dart';
 
@@ -40,6 +41,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final sub = context.watch<SubscriptionProvider>();
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
@@ -61,7 +63,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             ? TextButton(
                 onPressed: () => Navigator.pop(context),
                 child: Text(
-                  'Not now',
+                  l10n.subscriptionNotNow,
                   style: TextStyle(
                     color: textSecondary,
                     fontFamily: 'Manrope',
@@ -77,7 +79,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           TextButton(
             onPressed: sub.isRestoring ? null : _restore,
             child: Text(
-              sub.isRestoring ? 'Restoring…' : 'Restore',
+              sub.isRestoring ? l10n.subscriptionRestoring : l10n.subscriptionRestore,
               style: TextStyle(
                 color: brandPrimary,
                 fontFamily: 'Manrope',
@@ -108,6 +110,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     Color textSecondary,
     bool isDark,
   ) {
+    final l10n = AppLocalizations.of(context);
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
       child: Column(
@@ -116,7 +119,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           // ── Header ────────────────────────────────────────────────────
           const SizedBox(height: 8),
           Text(
-            'Preserve Your\nFamily Legacy',
+            l10n.subscriptionHeaderTitle,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 32,
@@ -128,7 +131,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Unlock premium features to keep your family\'s\nrecipes alive for generations.',
+            l10n.subscriptionHeaderSubtitle,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 15,
@@ -152,17 +155,17 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             textSecondary,
             isDark,
             tierIndex: 0,
-            name: 'Heritage Keeper',
-            tagline: 'Perfect for getting started',
+            name: l10n.subscriptionTierHeritageName,
+            tagline: l10n.subscriptionTierHeritageTagline,
             monthlyPrice: '\$9.99',
             annualPrice: '\$99.99',
             annualMonthlyEquiv: '\$8.33',
             features: [
-              'Unlimited family recipe storage',
-              'Family sharing (up to 10 members)',
-              'Photo uploads for every recipe',
-              'Export & print recipe books',
-              'Recipe categories & tags',
+              l10n.subscriptionFeatureUnlimitedStorage,
+              l10n.subscriptionFeatureFamilySharing,
+              l10n.subscriptionFeaturePhotoUploads,
+              l10n.subscriptionFeatureExportPrint,
+              l10n.subscriptionFeatureCategoriesTags,
             ],
           ),
           const SizedBox(height: 16),
@@ -174,19 +177,19 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             textSecondary,
             isDark,
             tierIndex: 1,
-            name: 'Legacy Collection',
-            tagline: 'The complete family experience',
+            name: l10n.subscriptionTierLegacyName,
+            tagline: l10n.subscriptionTierLegacyTagline,
             monthlyPrice: '\$19.99',
             annualPrice: '\$199.99',
             annualMonthlyEquiv: '\$16.67',
             highlight: true,
             features: [
-              'Everything in Heritage Keeper',
-              'Unlimited family members',
-              'Advanced recipe organization',
-              'Priority customer support',
-              'Early access to new features',
-              'Custom family cookbook themes',
+              l10n.subscriptionFeatureEverythingHeritage,
+              l10n.subscriptionFeatureUnlimitedMembers,
+              l10n.subscriptionFeatureAdvancedOrganization,
+              l10n.subscriptionFeaturePrioritySupport,
+              l10n.subscriptionFeatureEarlyAccess,
+              l10n.subscriptionFeatureCustomThemes,
             ],
           ),
           const SizedBox(height: 28),
@@ -197,7 +200,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
           // ── Footer ────────────────────────────────────────────────────
           Text(
-            'Subscriptions auto-renew until cancelled. Cancel anytime in your device settings.',
+            l10n.subscriptionAutoRenewNotice,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 11,
@@ -215,7 +218,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   mode: LaunchMode.externalApplication,
                 ),
                 child: Text(
-                  'Terms of Use',
+                  l10n.subscriptionTermsOfUse,
                   style: TextStyle(
                     fontSize: 12,
                     fontFamily: 'Manrope',
@@ -234,7 +237,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                   mode: LaunchMode.externalApplication,
                 ),
                 child: Text(
-                  'Privacy Policy',
+                  l10n.subscriptionPrivacyPolicy,
                   style: TextStyle(
                     fontSize: 12,
                     fontFamily: 'Manrope',
@@ -284,8 +287,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeInOut,
             alignment: _showAnnual
-                ? Alignment.centerRight
-                : Alignment.centerLeft,
+                ? AlignmentDirectional.centerEnd
+                : AlignmentDirectional.centerStart,
             child: FractionallySizedBox(
               widthFactor: 0.5,
               child: Container(
@@ -383,6 +386,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     required List<String> features,
     bool highlight = false,
   }) {
+    final l10n = AppLocalizations.of(context);
     final isSelected = _selectedTier == tierIndex;
     final borderColor = isSelected
         ? brandPrimary
@@ -422,10 +426,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                     top: Radius.circular(18),
                   ),
                 ),
-                child: const Text(
-                  'MOST POPULAR',
+                child: Text(
+                  l10n.subscriptionMostPopular,
                   textAlign: TextAlign.center,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Colors.white,
                     fontFamily: 'Manrope',
                     fontSize: 12,
@@ -504,9 +508,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                         ),
                       ),
                       Padding(
-                        padding: const EdgeInsets.only(bottom: 4, left: 4),
+                        padding: const EdgeInsetsDirectional.only(bottom: 4, start: 4),
                         child: Text(
-                          _showAnnual ? '/year' : '/month',
+                          _showAnnual ? l10n.subscriptionPerYear : l10n.subscriptionPerMonth,
                           style: TextStyle(
                             fontSize: 14,
                             fontFamily: 'Manrope',
@@ -526,7 +530,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            '$annualMonthlyEquiv/mo',
+                            l10n.subscriptionPerMonthEquivalent(annualMonthlyEquiv),
                             style: const TextStyle(
                               fontSize: 12,
                               fontFamily: 'Manrope',
@@ -577,9 +581,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }
 
   Widget _buildCtaButton(BuildContext context, SubscriptionProvider sub) {
+    final l10n = AppLocalizations.of(context);
     final tierName = _selectedTier == 0
-        ? 'Heritage Keeper'
-        : 'Legacy Collection';
+        ? l10n.subscriptionTierHeritageName
+        : l10n.subscriptionTierLegacyName;
     final price = _showAnnual
         ? (_selectedTier == 0 ? '\$99.99/year' : '\$199.99/year')
         : (_selectedTier == 0 ? '\$9.99/month' : '\$19.99/month');
@@ -602,7 +607,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               ),
             )
           : Text(
-              'Get $tierName — $price',
+              l10n.subscriptionGetPlanCta(tierName, price),
               style: const TextStyle(
                 fontFamily: 'Manrope',
                 fontSize: 16,
@@ -615,6 +620,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   // ── Actions ──────────────────────────────────────────────────────────────
 
   Future<void> _purchase(SubscriptionProvider sub) async {
+    final l10n = AppLocalizations.of(context);
     var offerings = sub.offerings;
     if (offerings == null) {
       // Attempt to reload offerings before giving up
@@ -624,7 +630,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     if (offerings == null) {
       _showPurchaseMessage(
         context,
-        'Unable to load subscription plans. Please check your internet connection and try again.',
+        l10n.subscriptionErrorLoadPlans,
         isError: true,
       );
       return;
@@ -637,7 +643,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     if (offering == null) {
       _showPurchaseMessage(
         context,
-        'No subscription plans are available right now. Please check RevenueCat and App Store Connect configuration.',
+        l10n.subscriptionErrorNoPlansAvailable,
         isError: true,
       );
       return;
@@ -648,8 +654,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       _showPurchaseMessage(
         context,
         _showAnnual
-            ? 'Annual pricing is not available for this plan yet.'
-            : 'Monthly pricing is not available for this plan yet.',
+            ? l10n.subscriptionErrorAnnualUnavailable
+            : l10n.subscriptionErrorMonthlyUnavailable,
         isError: true,
       );
       return;
@@ -660,8 +666,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       final messenger = ScaffoldMessenger.of(context);
       _exitScreen(true);
       messenger.showSnackBar(
-        const SnackBar(
-          content: Text('Welcome to Legacy Table Premium!'),
+        SnackBar(
+          content: Text(l10n.subscriptionWelcomePremium),
           backgroundColor: brandSecondary,
         ),
       );
@@ -669,6 +675,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }
 
   Future<void> _restore() async {
+    final l10n = AppLocalizations.of(context);
     final sub = context.read<SubscriptionProvider>();
     final restored = await sub.restore();
     if (!mounted) return;
@@ -683,8 +690,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
       SnackBar(
         content: Text(
           restored
-              ? 'Purchases restored successfully!'
-              : 'No previous purchases found.',
+              ? l10n.subscriptionRestoreSuccess
+              : l10n.subscriptionRestoreNoneFound,
         ),
         backgroundColor: restored ? brandSecondary : Colors.orange,
       ),

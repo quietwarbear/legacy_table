@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../providers/theme_provider.dart';
 import '../config/app_theme.dart';
 import '../models/recipe.dart';
+import '../l10n/app_localizations.dart';
 
 class RecipeCard extends StatelessWidget {
   final Recipe recipe;
@@ -18,6 +19,7 @@ class RecipeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
 
@@ -69,7 +71,7 @@ class RecipeCard extends StatelessWidget {
                       if (recipe.cookingTime != null) ...[
                         _buildMetaItem(
                           icon: 'assets/icons/Clock.svg',
-                          text: '${recipe.cookingTime} min',
+                          text: l10n.recipeCardCookingTime(recipe.cookingTime!),
                           isDark: isDark,
                         ),
                         const SizedBox(width: 16),
@@ -77,7 +79,7 @@ class RecipeCard extends StatelessWidget {
                       if (recipe.servings != null) ...[
                         _buildMetaItem(
                           icon: 'assets/icons/Users.svg',
-                          text: '${recipe.servings} servings',
+                          text: l10n.recipeCardServings(recipe.servings!),
                           isDark: isDark,
                         ),
                         const SizedBox(width: 16),

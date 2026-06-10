@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../config/app_theme.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/theme_provider.dart';
 import '../services/api_service.dart';
 
@@ -49,6 +50,7 @@ class _CelebrationHeadquartersState extends State<CelebrationHeadquarters> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
 
@@ -105,7 +107,7 @@ class _CelebrationHeadquartersState extends State<CelebrationHeadquarters> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      'Celebration Headquarters',
+                      l10n.celebrationTitle,
                       style: TextStyle(
                         fontFamily: 'Playfair Display',
                         fontSize: 18,
@@ -131,7 +133,7 @@ class _CelebrationHeadquartersState extends State<CelebrationHeadquarters> {
                       ),
                     ),
                     Text(
-                      ' — Next up: ',
+                      l10n.celebrationNextUp,
                       style: TextStyle(
                         fontFamily: 'Manrope',
                         fontSize: 13,
@@ -142,7 +144,11 @@ class _CelebrationHeadquartersState extends State<CelebrationHeadquarters> {
                     ),
                     Flexible(
                       child: Text(
-                        '${nextHoliday['emoji'] ?? ''} ${nextHoliday['name'] ?? ''} in ${nextHoliday['days_away'] ?? '?'} day${(nextHoliday['days_away'] ?? 0) != 1 ? 's' : ''}',
+                        l10n.celebrationNextHoliday(
+                          (nextHoliday['emoji'] ?? '').toString(),
+                          (nextHoliday['name'] ?? '').toString(),
+                          (nextHoliday['days_away'] ?? 0) as int,
+                        ),
                         style: TextStyle(
                           fontFamily: 'Manrope',
                           fontSize: 13,
@@ -158,7 +164,7 @@ class _CelebrationHeadquartersState extends State<CelebrationHeadquarters> {
                 ),
                 const SizedBox(height: 4),
                 Align(
-                  alignment: Alignment.topRight,
+                  alignment: AlignmentDirectional.topEnd,
                   child: Container(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -240,7 +246,10 @@ class _CelebrationHeadquartersState extends State<CelebrationHeadquarters> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '${h['days_away']} day${(h['days_away'] ?? 0) != 1 ? 's' : ''} away  •  $recipeCount recipes',
+                        l10n.celebrationHolidayCardSubtitle(
+                          (h['days_away'] ?? 0) as int,
+                          int.tryParse(recipeCount) ?? 0,
+                        ),
                         style: TextStyle(
                           fontFamily: 'Manrope',
                           fontSize: 11,

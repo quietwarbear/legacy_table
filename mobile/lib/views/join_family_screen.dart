@@ -6,6 +6,7 @@ import '../services/api_service.dart';
 import '../services/session_manager.dart';
 import '../models/family.dart';
 import '../widgets/styled_snackbar.dart';
+import '../l10n/app_localizations.dart';
 
 class JoinFamilyScreen extends StatefulWidget {
   final String? prefilledCode;
@@ -36,6 +37,7 @@ class _JoinFamilyScreenState extends State<JoinFamilyScreen> {
   }
 
   Future<void> _handleJoinFamily() async {
+    final l10n = AppLocalizations.of(context);
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
@@ -50,7 +52,7 @@ class _JoinFamilyScreenState extends State<JoinFamilyScreen> {
           .replaceAll(RegExp(r'[^A-Z0-9]'), '');
 
       if (inviteCode.length != 8) {
-        throw Exception('Invite code must be 8 characters');
+        throw Exception(l10n.joinFamilyCodeLengthError);
       }
 
       final response = await apiService.families.joinFamily(
@@ -61,18 +63,18 @@ class _JoinFamilyScreenState extends State<JoinFamilyScreen> {
       await sessionManager.refreshUser();
 
       if (mounted) {
-        StyledSnackBar.showSuccess(context, 'Successfully joined ${response.family.name}!');
+        StyledSnackBar.showSuccess(context, l10n.joinFamilySuccess(response.family.name));
         Navigator.of(context).pop(true); // Return true to indicate success
       }
     } catch (e) {
       if (mounted) {
-        String errorMessage = 'Failed to join family';
+        String errorMessage = l10n.joinFamilyGenericError;
         if (e.toString().contains('Exception:')) {
           errorMessage = e.toString().replaceFirst('Exception: ', '');
         } else if (e.toString().contains('404')) {
-          errorMessage = 'Invalid invite code. Please check and try again.';
+          errorMessage = l10n.joinFamilyInvalidCodeError;
         } else if (e.toString().contains('409')) {
-          errorMessage = 'You are already part of a family.';
+          errorMessage = l10n.joinFamilyAlreadyMemberError;
         } else {
           errorMessage = e.toString();
         }
@@ -89,6 +91,7 @@ class _JoinFamilyScreenState extends State<JoinFamilyScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
 
@@ -96,7 +99,7 @@ class _JoinFamilyScreenState extends State<JoinFamilyScreen> {
       backgroundColor: isDark ? DarkColors.background : LightColors.background,
       appBar: AppBar(
         title: Text(
-          'Join Family',
+          l10n.joinFamilyAppBarTitle,
           style: TextStyle(
             fontFamily: 'Playfair Display',
             fontSize: 24,
@@ -142,7 +145,7 @@ class _JoinFamilyScreenState extends State<JoinFamilyScreen> {
 
                   // Title
                   Text(
-                    'Join a Family',
+                    l10n.joinFamilyHeading,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontFamily: 'Playfair Display',
@@ -155,7 +158,7 @@ class _JoinFamilyScreenState extends State<JoinFamilyScreen> {
 
                   // Subtitle
                   Text(
-                    'Enter the 8-character invite code from your family keeper',
+                    l10n.joinFamilySubtitle,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontFamily: 'Manrope',
@@ -167,7 +170,7 @@ class _JoinFamilyScreenState extends State<JoinFamilyScreen> {
 
                   // Invite Code Field
                   Text(
-                    'INVITE CODE',
+                    l10n.joinFamilyInviteCodeLabel,
                     style: TextStyle(
                       fontFamily: 'Manrope',
                       fontSize: 12,
@@ -228,11 +231,11 @@ class _JoinFamilyScreenState extends State<JoinFamilyScreen> {
                     onFieldSubmitted: (_) => _handleJoinFamily(),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
-                        return 'Please enter an invite code';
+                        return l10n.joinFamilyEmptyCodeError;
                       }
                       final cleaned = value.trim().toUpperCase().replaceAll(RegExp(r'[^A-Z0-9]'), '');
                       if (cleaned.length != 8) {
-                        return 'Invite code must be 8 characters';
+                        return l10n.joinFamilyCodeLengthError;
                       }
                       return null;
                     },
@@ -261,7 +264,7 @@ class _JoinFamilyScreenState extends State<JoinFamilyScreen> {
                             ),
                           )
                         : Text(
-                            'Join Family',
+                            l10n.joinFamilyButton,
                             style: TextStyle(
                               fontFamily: 'Manrope',
                               fontSize: 16,
@@ -274,7 +277,7 @@ class _JoinFamilyScreenState extends State<JoinFamilyScreen> {
 
                   // Info Text
                   Text(
-                    'Ask your family keeper for the invite code',
+                    l10n.joinFamilyInfoText,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontFamily: 'Manrope',

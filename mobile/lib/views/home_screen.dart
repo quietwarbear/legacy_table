@@ -13,6 +13,7 @@ import 'profile_screen.dart';
 import 'settings_screen.dart';
 import 'add_recipe_screen.dart';
 import '../widgets/family_settings_tab.dart';
+import '../l10n/app_localizations.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -74,6 +75,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
     final subscriptionProvider = Provider.of<SubscriptionProvider>(context);
     final isDark = themeProvider.isDarkMode;
@@ -89,9 +91,9 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           IndexedStack(index: _currentIndex, children: _screens),
           if (_currentIndex == 0)
-            Positioned(
+            PositionedDirectional(
               top: MediaQuery.of(context).padding.top + 12,
-              right: 16,
+              end: 16,
               child: _buildSubscriptionBanner(
                 context: context,
                 isDark: isDark,
@@ -121,31 +123,31 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 _buildNavItem(
                   icon: 'assets/icons/Home.svg',
-                  label: 'Home',
+                  label: l10n.homeNavHome,
                   index: 0,
                   isDark: isDark,
                 ),
                 _buildNavItem(
                   icon: 'assets/icons/BookOpen.svg',
-                  label: 'Cookbook',
+                  label: l10n.homeNavCookbook,
                   index: 1,
                   isDark: isDark,
                 ),
                 _buildNavItem(
                   icon: 'assets/icons/User.svg',
-                  label: 'My Recipes',
+                  label: l10n.homeNavMyRecipes,
                   index: 2,
                   isDark: isDark,
                 ),
                 _buildNavItem(
                   icon: 'assets/icons/Users.svg',
-                  label: 'Family',
+                  label: l10n.homeNavFamily,
                   index: 3,
                   isDark: isDark,
                 ),
                 _buildNavItem(
                   icon: 'assets/icons/Settings.svg',
-                  label: 'Settings',
+                  label: l10n.homeNavSettings,
                   index: 4,
                   isDark: isDark,
                 ),
@@ -168,9 +170,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         ? DarkColors.background
                         : LightColors.textPrimary,
                     icon: const Icon(Icons.workspace_premium_outlined),
-                    label: const Text(
-                      'Upgrade',
-                      style: TextStyle(
+                    label: Text(
+                      l10n.homeUpgradeFab,
+                      style: const TextStyle(
                         fontFamily: 'Manrope',
                         fontWeight: FontWeight.w700,
                       ),
@@ -221,9 +223,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   backgroundColor: brandPrimary,
                   foregroundColor: Colors.white,
                   icon: const Icon(Icons.add),
-                  label: const Text(
-                    'Share a Recipe',
-                    style: TextStyle(
+                  label: Text(
+                    l10n.homeShareRecipeFab,
+                    style: const TextStyle(
                       fontFamily: 'Manrope',
                       fontWeight: FontWeight.w600,
                     ),
@@ -248,15 +250,16 @@ class _HomeScreenState extends State<HomeScreen> {
     required bool isDark,
     required SubscriptionProvider subscriptionProvider,
   }) {
+    final l10n = AppLocalizations.of(context);
     final isSubscribed = subscriptionProvider.hasAnySubscription;
     final title = switch (subscriptionProvider.tier) {
-      SubscriptionTier.legacy => 'Legacy Collection',
-      SubscriptionTier.heritage => 'Heritage Keeper',
-      SubscriptionTier.none => 'Upgrade',
+      SubscriptionTier.legacy => l10n.homeTierLegacyCollection,
+      SubscriptionTier.heritage => l10n.homeTierHeritageKeeper,
+      SubscriptionTier.none => l10n.homeUpgradeFab,
     };
     final subtitle = isSubscribed
-        ? 'Premium plan active'
-        : 'Unlock premium family features';
+        ? l10n.homeSubscriptionActive
+        : l10n.homeSubscriptionUnlock;
 
     return Material(
       color: Colors.transparent,

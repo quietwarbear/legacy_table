@@ -9,6 +9,7 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import '../config/api_config.dart';
 import '../config/app_config.dart';
 import '../config/app_theme.dart';
+import '../l10n/app_localizations.dart';
 import '../main.dart' show facebookAppEvents;
 import '../providers/theme_provider.dart';
 import '../services/session_manager.dart';
@@ -333,6 +334,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
 
@@ -402,7 +404,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       // Subtitle
                       Text(
-                        'Share your culinary heritage',
+                        l10n.loginSubtitle,
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontFamily: 'Manrope',
@@ -416,7 +418,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       // Email Field
                       Text(
-                        'EMAIL',
+                        l10n.loginEmailLabel,
                         style: TextStyle(
                           fontFamily: 'Manrope',
                           fontSize: 12,
@@ -440,7 +442,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               : LightColors.textPrimary,
                         ),
                         decoration: InputDecoration(
-                          hintText: 'Enter your email',
+                          hintText: l10n.loginEmailHint,
                           hintStyle: TextStyle(
                             color: isDark
                                 ? DarkColors.textMuted
@@ -482,10 +484,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
-                            return 'Please enter your email';
+                            return l10n.loginEmailRequired;
                           }
                           if (!value.contains('@')) {
-                            return 'Please enter a valid email';
+                            return l10n.loginEmailInvalid;
                           }
                           return null;
                         },
@@ -494,7 +496,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       // Password Field
                       Text(
-                        'PASSWORD',
+                        l10n.loginPasswordLabel,
                         style: TextStyle(
                           fontFamily: 'Manrope',
                           fontSize: 12,
@@ -519,7 +521,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               : LightColors.textPrimary,
                         ),
                         decoration: InputDecoration(
-                          hintText: 'Enter your password',
+                          hintText: l10n.loginPasswordHint,
                           hintStyle: TextStyle(
                             color: isDark
                                 ? DarkColors.textMuted
@@ -582,10 +584,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Please enter your password';
+                            return l10n.loginPasswordRequired;
                           }
                           if (value.length < 6) {
-                            return 'Password must be at least 6 characters';
+                            return l10n.loginPasswordTooShort;
                           }
                           return null;
                         },
@@ -616,7 +618,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               )
                             : Text(
-                                'Sign In',
+                                l10n.loginSignInButton,
                                 style: TextStyle(
                                   fontFamily: 'Manrope',
                                   fontSize: 16,
@@ -640,7 +642,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Text(
-                              'or',
+                              l10n.loginOrDivider,
                               style: TextStyle(
                                 fontFamily: 'Manrope',
                                 fontSize: 14,
@@ -713,7 +715,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                   const SizedBox(width: 10),
                                   Text(
-                                    'Continue with Google',
+                                    l10n.loginContinueWithGoogle,
                                     style: TextStyle(
                                       fontFamily: 'Manrope',
                                       fontSize: 16,
@@ -768,7 +770,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                   const SizedBox(width: 10),
                                   Text(
-                                    'Continue with Apple',
+                                    l10n.loginContinueWithApple,
                                     style: TextStyle(
                                       fontFamily: 'Manrope',
                                       fontSize: 16,
@@ -827,8 +829,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                   ),
                                   const SizedBox(width: 10),
-                                  const Text(
-                                    'Continue with Facebook',
+                                  Text(
+                                    l10n.loginContinueWithFacebook,
                                     style: TextStyle(
                                       fontFamily: 'Manrope',
                                       fontSize: 16,
@@ -846,7 +848,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            'New to the family? ',
+                            l10n.loginNewToFamily,
                             style: TextStyle(
                               fontFamily: 'Manrope',
                               fontSize: 14,
@@ -864,7 +866,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               );
                             },
                             child: Text(
-                              'Create account',
+                              l10n.loginCreateAccount,
                               style: TextStyle(
                                 fontFamily: 'Manrope',
                                 fontSize: 14,

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart' hide Category;
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/theme_provider.dart';
 import '../providers/subscription_provider.dart';
 import '../config/app_theme.dart';
@@ -138,9 +139,10 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
         _isLoading = false;
       });
       if (mounted) {
+        final l10n = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to load recipes: ${e.toString()}'),
+            content: Text(l10n.recipeFeedLoadError(e.toString())),
             backgroundColor: Colors.red,
           ),
         );
@@ -190,6 +192,7 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
 
@@ -270,8 +273,8 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                                     size: 28,
                                   ),
                                   if (_unreadNotificationCount > 0)
-                                    Positioned(
-                                      right: 0,
+                                    PositionedDirectional(
+                                      end: 0,
                                       top: 0,
                                       child: Container(
                                         padding: const EdgeInsets.all(4),
@@ -303,7 +306,7 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                                     ),
                                 ],
                               ),
-                              tooltip: 'Notifications',
+                              tooltip: l10n.recipeFeedNotificationsTooltip,
                             ),
                           ],
                         ),
@@ -329,7 +332,7 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                           ),
                         ),
                         Text(
-                          'Family Recipes',
+                          l10n.recipeFeedSubheading,
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontFamily: 'Playfair Display',
@@ -341,7 +344,7 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                         const SizedBox(height: 8),
                         // Subtitle
                         Text(
-                          'Preserve and share our family\'s culinary traditions with love',
+                          l10n.recipeFeedTagline,
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontFamily: 'Manrope',
@@ -365,9 +368,9 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                                   );
                                 },
                                 icon: const Icon(Icons.add, size: 20),
-                                label: const Text(
-                                  'Share a Recipe',
-                                  style: TextStyle(
+                                label: Text(
+                                  l10n.recipeFeedShareRecipe,
+                                  style: const TextStyle(
                                     fontFamily: 'Manrope',
                                     fontWeight: FontWeight.w600,
                                     fontSize: 15,
@@ -406,7 +409,7 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                                   colorFilter: ColorFilter.mode(brandPrimary, BlendMode.srcIn),
                                 ),
                                 label: Text(
-                                  'Family Cookbook',
+                                  l10n.recipeFeedFamilyCookbook,
                                   style: TextStyle(
                                     fontFamily: 'Manrope',
                                     fontWeight: FontWeight.w600,
@@ -434,7 +437,7 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                           children: [
                             _buildQuickAction(
                               icon: Icons.camera_alt_outlined,
-                              label: 'Scan a Recipe',
+                              label: l10n.recipeFeedScanRecipe,
                               color: brandPrimary,
                               isDark: isDark,
                               onTap: () {
@@ -447,20 +450,20 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                             ),
                             _buildQuickAction(
                               icon: Icons.mic_outlined,
-                              label: 'Voice a Recipe',
+                              label: l10n.recipeFeedVoiceRecipe,
                               color: const Color(0xFFD97706),
                               isDark: isDark,
                               onTap: () {
                                 Navigator.of(context).push(
                                   MaterialPageRoute(
-                                    builder: (_) => const Scaffold(body: Center(child: Text("Coming soon"))),
+                                    builder: (_) => Scaffold(body: Center(child: Text(l10n.recipeFeedComingSoon))),
                                   ),
                                 );
                               },
                             ),
                             _buildQuickAction(
                               icon: Icons.link,
-                              label: 'Save from Link',
+                              label: l10n.recipeFeedSaveFromLink,
                               color: const Color(0xFFDB2777),
                               isDark: isDark,
                               onTap: () {
@@ -581,6 +584,7 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
   }
 
   Widget _buildSearchBar(bool isDark) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       decoration: BoxDecoration(
         color: isDark ? DarkColors.surface : LightColors.surface,
@@ -606,7 +610,7 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
           fontSize: 15,
         ),
         decoration: InputDecoration(
-          hintText: 'Search recipes, ingredients, or categories...',
+          hintText: l10n.recipeFeedSearchHint,
           hintStyle: TextStyle(
             color: isDark ? DarkColors.textMuted : LightColors.textMuted,
             fontFamily: 'Manrope',
@@ -626,7 +630,7 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
           ),
           suffixIcon: _searchQuery.isNotEmpty
               ? Padding(
-                  padding: const EdgeInsets.only(right: 4),
+                  padding: const EdgeInsetsDirectional.only(end: 4),
                   child: IconButton(
                     icon: Icon(
                       Icons.clear,
@@ -664,6 +668,7 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
   }
 
   Widget _buildCategoryFilter(bool isDark) {
+    final l10n = AppLocalizations.of(context);
     if (_isLoadingCategories) {
       return const SizedBox(
         height: 40,
@@ -684,7 +689,7 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
         children: [
           // "All" button
           _buildCategoryButton(
-            label: 'All',
+            label: l10n.recipeFeedCategoryAll,
             isSelected: _selectedCategory == null,
             isDark: isDark,
             onTap: () => _onCategorySelected(null),
@@ -693,7 +698,7 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
           // Category buttons
           ..._categories.map((category) {
             return Padding(
-              padding: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsetsDirectional.only(end: 8),
               child: _buildCategoryButton(
                 label: category.name,
                 isSelected: _selectedCategory == category.name,
@@ -796,6 +801,7 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
   }
 
   Widget _buildEmptyState(bool isDark) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.all(32),
       child: Column(
@@ -815,7 +821,9 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
           ),
           const SizedBox(height: 24),
           Text(
-            _searchQuery.isNotEmpty ? 'No recipes found' : 'No recipes yet',
+            _searchQuery.isNotEmpty
+                ? l10n.recipeFeedEmptyNoResultsTitle
+                : l10n.recipeFeedEmptyNoRecipesTitle,
             style: TextStyle(
               fontFamily: 'Playfair Display',
               fontSize: 28,
@@ -826,8 +834,8 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
           const SizedBox(height: 12),
           Text(
             _searchQuery.isNotEmpty
-                ? 'Try adjusting your search or browse all recipes'
-                : 'Share your first family recipe and start building your collection!',
+                ? l10n.recipeFeedEmptyNoResultsBody
+                : l10n.recipeFeedEmptyNoRecipesBody,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontFamily: 'Manrope',
@@ -852,7 +860,7 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                 ),
               ),
               child: Text(
-                'Clear Search',
+                l10n.recipeFeedClearSearch,
                 style: TextStyle(
                   fontFamily: 'Manrope',
                   fontSize: 15,
@@ -867,11 +875,12 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
   }
 
   Widget _buildSmartToolsSection(bool isDark) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Smart Recipe Tools',
+          l10n.recipeFeedSmartToolsTitle,
           style: TextStyle(
             fontFamily: 'Playfair Display',
             fontSize: 24,
@@ -881,7 +890,7 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          'Bring recipes in the same way the web app does: scan a card or turn a video link into a draft.',
+          l10n.recipeFeedSmartToolsSubtitle,
           style: TextStyle(
             fontFamily: 'Manrope',
             fontSize: 14,
@@ -898,9 +907,8 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
             scrollDirection: Axis.horizontal,
             children: [
               _FeatureCard(
-                title: 'Scan Recipe',
-                description:
-                    'Use a photo of a handwritten card or cookbook page.',
+                title: l10n.recipeFeedFeatureScanTitle,
+                description: l10n.recipeFeedFeatureScanDescription,
                 icon: Icons.document_scanner_outlined,
                 accent: brandPrimary,
                 onTap: () {
@@ -911,9 +919,8 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
               ),
               const SizedBox(width: 14),
               _FeatureCard(
-                title: 'Save From Link',
-                description:
-                    'Turn a TikTok, Instagram, or YouTube link into a draft.',
+                title: l10n.recipeFeedFeatureLinkTitle,
+                description: l10n.recipeFeedFeatureLinkDescription,
                 icon: Icons.link_outlined,
                 accent: brandSecondary,
                 onTap: () {
@@ -932,6 +939,7 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
   }
 
   Widget _buildHolidaySection(bool isDark) {
+    final l10n = AppLocalizations.of(context);
     if (_isLoadingHolidays) {
       return Container(
         padding: const EdgeInsets.all(20),
@@ -979,7 +987,7 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Celebration Headquarters',
+                      l10n.recipeFeedCelebrationHeadquarters,
                       style: TextStyle(
                         fontFamily: 'Playfair Display',
                         fontSize: 22,
@@ -991,7 +999,10 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${_capitalize(summary.season)} season • ${summary.seasonTheme}',
+                      l10n.recipeFeedSeasonTheme(
+                        _capitalize(summary.season),
+                        summary.seasonTheme,
+                      ),
                       style: TextStyle(
                         fontFamily: 'Manrope',
                         fontSize: 13,
@@ -1050,7 +1061,7 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              '${holiday.daysAway ?? 0} days away',
+                              l10n.recipeFeedDaysAway(holiday.daysAway ?? 0),
                               style: TextStyle(
                                 fontFamily: 'Manrope',
                                 fontSize: 13,
@@ -1074,7 +1085,7 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: Text(
-                          count == 1 ? '1 recipe' : '$count recipes',
+                          l10n.recipeFeedRecipeCount(count),
                           style: TextStyle(
                             fontFamily: 'Manrope',
                             fontSize: 12,

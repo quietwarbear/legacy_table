@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../config/app_theme.dart';
+import '../l10n/app_localizations.dart';
 import '../models/comment.dart';
 import '../models/recipe.dart';
 import '../services/api_service.dart';
@@ -67,7 +68,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       if (mounted) {
         StyledSnackBar.showError(
           context,
-          'Failed to load recipe. Please try again.',
+          AppLocalizations.of(context).recipeDetailLoadRecipeError,
         );
       }
     }
@@ -106,7 +107,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       if (mounted) {
         StyledSnackBar.showError(
           context,
-          'Failed to load comments. Please try again.',
+          AppLocalizations.of(context).recipeDetailLoadCommentsError,
         );
       }
     }
@@ -120,8 +121,10 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     if (!sessionManager.isLoggedIn) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please log in to post a comment'),
+          SnackBar(
+            content: Text(
+              AppLocalizations.of(context).recipeDetailLoginToComment,
+            ),
             backgroundColor: Colors.orange,
           ),
         );
@@ -156,7 +159,10 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
 
       // Show success message
       if (mounted) {
-        StyledSnackBar.showSuccess(context, 'Comment posted successfully!');
+        StyledSnackBar.showSuccess(
+          context,
+          AppLocalizations.of(context).recipeDetailCommentPosted,
+        );
       }
 
       // Scroll to show the new comment
@@ -176,11 +182,12 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         _isSubmittingComment = false;
       });
       if (mounted) {
-        String errorMessage = 'Failed to post comment';
+        final l10n = AppLocalizations.of(context);
+        String errorMessage = l10n.recipeDetailPostCommentError;
         if (e.toString().contains('Exception:')) {
           errorMessage = e.toString().replaceFirst('Exception: ', '');
         } else {
-          errorMessage = 'Failed to post comment: ${e.toString()}';
+          errorMessage = l10n.recipeDetailPostCommentErrorDetail(e.toString());
         }
         StyledSnackBar.showError(context, errorMessage);
       }
@@ -194,20 +201,21 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     }
 
     // Show confirmation dialog
+    final l10n = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Comment'),
-        content: const Text('Are you sure you want to delete this comment?'),
+        title: Text(l10n.recipeDetailDeleteCommentTitle),
+        content: Text(l10n.recipeDetailDeleteCommentConfirm),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(l10n.recipeDetailCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
+            child: Text(l10n.recipeDetailDelete),
           ),
         ],
       ),
@@ -228,18 +236,24 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       });
 
       if (mounted) {
-        StyledSnackBar.showSuccess(context, 'Comment deleted successfully');
+        StyledSnackBar.showSuccess(
+          context,
+          AppLocalizations.of(context).recipeDetailCommentDeleted,
+        );
       }
     } catch (e) {
       if (kDebugMode) {
         print('Error deleting comment: $e');
       }
       if (mounted) {
-        String errorMessage = 'Failed to delete comment';
+        final l10n = AppLocalizations.of(context);
+        String errorMessage = l10n.recipeDetailDeleteCommentError;
         if (e.toString().contains('Exception:')) {
           errorMessage = e.toString().replaceFirst('Exception: ', '');
         } else {
-          errorMessage = 'Failed to delete comment: ${e.toString()}';
+          errorMessage = l10n.recipeDetailDeleteCommentErrorDetail(
+            e.toString(),
+          );
         }
         StyledSnackBar.showError(context, errorMessage);
       }
@@ -259,7 +273,10 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       setState(() {
         _recipe = result;
       });
-      StyledSnackBar.showSuccess(context, 'Recipe updated successfully!');
+      StyledSnackBar.showSuccess(
+        context,
+        AppLocalizations.of(context).recipeDetailRecipeUpdated,
+      );
     }
   }
 
@@ -267,22 +284,23 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     if (_recipe == null) return;
 
     // Show confirmation dialog
+    final l10n = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Recipe'),
+        title: Text(l10n.recipeDetailDeleteRecipeTitle),
         content: Text(
-          'Are you sure you want to delete "${_recipe!.title}"? This action cannot be undone.',
+          l10n.recipeDetailDeleteRecipeConfirm(_recipe!.title),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
+            child: Text(l10n.recipeDetailCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
+            child: Text(l10n.recipeDetailDelete),
           ),
         ],
       ),
@@ -298,7 +316,10 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       await apiService.recipes.deleteRecipe(_recipe!.id);
 
       if (mounted) {
-        StyledSnackBar.showSuccess(context, 'Recipe deleted successfully');
+        StyledSnackBar.showSuccess(
+          context,
+          AppLocalizations.of(context).recipeDetailRecipeDeleted,
+        );
         // Navigate back to previous screen
         Navigator.of(
           context,
@@ -309,11 +330,14 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         print('Error deleting recipe: $e');
       }
       if (mounted) {
-        String errorMessage = 'Failed to delete recipe';
+        final l10n = AppLocalizations.of(context);
+        String errorMessage = l10n.recipeDetailDeleteRecipeError;
         if (e.toString().contains('Exception:')) {
           errorMessage = e.toString().replaceFirst('Exception: ', '');
         } else {
-          errorMessage = 'Failed to delete recipe: ${e.toString()}';
+          errorMessage = l10n.recipeDetailDeleteRecipeErrorDetail(
+            e.toString(),
+          );
         }
         StyledSnackBar.showError(context, errorMessage);
       }
@@ -335,6 +359,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final textColor = isDark ? DarkColors.textPrimary : LightColors.textPrimary;
@@ -377,7 +402,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               Icon(Icons.error_outline, size: 64, color: secondaryTextColor),
               const SizedBox(height: 16),
               Text(
-                'Recipe not found',
+                l10n.recipeDetailNotFound,
                 style: theme.textTheme.headlineSmall?.copyWith(
                   color: textColor,
                 ),
@@ -463,7 +488,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                         CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        'Shared by',
+                                        l10n.recipeDetailSharedByLabel,
                                         style: theme.textTheme.bodySmall
                                             ?.copyWith(
                                               color: secondaryTextColor,
@@ -471,7 +496,8 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                             ),
                                       ),
                                       Text(
-                                        _recipe!.authorName ?? 'Unknown',
+                                        _recipe!.authorName ??
+                                            l10n.recipeDetailUnknownAuthor,
                                         style: theme.textTheme.bodyMedium
                                             ?.copyWith(
                                               fontFamily: 'Manrope',
@@ -546,7 +572,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                               child: OutlinedButton.icon(
                                 onPressed: _editRecipe,
                                 icon: const Icon(Icons.edit_outlined, size: 18),
-                                label: const Text('Edit'),
+                                label: Text(l10n.recipeDetailEdit),
                                 style: OutlinedButton.styleFrom(
                                   padding: const EdgeInsets.symmetric(
                                     vertical: 12,
@@ -565,7 +591,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                   Icons.delete_outline,
                                   size: 18,
                                 ),
-                                label: const Text('Delete'),
+                                label: Text(l10n.recipeDetailDelete),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.red,
                                   foregroundColor: Colors.white,
@@ -593,8 +619,10 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                         Expanded(
                           child: _StatCard(
                             icon: Icons.access_time_rounded,
-                            label: 'Time',
-                            value: '${_recipe!.cookingTime} min',
+                            label: l10n.recipeDetailStatTime,
+                            value: l10n.recipeDetailStatTimeValue(
+                              _recipe!.cookingTime!,
+                            ),
                             isDark: isDark,
                           ),
                         ),
@@ -605,7 +633,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                         Expanded(
                           child: _StatCard(
                             icon: Icons.people_rounded,
-                            label: 'Serves',
+                            label: l10n.recipeDetailStatServes,
                             value: '${_recipe!.servings}',
                             isDark: isDark,
                           ),
@@ -617,7 +645,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                         Expanded(
                           child: _StatCard(
                             icon: Icons.restaurant_menu_rounded,
-                            label: 'Category',
+                            label: l10n.recipeDetailStatCategory,
                             value: _recipe!.category!,
                             isDark: isDark,
                           ),
@@ -650,7 +678,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                           ),
                           const SizedBox(width: 12),
                           Text(
-                            'Ingredients',
+                            l10n.recipeDetailIngredients,
                             style: theme.textTheme.headlineMedium?.copyWith(
                               fontFamily: 'Playfair Display',
                               fontWeight: FontWeight.bold,
@@ -739,7 +767,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                           ),
                           const SizedBox(width: 12),
                           Text(
-                            'Instructions',
+                            l10n.recipeDetailInstructions,
                             style: theme.textTheme.headlineMedium?.copyWith(
                               fontFamily: 'Playfair Display',
                               fontWeight: FontWeight.bold,
@@ -808,7 +836,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                'The Story Behind This Recipe',
+                                l10n.recipeDetailStoryTitle,
                                 maxLines: 3,
                                 style: theme.textTheme.headlineSmall?.copyWith(
                                   fontFamily: 'Playfair Display',
@@ -839,7 +867,10 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            'Shared by ${_recipe!.authorName ?? 'Unknown'}',
+                            l10n.recipeDetailStorySharedBy(
+                              _recipe!.authorName ??
+                                  l10n.recipeDetailUnknownAuthor,
+                            ),
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: brandPrimary,
                               fontFamily: 'Manrope',
@@ -880,7 +911,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                               children: [
                                 Expanded(
                                   child: Text(
-                                    'Family Comments',
+                                    l10n.recipeDetailFamilyComments,
                                     maxLines: 2,
                                     style: theme.textTheme.headlineMedium
                                         ?.copyWith(
@@ -928,7 +959,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                             onPressed: _isLoadingComments
                                 ? null
                                 : _loadComments,
-                            tooltip: 'Refresh comments',
+                            tooltip: l10n.recipeDetailRefreshComments,
                           ),
                         ],
                       ),
@@ -957,8 +988,8 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                               ),
                               decoration: InputDecoration(
                                 hintText: sessionManager.isLoggedIn
-                                    ? 'Share your thoughts about this recipe...'
-                                    : 'Please log in to post a comment',
+                                    ? l10n.recipeDetailCommentHint
+                                    : l10n.recipeDetailLoginToComment,
                                 hintStyle: TextStyle(
                                   color: secondaryTextColor,
                                   fontFamily: 'Manrope',
@@ -986,7 +1017,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                           ? null
                                           : () => _commentController.clear(),
                                       child: Text(
-                                        'Clear',
+                                        l10n.recipeDetailClear,
                                         style: TextStyle(
                                           color: secondaryTextColor,
                                           fontFamily: 'Manrope',
@@ -1022,8 +1053,8 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                           ),
                                     label: Text(
                                       _isSubmittingComment
-                                          ? 'Posting...'
-                                          : 'Post',
+                                          ? l10n.recipeDetailPosting
+                                          : l10n.recipeDetailPost,
                                     ),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: brandPrimary,
@@ -1077,7 +1108,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                 ),
                                 const SizedBox(height: 16),
                                 Text(
-                                  'No comments yet',
+                                  l10n.recipeDetailNoComments,
                                   style: theme.textTheme.bodyLarge?.copyWith(
                                     fontFamily: 'Manrope',
                                     fontWeight: FontWeight.w600,
@@ -1085,7 +1116,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  'Be the first to share your thoughts!',
+                                  l10n.recipeDetailBeFirstToComment,
                                   style: theme.textTheme.bodyMedium?.copyWith(
                                     color: secondaryTextColor,
                                     fontFamily: 'Manrope',
@@ -1189,11 +1220,11 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
             ),
             // Page indicators (only show if multiple images)
             if (hasMultipleImages)
-              Positioned(
+              PositionedDirectional(
                 bottom: 16,
 
-                left: 0,
-                right: 0,
+                start: 0,
+                end: 0,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -1268,7 +1299,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'No image available',
+              AppLocalizations.of(context).recipeDetailNoImage,
               style: TextStyle(
                 color: isDark ? DarkColors.textMuted : LightColors.textMuted,
                 fontFamily: 'Manrope',
@@ -1379,6 +1410,7 @@ class _CommentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
@@ -1421,7 +1453,7 @@ class _CommentCard extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            comment.authorName ?? 'Unknown',
+                            comment.authorName ?? l10n.recipeDetailUnknownAuthor,
                             style: theme.textTheme.bodyLarge?.copyWith(
                               fontFamily: 'Manrope',
                               fontWeight: FontWeight.w600,
@@ -1438,7 +1470,7 @@ class _CommentCard extends StatelessWidget {
                             onPressed: onDelete,
                             padding: EdgeInsets.zero,
                             constraints: const BoxConstraints(),
-                            tooltip: 'Delete comment',
+                            tooltip: l10n.recipeDetailDeleteCommentTooltip,
                           ),
                       ],
                     ),
@@ -1605,10 +1637,10 @@ class _FullScreenGalleryViewState extends State<FullScreenGalleryView> {
           ),
           // Page indicators at the bottom
           if (widget.photos.length > 1)
-            Positioned(
+            PositionedDirectional(
               bottom: 32,
-              left: 0,
-              right: 0,
+              start: 0,
+              end: 0,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(

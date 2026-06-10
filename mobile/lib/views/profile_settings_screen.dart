@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../config/app_theme.dart';
+import '../l10n/app_localizations.dart';
 import '../services/session_manager.dart';
 import '../services/api_service.dart';
 import '../models/user.dart';
@@ -92,8 +93,9 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       // Ensure we're logged in
       if (!sessionManager.isLoggedIn) {
         if (mounted) {
+          final l10n = AppLocalizations.of(context);
           Navigator.of(context).pop();
-          StyledSnackBar.showWarning(context, 'Please log in to access profile settings');
+          StyledSnackBar.showWarning(context, l10n.profileSettingsLoginRequired);
         }
         return;
       }
@@ -131,7 +133,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
         _isLoading = false;
       });
       if (mounted) {
-        StyledSnackBar.showError(context, 'Failed to load user data. Please try again.');
+        StyledSnackBar.showError(context, AppLocalizations.of(context).profileSettingsLoadFailed);
       }
     }
   }
@@ -139,24 +141,25 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   Future<void> _pickImage() async {
     if (!mounted) return;
 
+    final l10n = AppLocalizations.of(context);
     final ImagePicker picker = ImagePicker();
-    
+
     // Show options dialog
     final source = await showDialog<ImageSource>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Select Photo Source'),
+        title: Text(l10n.profileSettingsPhotoSourceTitle),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
               leading: const Icon(Icons.camera_alt),
-              title: const Text('Camera'),
+              title: Text(l10n.profileSettingsCamera),
               onTap: () => Navigator.pop(context, ImageSource.camera),
             ),
             ListTile(
               leading: const Icon(Icons.photo_library),
-              title: const Text('Gallery'),
+              title: Text(l10n.profileSettingsGallery),
               onTap: () => Navigator.pop(context, ImageSource.gallery),
             ),
           ],
@@ -164,7 +167,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(l10n.profileSettingsCancel),
           ),
         ],
       ),
@@ -177,7 +180,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
         final ok = await _requestCameraPermission();
         if (!ok) {
           if (mounted) {
-            StyledSnackBar.showWarning(context, 'Camera permission is required to take a photo');
+            StyledSnackBar.showWarning(context, l10n.profileSettingsCameraPermissionRequired);
           }
           return;
         }
@@ -217,7 +220,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       }
     } catch (e) {
       if (mounted) {
-        StyledSnackBar.showError(context, 'Failed to pick image. Please try again.');
+        StyledSnackBar.showError(context, l10n.profileSettingsPickImageFailed);
       }
     }
   }
@@ -250,14 +253,14 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       });
 
       if (mounted) {
-        StyledSnackBar.showSuccess(context, 'Profile updated successfully');
+        StyledSnackBar.showSuccess(context, AppLocalizations.of(context).profileSettingsUpdateSuccess);
       }
     } catch (e) {
       setState(() {
         _isSaving = false;
       });
       if (mounted) {
-        String errorMessage = 'Failed to update profile';
+        String errorMessage = AppLocalizations.of(context).profileSettingsUpdateFailed;
         if (e.toString().contains('Exception:')) {
           errorMessage = e.toString().replaceFirst('Exception: ', '');
         }
@@ -308,9 +311,9 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
             radius: 60,
             backgroundImage: MemoryImage(_selectedAvatarBytes!),
           ),
-          Positioned(
+          PositionedDirectional(
             bottom: 0,
-            right: 0,
+            end: 0,
             child: GestureDetector(
               onTap: _pickImage,
               child: Container(
@@ -348,9 +351,9 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
               radius: 60,
               backgroundImage: MemoryImage(imageBytes),
             ),
-            Positioned(
+            PositionedDirectional(
               bottom: 0,
-              right: 0,
+              end: 0,
               child: GestureDetector(
                 onTap: _pickImage,
                 child: Container(
@@ -394,9 +397,9 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
             ),
           ),
         ),
-        Positioned(
+        PositionedDirectional(
           bottom: 0,
-          right: 0,
+          end: 0,
           child: GestureDetector(
             onTap: _pickImage,
             child: Container(
@@ -424,6 +427,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final textColor = isDark ? DarkColors.textPrimary : LightColors.textPrimary;
@@ -466,7 +470,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                 children: [
                   // Header
                   Text(
-                    'Profile Settings',
+                    l10n.profileSettingsTitle,
                     style: theme.textTheme.headlineLarge?.copyWith(
                       fontFamily: 'Playfair Display',
                       fontWeight: FontWeight.bold,
@@ -474,7 +478,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Customize how you appear to the family',
+                    l10n.profileSettingsSubtitle,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: secondaryTextColor,
                     ),
@@ -495,7 +499,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Profile Picture',
+                            l10n.profileSettingsProfilePicture,
                             style: theme.textTheme.headlineSmall?.copyWith(
                               fontFamily: 'Playfair Display',
                               fontWeight: FontWeight.bold,
@@ -508,7 +512,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                               const SizedBox(width: 20),
                               Expanded(
                                 child: Text(
-                                  'Upload a photo to personalize your profile',
+                                  l10n.profileSettingsUploadPhotoHint,
                                   style: theme.textTheme.bodyMedium?.copyWith(
                                     color: secondaryTextColor,
                                   ),
@@ -536,7 +540,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Display Name',
+                            l10n.profileSettingsDisplayName,
                             style: theme.textTheme.headlineSmall?.copyWith(
                               fontFamily: 'Playfair Display',
                               fontWeight: FontWeight.bold,
@@ -548,7 +552,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Full Name',
+                                l10n.profileSettingsFullName,
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   fontWeight: FontWeight.w600,
                                   color: secondaryTextColor,
@@ -578,7 +582,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Nickname (optional)',
+                                l10n.profileSettingsNicknameLabel,
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   fontWeight: FontWeight.w600,
                                   color: secondaryTextColor,
@@ -589,7 +593,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                                 controller: _nicknameController,
                                 onChanged: (_) => setState(() {}), // Trigger rebuild to update save button
                                 decoration: InputDecoration(
-                                  hintText: 'Enter a nickname...',
+                                  hintText: l10n.profileSettingsNicknameHint,
                                   hintStyle: TextStyle(
                                     color: secondaryTextColor,
                                   ),
@@ -613,7 +617,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                'Your nickname will be shown instead of your full name on recipes and comments.',
+                                l10n.profileSettingsNicknameHelper,
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color: secondaryTextColor,
                                 ),
@@ -640,7 +644,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Account Information',
+                            l10n.profileSettingsAccountInformation,
                             style: theme.textTheme.headlineSmall?.copyWith(
                               fontFamily: 'Playfair Display',
                               fontWeight: FontWeight.bold,
@@ -652,7 +656,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Email',
+                                l10n.profileSettingsEmail,
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   fontWeight: FontWeight.w600,
                                   color: secondaryTextColor,
@@ -682,7 +686,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Member Since',
+                                l10n.profileSettingsMemberSince,
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   fontWeight: FontWeight.w600,
                                   color: secondaryTextColor,
@@ -738,7 +742,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                         ),
                       ),
                       child: Text(
-                        'Cancel',
+                        l10n.profileSettingsCancel,
                         style: theme.textTheme.bodyLarge?.copyWith(
                           color: textColor,
                           fontWeight: FontWeight.w600,
@@ -774,7 +778,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                               ),
                             )
                           : Text(
-                              'Save Changes',
+                              l10n.profileSettingsSaveButton,
                               style: theme.textTheme.bodyLarge?.copyWith(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w600,

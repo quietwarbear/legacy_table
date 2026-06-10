@@ -7,7 +7,10 @@ import 'package:provider/provider.dart';
 import 'config/api_config.dart';
 import 'config/app_config.dart';
 import 'config/app_theme.dart';
+import 'l10n/app_localizations.dart';
+import 'l10n/localization_delegates.dart';
 import 'providers/theme_provider.dart';
+import 'providers/locale_provider.dart';
 import 'providers/subscription_provider.dart';
 import 'services/subscription_service.dart';
 import 'views/splash_screen.dart';
@@ -139,17 +142,21 @@ class _MyAppState extends State<MyApp> {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => LocaleProvider()),
         ChangeNotifierProvider(create: (_) => SubscriptionProvider()),
       ],
-      child: Consumer<ThemeProvider>(
-        builder: (context, themeProvider, child) {
-          if (!themeProvider.isInitialized) {
+      child: Consumer2<ThemeProvider, LocaleProvider>(
+        builder: (context, themeProvider, localeProvider, child) {
+          if (!themeProvider.isInitialized || !localeProvider.isInitialized) {
             return MaterialApp(
               navigatorKey: MyApp.navigatorKey,
               debugShowCheckedModeBanner: false,
               title: 'Legacy Table',
               theme: AppTheme.lightTheme,
               darkTheme: AppTheme.darkTheme,
+              locale: localeProvider.locale,
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              supportedLocales: AppLocalizations.supportedLocales,
               home: const Scaffold(
                 body: Center(child: CircularProgressIndicator()),
               ),
@@ -163,6 +170,9 @@ class _MyAppState extends State<MyApp> {
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: themeProvider.themeMode,
+            locale: localeProvider.locale,
+            localizationsDelegates: appLocalizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
             home: _pendingInviteCode != null
                 ? Builder(builder: (ctx) {
                     final code = _pendingInviteCode!;

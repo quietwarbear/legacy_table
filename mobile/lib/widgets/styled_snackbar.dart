@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../config/app_theme.dart';
+import '../l10n/app_localizations.dart';
 
 class StyledSnackBar {
   static void showSuccess(
@@ -48,6 +49,7 @@ class StyledSnackBar {
     Duration duration = const Duration(seconds: 4),
     VoidCallback? onDismiss,
   }) {
+    final l10n = AppLocalizations.of(context);
     final messenger = ScaffoldMessenger.of(context);
     messenger.showSnackBar(
       SnackBar(
@@ -81,7 +83,7 @@ class StyledSnackBar {
         elevation: 4,
         duration: duration,
         action: SnackBarAction(
-          label: 'Dismiss',
+          label: l10n.styledSnackbarDismiss,
           textColor: Colors.white,
           onPressed: () {
             messenger.hideCurrentSnackBar();

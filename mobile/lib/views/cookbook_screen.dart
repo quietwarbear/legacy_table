@@ -11,6 +11,7 @@ import '../widgets/cookbook_recipe_card_shimmer.dart';
 import '../services/api_service.dart';
 import '../services/pdf_service.dart';
 import '../widgets/styled_snackbar.dart';
+import '../l10n/app_localizations.dart';
 
 class CookbookScreen extends StatefulWidget {
   const CookbookScreen({super.key});
@@ -60,7 +61,7 @@ class _CookbookScreenState extends State<CookbookScreen> {
         _isLoading = false;
       });
       if (mounted) {
-        StyledSnackBar.showError(context, 'Failed to load recipes. Please try again.');
+        StyledSnackBar.showError(context, AppLocalizations.of(context).cookbookLoadError);
       }
     }
   }
@@ -89,8 +90,9 @@ class _CookbookScreenState extends State<CookbookScreen> {
   }
 
   Future<void> _exportPDF() async {
+    final l10n = AppLocalizations.of(context);
     if (_selectedRecipeIds.isEmpty) {
-      StyledSnackBar.showWarning(context, 'Please select at least one recipe');
+      StyledSnackBar.showWarning(context, l10n.cookbookSelectAtLeastOne);
       return;
     }
 
@@ -116,7 +118,7 @@ class _CookbookScreenState extends State<CookbookScreen> {
                     const CircularProgressIndicator(),
                     const SizedBox(height: 16),
                     Text(
-                      progressMessage ?? 'Generating PDF...',
+                      progressMessage ?? l10n.cookbookGeneratingPdf,
                       style: const TextStyle(
                         fontFamily: 'Manrope',
                         fontSize: 16,
@@ -155,7 +157,7 @@ class _CookbookScreenState extends State<CookbookScreen> {
       }
 
       if (mounted) {
-        String errorMessage = 'Failed to generate PDF';
+        String errorMessage = l10n.cookbookGeneratePdfError;
         if (e.toString().contains('Exception:')) {
           errorMessage = e.toString().replaceFirst('Exception: ', '');
         }
@@ -165,6 +167,7 @@ class _CookbookScreenState extends State<CookbookScreen> {
   }
 
   Future<void> _showPDFActionDialog(Uint8List pdfBytes, int recipeCount) async {
+    final l10n = AppLocalizations.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     final isDark = themeProvider.isDarkMode;
 
@@ -181,7 +184,7 @@ class _CookbookScreenState extends State<CookbookScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: isDark ? DarkColors.surface : LightColors.surface,
         title: Text(
-          'PDF Generated Successfully!',
+          l10n.cookbookPdfGeneratedTitle,
           style: TextStyle(
             fontFamily: 'Manrope',
             fontSize: 18,
@@ -190,7 +193,7 @@ class _CookbookScreenState extends State<CookbookScreen> {
           ),
         ),
         content: Text(
-          'Your cookbook with $recipeCount recipe${recipeCount == 1 ? '' : 's'} is ready. What would you like to do?',
+          l10n.cookbookPdfReadyMessage(recipeCount),
           style: TextStyle(
             fontFamily: 'Manrope',
             fontSize: 14,
@@ -203,7 +206,7 @@ class _CookbookScreenState extends State<CookbookScreen> {
             onPressed: () => Navigator.pop(context, 'save'),
             icon: Icon(Icons.download, color: brandPrimary),
             label: Text(
-              'Save to Device',
+              l10n.cookbookSaveToDevice,
               style: TextStyle(
                 fontFamily: 'Manrope',
                 color: brandPrimary,
@@ -215,7 +218,7 @@ class _CookbookScreenState extends State<CookbookScreen> {
             onPressed: () => Navigator.pop(context, 'share'),
             icon: Icon(Icons.share, color: brandPrimary),
             label: Text(
-              'Share',
+              l10n.cookbookShare,
               style: TextStyle(
                 fontFamily: 'Manrope',
                 color: brandPrimary,
@@ -227,7 +230,7 @@ class _CookbookScreenState extends State<CookbookScreen> {
             onPressed: () => Navigator.pop(context, 'preview'),
             icon: Icon(Icons.preview, color: brandPrimary),
             label: Text(
-              'Preview/Print',
+              l10n.cookbookPreviewPrint,
               style: TextStyle(
                 fontFamily: 'Manrope',
                 color: brandPrimary,
@@ -238,7 +241,7 @@ class _CookbookScreenState extends State<CookbookScreen> {
           TextButton(
             onPressed: () => Navigator.pop(context, null),
             child: Text(
-              'Cancel',
+              l10n.cookbookCancel,
               style: TextStyle(
                 fontFamily: 'Manrope',
                 color: isDark ? DarkColors.textSecondary : LightColors.textSecondary,
@@ -267,9 +270,9 @@ class _CookbookScreenState extends State<CookbookScreen> {
                     children: [
                       const CircularProgressIndicator(),
                       const SizedBox(height: 16),
-                      const Text(
-                        'Saving PDF...',
-                        style: TextStyle(
+                      Text(
+                        l10n.cookbookSavingPdf,
+                        style: const TextStyle(
                           fontFamily: 'Manrope',
                           fontSize: 16,
                         ),
@@ -291,7 +294,7 @@ class _CookbookScreenState extends State<CookbookScreen> {
           if (mounted) {
             StyledSnackBar.showSuccess(
               context,
-              'PDF saved successfully to Downloads folder!',
+              l10n.cookbookPdfSavedSuccess,
             );
           }
           break;
@@ -301,7 +304,7 @@ class _CookbookScreenState extends State<CookbookScreen> {
           await _pdfService.sharePDF(pdfBytes, fileName);
 
           if (mounted) {
-            StyledSnackBar.showSuccess(context, 'PDF shared successfully!');
+            StyledSnackBar.showSuccess(context, l10n.cookbookPdfSharedSuccess);
           }
           break;
 
@@ -317,7 +320,11 @@ class _CookbookScreenState extends State<CookbookScreen> {
       }
 
       if (mounted) {
-        String errorMessage = 'Failed to ${action == 'save' ? 'save' : action == 'share' ? 'share' : 'preview'} PDF';
+        String errorMessage = action == 'save'
+            ? l10n.cookbookSavePdfError
+            : action == 'share'
+                ? l10n.cookbookSharePdfError
+                : l10n.cookbookPreviewPdfError;
         if (e.toString().contains('Exception:')) {
           errorMessage = e.toString().replaceFirst('Exception: ', '');
         }
@@ -328,6 +335,7 @@ class _CookbookScreenState extends State<CookbookScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
     final selectedCount = _selectedRecipeIds.length;
@@ -340,7 +348,7 @@ class _CookbookScreenState extends State<CookbookScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'Family Cookbook',
+              l10n.cookbookTitle,
               style: TextStyle(
                 fontFamily: 'Playfair Display',
                 fontSize: 24,
@@ -350,7 +358,7 @@ class _CookbookScreenState extends State<CookbookScreen> {
             ),
             const SizedBox(height: 2),
             Text(
-              'Select recipes to create a printable PDF cookbook',
+              l10n.cookbookSubtitle,
               style: TextStyle(
                 fontFamily: 'Manrope',
                 fontSize: 12,
@@ -367,7 +375,7 @@ class _CookbookScreenState extends State<CookbookScreen> {
             TextButton(
               onPressed: _deselectAll,
               child: Text(
-                'Clear',
+                l10n.cookbookClear,
                 style: TextStyle(
                   fontFamily: 'Manrope',
                   fontSize: 14,
@@ -420,7 +428,7 @@ class _CookbookScreenState extends State<CookbookScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              '$selectedCount recipe${selectedCount == 1 ? '' : 's'} selected',
+                              l10n.cookbookRecipesSelected(selectedCount),
                               style: TextStyle(
                                 fontFamily: 'Manrope',
                                 fontSize: 16,
@@ -430,7 +438,7 @@ class _CookbookScreenState extends State<CookbookScreen> {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              'Ready to create your cookbook',
+                              l10n.cookbookReadyToCreate,
                               style: TextStyle(
                                 fontFamily: 'Manrope',
                                 fontSize: 12,
@@ -454,7 +462,7 @@ class _CookbookScreenState extends State<CookbookScreen> {
                         colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
                       ),
                       label: Text(
-                        'Export PDF Cookbook',
+                        l10n.cookbookExportButton,
                         style: TextStyle(
                           fontFamily: 'Manrope',
                           fontSize: 16,
@@ -505,7 +513,7 @@ class _CookbookScreenState extends State<CookbookScreen> {
                             ),
                             const SizedBox(height: 16),
                             Text(
-                              'No recipes yet',
+                              l10n.cookbookNoRecipesTitle,
                               style: TextStyle(
                                 fontFamily: 'Playfair Display',
                                 fontSize: 24,
@@ -515,7 +523,7 @@ class _CookbookScreenState extends State<CookbookScreen> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Add recipes to create your cookbook',
+                              l10n.cookbookNoRecipesSubtitle,
                               style: TextStyle(
                                 fontFamily: 'Manrope',
                                 fontSize: 16,

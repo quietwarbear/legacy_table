@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/theme_provider.dart';
 import '../config/app_theme.dart';
 import '../services/storage_service.dart';
+import '../l10n/app_localizations.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -54,7 +55,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
-    
+    final l10n = AppLocalizations.of(context);
+
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
@@ -135,7 +137,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         //   mainAxisAlignment: MainAxisAlignment.center,
                         //   children: [
                             Text(
-                              _currentPage < _pages.length - 1 ? 'Next' : 'Get Started',
+                              _currentPage < _pages.length - 1 ? l10n.onboardingNextButton : l10n.onboardingGetStartedButton,
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,

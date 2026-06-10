@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../config/app_theme.dart';
+import '../l10n/app_localizations.dart';
 import '../models/recipe.dart';
 import '../widgets/recipe_card.dart';
 import '../widgets/recipe_card_shimmer.dart';
@@ -36,6 +37,7 @@ class _HolidayRecipesScreenState extends State<HolidayRecipesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -63,7 +65,7 @@ class _HolidayRecipesScreenState extends State<HolidayRecipesScreen> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'No recipes tagged for ${widget.holidayName} yet',
+                      l10n.holidayRecipesEmptyTitle(widget.holidayName),
                       textAlign: TextAlign.center,
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontFamily: 'Manrope',
@@ -72,7 +74,7 @@ class _HolidayRecipesScreenState extends State<HolidayRecipesScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Tag a family favorite for this holiday from the web app or upcoming mobile detail enhancements.',
+                      l10n.holidayRecipesEmptyBody,
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: isDark

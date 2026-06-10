@@ -1,0 +1,714 @@
+{
+  "@@locale": "en",
+  "settingsLanguage": "Language",
+  "selectLanguage": "Select Language",
+  "languageEnglish": "English",
+  "languageSpanish": "Español",
+  "settingsTitle": "Settings",
+  "settingsCouldNotOpenDeleteAccount": "Could not open delete account page",
+  "settingsFailedToLoadMembers": "Failed to load family members",
+  "settingsInviteCodeCopied": "Invite code copied!",
+  "settingsShareInviteJoin": "Join my family \"{name}\" on Legacy Table!",
+  "@settingsShareInviteJoin": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsShareInviteCode": "Invite Code: {code}",
+  "@settingsShareInviteCode": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsLeaveFamily": "Leave Family",
+  "settingsLeaveFamilyConfirm": "Are you sure you want to leave \"{name}\"? You will need an invite code to rejoin.",
+  "@settingsLeaveFamilyConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsCancel": "Cancel",
+  "settingsLeave": "Leave",
+  "settingsLeftFamilySuccess": "Successfully left family",
+  "settingsFailedToLeaveFamily": "Failed to leave family",
+  "settingsMustTransferBeforeLeaving": "You must transfer the keeper role before leaving",
+  "settingsTransferKeeperRole": "Transfer Keeper Role",
+  "settingsTransferKeeperPrompt": "As the keeper, you must transfer your role to another member before leaving. Select a member to become the new keeper:",
+  "settingsKeeperTransferredTo": "Keeper role transferred to {name}",
+  "@settingsKeeperTransferredTo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsLeaveFamilyQuestion": "Leave Family?",
+  "settingsTransferSuccessLeavePrompt": "You have successfully transferred the keeper role. Would you like to leave the family now?",
+  "settingsStay": "Stay",
+  "settingsFailedToTransferKeeper": "Failed to transfer keeper role",
+  "settingsRemoveMember": "Remove Member",
+  "settingsRemoveMemberConfirm": "Are you sure you want to remove \"{name}\" from \"{family}\"? They will need an invite code to rejoin.",
+  "@settingsRemoveMemberConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "family": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsRemove": "Remove",
+  "settingsMemberRemoved": "{name} has been removed from the family",
+  "@settingsMemberRemoved": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsFailedToRemoveMember": "Failed to remove member",
+  "settingsManageSubscription": "Manage Subscription",
+  "settingsUpgradeToPremium": "Upgrade to Premium",
+  "settingsLegacyCollectionActive": "Legacy Collection is active",
+  "settingsHeritageKeeperActive": "Heritage Keeper is active",
+  "settingsUnlockPremiumFeatures": "Unlock family plans, exports, and premium features",
+  "settingsKeeperBadge": "Keeper",
+  "settingsMemberBadge": "Member",
+  "settingsInviteCodeLabel": "Invite Code",
+  "settingsShareInviteCodeButton": "Share Invite Code",
+  "settingsFamilyMembers": "Family Members",
+  "settingsNoMembersFound": "No members found",
+  "settingsRemoveMemberTooltip": "Remove member",
+  "settingsTheme": "Theme",
+  "settingsDarkMode": "Dark Mode",
+  "settingsLightMode": "Light Mode",
+  "settingsEditProfile": "Edit Profile",
+  "settingsDeleteAccount": "Delete Account",
+  "settingsNotifications": "Notifications",
+  "settingsTermsOfUse": "Terms of Use",
+  "settingsPrivacyPolicy": "Privacy Policy",
+  "settingsAbout": "About",
+  "settingsAboutVersion": "Legacy Table Family Recipes v2.0.0",
+  "settingsLegalese": "© 2026 Ubuntu Market LLC. All rights reserved.",
+  "settingsLogout": "Logout",
+  "settingsLogoutConfirm": "Are you sure you want to logout?",
+  "recipeDetailLoadRecipeError": "Failed to load recipe. Please try again.",
+  "recipeDetailLoadCommentsError": "Failed to load comments. Please try again.",
+  "recipeDetailLoginToComment": "Please log in to post a comment",
+  "recipeDetailCommentPosted": "Comment posted successfully!",
+  "recipeDetailPostCommentError": "Failed to post comment",
+  "recipeDetailPostCommentErrorDetail": "Failed to post comment: {error}",
+  "@recipeDetailPostCommentErrorDetail": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "recipeDetailDeleteCommentTitle": "Delete Comment",
+  "recipeDetailDeleteCommentConfirm": "Are you sure you want to delete this comment?",
+  "recipeDetailCancel": "Cancel",
+  "recipeDetailDelete": "Delete",
+  "recipeDetailCommentDeleted": "Comment deleted successfully",
+  "recipeDetailDeleteCommentError": "Failed to delete comment",
+  "recipeDetailDeleteCommentErrorDetail": "Failed to delete comment: {error}",
+  "@recipeDetailDeleteCommentErrorDetail": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "recipeDetailRecipeUpdated": "Recipe updated successfully!",
+  "recipeDetailDeleteRecipeTitle": "Delete Recipe",
+  "recipeDetailDeleteRecipeConfirm": "Are you sure you want to delete \"{title}\"? This action cannot be undone.",
+  "@recipeDetailDeleteRecipeConfirm": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "recipeDetailRecipeDeleted": "Recipe deleted successfully",
+  "recipeDetailDeleteRecipeError": "Failed to delete recipe",
+  "recipeDetailDeleteRecipeErrorDetail": "Failed to delete recipe: {error}",
+  "@recipeDetailDeleteRecipeErrorDetail": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "recipeDetailNotFound": "Recipe not found",
+  "recipeDetailSharedByLabel": "Shared by",
+  "recipeDetailUnknownAuthor": "Unknown",
+  "recipeDetailEdit": "Edit",
+  "recipeDetailStatTime": "Time",
+  "recipeDetailStatTimeValue": "{minutes} min",
+  "@recipeDetailStatTimeValue": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "recipeDetailStatServes": "Serves",
+  "recipeDetailStatCategory": "Category",
+  "recipeDetailIngredients": "Ingredients",
+  "recipeDetailInstructions": "Instructions",
+  "recipeDetailStoryTitle": "The Story Behind This Recipe",
+  "recipeDetailStorySharedBy": "Shared by {author}",
+  "@recipeDetailStorySharedBy": {
+    "placeholders": {
+      "author": {
+        "type": "String"
+      }
+    }
+  },
+  "recipeDetailFamilyComments": "Family Comments",
+  "recipeDetailRefreshComments": "Refresh comments",
+  "recipeDetailCommentHint": "Share your thoughts about this recipe...",
+  "recipeDetailClear": "Clear",
+  "recipeDetailPosting": "Posting...",
+  "recipeDetailPost": "Post",
+  "recipeDetailNoComments": "No comments yet",
+  "recipeDetailBeFirstToComment": "Be the first to share your thoughts!",
+  "recipeDetailNoImage": "No image available",
+  "recipeDetailDeleteCommentTooltip": "Delete comment",
+  "addRecipePhotoPermissionTitle": "Photo Library Permission",
+  "addRecipePhotoPermissionAndroidMessage": "Photo library permission is required to select images.\n\nTo enable:\n1. Tap \"Open Settings\"\n2. Go to \"Permissions\"\n3. Enable \"Photos and videos\"",
+  "addRecipeStoragePermissionTitle": "Storage Permission",
+  "addRecipeStoragePermissionMessage": "Storage permission is required to select images.\n\nTo enable:\n1. Tap \"Open Settings\"\n2. Go to \"Permissions\"\n3. Enable \"Storage\" or \"Files and media\"",
+  "addRecipePhotoPermissionIosMessage": "Photo library permission is required to select images.\n\nTo enable:\n1. Tap \"Open Settings\"\n2. Find \"Legacy Table\"\n3. Tap \"Photos\"\n4. Select \"All Photos\" or \"Selected Photos\"",
+  "addRecipeCameraPermissionTitle": "Camera Permission",
+  "addRecipeCameraPermissionDeniedMessage": "Camera permission is permanently denied. Please enable it from app settings.",
+  "addRecipeCameraPermissionRequired": "Camera permission is required to take photos",
+  "addRecipeCancel": "Cancel",
+  "addRecipeSettingsHintAndroid": "Look for \"Photos and videos\" or \"Media\" permission in App Settings",
+  "addRecipeSettingsHintIos": "Look for \"Photos\" permission in App Settings",
+  "addRecipeOpenSettings": "Open Settings",
+  "addRecipeImageSelectError": "Couldn't select images. Please try again.",
+  "addRecipeTakePhotoError": "Couldn't take photo. Please try again.",
+  "addRecipeSelectCategoryWarning": "Please select a category",
+  "addRecipeAddIngredientWarning": "Please add at least one ingredient",
+  "addRecipeUpdatingRecipe": "Updating recipe...",
+  "addRecipeSharingRecipe": "Sharing recipe...",
+  "addRecipeImageTooLarge": "Image \"{fileName}\" is too large. Maximum size is 5MB.",
+  "@addRecipeImageTooLarge": {
+    "placeholders": {
+      "fileName": {
+        "type": "String"
+      }
+    }
+  },
+  "addRecipeProcessImagesError": "Failed to process images. Please try selecting different images.",
+  "addRecipeUpdateSuccess": "Recipe updated successfully!",
+  "addRecipeShareSuccess": "Recipe shared successfully!",
+  "addRecipeEditTitle": "Edit Recipe",
+  "addRecipeShareTitle": "Share a Recipe",
+  "addRecipeEditSubtitle": "Update your recipe details",
+  "addRecipeShareSubtitle": "Add a new dish to the family collection",
+  "addRecipePhotosLabel": "PHOTOS",
+  "addRecipeTitleLabel": "RECIPE TITLE *",
+  "addRecipeTitlePlaceholder": "e.g., Grandma's Special Jollof Rice",
+  "addRecipeTitleRequired": "Recipe title is required",
+  "addRecipeCategoryLabel": "CATEGORY *",
+  "addRecipeCategoryPlaceholder": "Select category",
+  "addRecipeCategoryRequired": "Category is required",
+  "addRecipeDifficultyLabel": "DIFFICULTY",
+  "addRecipeDifficultyPlaceholder": "Select difficulty",
+  "addRecipeCookingTimeLabel": "COOKING TIME\n(MINUTES)",
+  "addRecipeServingsLabel": "\nSERVINGS",
+  "addRecipeIngredientsLabel": "INGREDIENTS *",
+  "addRecipeIngredientPlaceholder": "Ingredient {number}",
+  "@addRecipeIngredientPlaceholder": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "addRecipeIngredientRequired": "Ingredient is required",
+  "addRecipeAddIngredient": "Add ingredient",
+  "addRecipeInstructionsLabel": "INSTRUCTIONS *",
+  "addRecipeInstructionsPlaceholder": "Write the step-by-step cooking instructions...",
+  "addRecipeInstructionsRequired": "Instructions are required",
+  "addRecipeStoryLabel": "THE STORY BEHIND THIS RECIPE (optional)",
+  "addRecipeStoryDescription": "Share the story of this recipe... Where did it come from? Who passed it down? What memories does it hold for your family?",
+  "addRecipeStoryPlaceholder": "Tell us about the history, traditions, or special memories connected to this dish.",
+  "addRecipeUpdateButton": "Update Recipe",
+  "addRecipeShareButton": "Share Recipe",
+  "addRecipeErrorTitle": "Something went wrong",
+  "addRecipeErrorMessage": "Please try again or restart the app.",
+  "addRecipeGoBack": "Go Back",
+  "addRecipeUploadFromGallery": "Upload from gallery",
+  "addRecipeTakePhoto": "Take Photo",
+  "subscriptionNotNow": "Not now",
+  "subscriptionRestoring": "Restoring…",
+  "subscriptionRestore": "Restore",
+  "subscriptionHeaderTitle": "Preserve Your\nFamily Legacy",
+  "subscriptionHeaderSubtitle": "Unlock premium features to keep your family's\nrecipes alive for generations.",
+  "subscriptionTierHeritageName": "Heritage Keeper",
+  "subscriptionTierHeritageTagline": "Perfect for getting started",
+  "subscriptionTierLegacyName": "Legacy Collection",
+  "subscriptionTierLegacyTagline": "The complete family experience",
+  "subscriptionFeatureUnlimitedStorage": "Unlimited family recipe storage",
+  "subscriptionFeatureFamilySharing": "Family sharing (up to 10 members)",
+  "subscriptionFeaturePhotoUploads": "Photo uploads for every recipe",
+  "subscriptionFeatureExportPrint": "Export & print recipe books",
+  "subscriptionFeatureCategoriesTags": "Recipe categories & tags",
+  "subscriptionFeatureEverythingHeritage": "Everything in Heritage Keeper",
+  "subscriptionFeatureUnlimitedMembers": "Unlimited family members",
+  "subscriptionFeatureAdvancedOrganization": "Advanced recipe organization",
+  "subscriptionFeaturePrioritySupport": "Priority customer support",
+  "subscriptionFeatureEarlyAccess": "Early access to new features",
+  "subscriptionFeatureCustomThemes": "Custom family cookbook themes",
+  "subscriptionAutoRenewNotice": "Subscriptions auto-renew until cancelled. Cancel anytime in your device settings.",
+  "subscriptionTermsOfUse": "Terms of Use",
+  "subscriptionPrivacyPolicy": "Privacy Policy",
+  "subscriptionMostPopular": "MOST POPULAR",
+  "subscriptionPerYear": "/year",
+  "subscriptionPerMonth": "/month",
+  "subscriptionPerMonthEquivalent": "{price}/mo",
+  "@subscriptionPerMonthEquivalent": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "subscriptionGetPlanCta": "Get {tierName} — {price}",
+  "@subscriptionGetPlanCta": {
+    "placeholders": {
+      "tierName": {
+        "type": "String"
+      },
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "subscriptionErrorLoadPlans": "Unable to load subscription plans. Please check your internet connection and try again.",
+  "subscriptionErrorNoPlansAvailable": "No subscription plans are available right now. Please check RevenueCat and App Store Connect configuration.",
+  "subscriptionErrorAnnualUnavailable": "Annual pricing is not available for this plan yet.",
+  "subscriptionErrorMonthlyUnavailable": "Monthly pricing is not available for this plan yet.",
+  "subscriptionWelcomePremium": "Welcome to Legacy Table Premium!",
+  "subscriptionRestoreSuccess": "Purchases restored successfully!",
+  "subscriptionRestoreNoneFound": "No previous purchases found.",
+  "recipeFeedNotificationsTooltip": "Notifications",
+  "recipeFeedSubheading": "Family Recipes",
+  "recipeFeedTagline": "Preserve and share our family's culinary traditions with love",
+  "recipeFeedShareRecipe": "Share a Recipe",
+  "recipeFeedFamilyCookbook": "Family Cookbook",
+  "recipeFeedScanRecipe": "Scan a Recipe",
+  "recipeFeedVoiceRecipe": "Voice a Recipe",
+  "recipeFeedComingSoon": "Coming soon",
+  "recipeFeedSaveFromLink": "Save from Link",
+  "recipeFeedLoadError": "Failed to load recipes: {error}",
+  "@recipeFeedLoadError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "recipeFeedSearchHint": "Search recipes, ingredients, or categories...",
+  "recipeFeedCategoryAll": "All",
+  "recipeFeedEmptyNoResultsTitle": "No recipes found",
+  "recipeFeedEmptyNoRecipesTitle": "No recipes yet",
+  "recipeFeedEmptyNoResultsBody": "Try adjusting your search or browse all recipes",
+  "recipeFeedEmptyNoRecipesBody": "Share your first family recipe and start building your collection!",
+  "recipeFeedClearSearch": "Clear Search",
+  "recipeFeedSmartToolsTitle": "Smart Recipe Tools",
+  "recipeFeedSmartToolsSubtitle": "Bring recipes in the same way the web app does: scan a card or turn a video link into a draft.",
+  "recipeFeedFeatureScanTitle": "Scan Recipe",
+  "recipeFeedFeatureScanDescription": "Use a photo of a handwritten card or cookbook page.",
+  "recipeFeedFeatureLinkTitle": "Save From Link",
+  "recipeFeedFeatureLinkDescription": "Turn a TikTok, Instagram, or YouTube link into a draft.",
+  "recipeFeedCelebrationHeadquarters": "Celebration Headquarters",
+  "recipeFeedSeasonTheme": "{season} season • {theme}",
+  "@recipeFeedSeasonTheme": {
+    "placeholders": {
+      "season": {
+        "type": "String"
+      },
+      "theme": {
+        "type": "String"
+      }
+    }
+  },
+  "recipeFeedDaysAway": "{days} days away",
+  "@recipeFeedDaysAway": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "recipeFeedRecipeCount": "{count, plural, =1{1 recipe} other{{count} recipes}}",
+  "@recipeFeedRecipeCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "profileSettingsLoginRequired": "Please log in to access profile settings",
+  "profileSettingsLoadFailed": "Failed to load user data. Please try again.",
+  "profileSettingsPhotoSourceTitle": "Select Photo Source",
+  "profileSettingsCamera": "Camera",
+  "profileSettingsGallery": "Gallery",
+  "profileSettingsCancel": "Cancel",
+  "profileSettingsCameraPermissionRequired": "Camera permission is required to take a photo",
+  "profileSettingsPickImageFailed": "Failed to pick image. Please try again.",
+  "profileSettingsUpdateSuccess": "Profile updated successfully",
+  "profileSettingsUpdateFailed": "Failed to update profile",
+  "profileSettingsTitle": "Profile Settings",
+  "profileSettingsSubtitle": "Customize how you appear to the family",
+  "profileSettingsProfilePicture": "Profile Picture",
+  "profileSettingsUploadPhotoHint": "Upload a photo to personalize your profile",
+  "profileSettingsDisplayName": "Display Name",
+  "profileSettingsFullName": "Full Name",
+  "profileSettingsNicknameLabel": "Nickname (optional)",
+  "profileSettingsNicknameHint": "Enter a nickname...",
+  "profileSettingsNicknameHelper": "Your nickname will be shown instead of your full name on recipes and comments.",
+  "profileSettingsAccountInformation": "Account Information",
+  "profileSettingsEmail": "Email",
+  "profileSettingsMemberSince": "Member Since",
+  "profileSettingsSaveButton": "Save Changes",
+  "cookbookLoadError": "Failed to load recipes. Please try again.",
+  "cookbookSelectAtLeastOne": "Please select at least one recipe",
+  "cookbookGeneratingPdf": "Generating PDF...",
+  "cookbookGeneratePdfError": "Failed to generate PDF",
+  "cookbookPdfGeneratedTitle": "PDF Generated Successfully!",
+  "cookbookPdfReadyMessage": "Your cookbook with {recipeCount} recipe{recipeCount, plural, =1{} other{s}} is ready. What would you like to do?",
+  "@cookbookPdfReadyMessage": {
+    "placeholders": {
+      "recipeCount": {
+        "type": "int"
+      }
+    }
+  },
+  "cookbookSaveToDevice": "Save to Device",
+  "cookbookShare": "Share",
+  "cookbookPreviewPrint": "Preview/Print",
+  "cookbookCancel": "Cancel",
+  "cookbookSavingPdf": "Saving PDF...",
+  "cookbookPdfSavedSuccess": "PDF saved successfully to Downloads folder!",
+  "cookbookPdfSharedSuccess": "PDF shared successfully!",
+  "cookbookSavePdfError": "Failed to save PDF",
+  "cookbookSharePdfError": "Failed to share PDF",
+  "cookbookPreviewPdfError": "Failed to preview PDF",
+  "cookbookTitle": "Family Cookbook",
+  "cookbookSubtitle": "Select recipes to create a printable PDF cookbook",
+  "cookbookClear": "Clear",
+  "cookbookRecipesSelected": "{selectedCount} recipe{selectedCount, plural, =1{} other{s}} selected",
+  "@cookbookRecipesSelected": {
+    "placeholders": {
+      "selectedCount": {
+        "type": "int"
+      }
+    }
+  },
+  "cookbookReadyToCreate": "Ready to create your cookbook",
+  "cookbookExportButton": "Export PDF Cookbook",
+  "cookbookNoRecipesTitle": "No recipes yet",
+  "cookbookNoRecipesSubtitle": "Add recipes to create your cookbook",
+  "createFamilyAppBarTitle": "Create Family",
+  "createFamilyHeading": "Create a Family",
+  "createFamilySubtitle": "Start sharing recipes with your family members",
+  "createFamilyNameLabel": "FAMILY NAME",
+  "createFamilyNameHint": "e.g., Smith Family",
+  "createFamilyNameRequired": "Please enter a family name",
+  "createFamilyNameTooShort": "Family name must be at least 2 characters",
+  "createFamilyNameTooLong": "Family name must be 50 characters or less",
+  "createFamilyDescriptionLabel": "DESCRIPTION (OPTIONAL)",
+  "createFamilyDescriptionHint": "Tell us about your family...",
+  "createFamilyDescriptionTooLong": "Description must be 500 characters or less",
+  "createFamilySubmitButton": "Create Family",
+  "createFamilyKeeperInfo": "You will become the family keeper and can invite others",
+  "createFamilyErrorGeneric": "Failed to create family",
+  "createFamilyErrorAlreadyMember": "You are already part of a family.",
+  "createFamilySuccessTitle": "Family Created!",
+  "createFamilyInviteCodeLabel": "Invite Code",
+  "createFamilyInviteCodeCopied": "Invite code copied!",
+  "createFamilyShareCodeHint": "Share this code with family members to invite them",
+  "createFamilyShareInviteButton": "Share Invite",
+  "createFamilyDoneButton": "Done",
+  "loginSubtitle": "Share your culinary heritage",
+  "loginEmailLabel": "EMAIL",
+  "loginEmailHint": "Enter your email",
+  "loginEmailRequired": "Please enter your email",
+  "loginEmailInvalid": "Please enter a valid email",
+  "loginPasswordLabel": "PASSWORD",
+  "loginPasswordHint": "Enter your password",
+  "loginPasswordRequired": "Please enter your password",
+  "loginPasswordTooShort": "Password must be at least 6 characters",
+  "loginSignInButton": "Sign In",
+  "loginOrDivider": "or",
+  "loginContinueWithGoogle": "Continue with Google",
+  "loginContinueWithApple": "Continue with Apple",
+  "loginContinueWithFacebook": "Continue with Facebook",
+  "loginNewToFamily": "New to the family? ",
+  "loginCreateAccount": "Create account",
+  "voiceRecipeMicPermissionRequired": "Microphone permission is required to record a recipe",
+  "voiceRecipeFailedToStart": "Failed to start recording: {error}",
+  "@voiceRecipeFailedToStart": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "voiceRecipeFailedToStop": "Failed to stop recording: {error}",
+  "@voiceRecipeFailedToStop": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "voiceRecipeFileNotFound": "Recording file not found",
+  "voiceRecipeTranscribedCredits": "Recipe transcribed! {credits} credits remaining.",
+  "@voiceRecipeTranscribedCredits": {
+    "placeholders": {
+      "credits": {
+        "type": "int"
+      }
+    }
+  },
+  "voiceRecipeTitle": "Voice Recipe",
+  "voiceRecipeIntro": "Tell us your recipe out loud — we'll transcribe it and turn it into a structured draft.",
+  "voiceRecipeUsesCredits": "Uses 2 AI credits",
+  "voiceRecipeTapToStop": "Tap the button to stop",
+  "voiceRecipeRecordingDuration": "Recording: {duration}",
+  "@voiceRecipeRecordingDuration": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "voiceRecipeReadyToTranscribe": "Ready to transcribe",
+  "voiceRecipeTapToStart": "Tap to start recording",
+  "voiceRecipeSpeakNaturally": "Speak your recipe naturally — include ingredients, amounts, and steps.",
+  "voiceRecipeTipsTitle": "Tips for best results",
+  "voiceRecipeTipsBody": "• Start with the recipe name\n• List each ingredient with amounts\n• Describe the steps in order\n• Mention cooking time and servings",
+  "voiceRecipeTranscribing": "Transcribing with AI...",
+  "voiceRecipeTranscribeIntoDraft": "Transcribe Into Draft",
+  "voiceRecipeRecordAgain": "Record Again",
+  "registerSubtitle": "Share your culinary heritage",
+  "registerNameLabel": "NAME",
+  "registerNameHint": "Enter your name",
+  "registerNameRequired": "Please enter your name",
+  "registerEmailLabel": "EMAIL",
+  "registerEmailHint": "Enter your email",
+  "registerEmailRequired": "Please enter your email",
+  "registerEmailInvalid": "Please enter a valid email",
+  "registerNicknameLabel": "NICKNAME (OPTIONAL)",
+  "registerNicknameHint": "Enter your nickname (optional)",
+  "registerNicknameTooLong": "Nickname must be 30 characters or less",
+  "registerPasswordLabel": "PASSWORD",
+  "registerPasswordHint": "Enter your password",
+  "registerPasswordRequired": "Please enter your password",
+  "registerPasswordTooShort": "Password must be at least 6 characters",
+  "registerCreateAccountButton": "Create Account",
+  "registerAlreadyHaveAccount": "Already have an account? ",
+  "registerSignInLink": "Sign in",
+  "registerRegistrationFailed": "Registration failed",
+  "scanRecipeCameraPermission": "Camera permission is required to scan a recipe",
+  "scanRecipeScannedSuccess": "Recipe scanned! {credits} credits remaining.",
+  "@scanRecipeScannedSuccess": {
+    "placeholders": {
+      "credits": {
+        "type": "int"
+      }
+    }
+  },
+  "scanRecipeTitle": "Scan Recipe",
+  "scanRecipeIntro": "Turn a handwritten card or cookbook page into an editable recipe draft.",
+  "scanRecipeCreditCost": "Uses 1 AI credit",
+  "scanRecipeEmptyTitle": "Add a recipe photo to scan",
+  "scanRecipeEmptyHint": "Best results come from a clear, well-lit photo with the full recipe visible.",
+  "scanRecipeChoosePhoto": "Choose Photo",
+  "scanRecipeTakePhoto": "Take Photo",
+  "scanRecipeScanning": "Scanning with AI...",
+  "scanRecipeScanButton": "Scan Into Draft",
+  "notificationsLoadError": "Failed to load notifications. Please try again.",
+  "notificationsAllMarkedRead": "All notifications marked as read",
+  "notificationsMarkAllError": "Failed to mark all as read. Please try again.",
+  "notificationsTitle": "Notifications",
+  "notificationsMarkAllButton": "Mark all as read",
+  "notificationsEmptyTitle": "No notifications",
+  "notificationsEmptySubtitle": "You're all caught up!",
+  "joinFamilyAppBarTitle": "Join Family",
+  "joinFamilyHeading": "Join a Family",
+  "joinFamilySubtitle": "Enter the 8-character invite code from your family keeper",
+  "joinFamilyInviteCodeLabel": "INVITE CODE",
+  "joinFamilyButton": "Join Family",
+  "joinFamilyInfoText": "Ask your family keeper for the invite code",
+  "joinFamilyEmptyCodeError": "Please enter an invite code",
+  "joinFamilyCodeLengthError": "Invite code must be 8 characters",
+  "joinFamilyGenericError": "Failed to join family",
+  "joinFamilyInvalidCodeError": "Invalid invite code. Please check and try again.",
+  "joinFamilyAlreadyMemberError": "You are already part of a family.",
+  "joinFamilySuccess": "Successfully joined {familyName}!",
+  "@joinFamilySuccess": {
+    "placeholders": {
+      "familyName": {
+        "type": "String"
+      }
+    }
+  },
+  "saveFromLinkEmptyUrlWarning": "Paste a cooking video or recipe link first",
+  "saveFromLinkInvalidUrlWarning": "Please enter a valid URL starting with http:// or https://",
+  "saveFromLinkImportSuccess": "Recipe imported! {creditsRemaining} credits remaining.",
+  "@saveFromLinkImportSuccess": {
+    "placeholders": {
+      "creditsRemaining": {
+        "type": "int"
+      }
+    }
+  },
+  "saveFromLinkAppBarTitle": "Save From Link",
+  "saveFromLinkIntro": "Paste a TikTok, Instagram, YouTube, or recipe link and turn it into a shareable Legacy Table draft.",
+  "saveFromLinkCreditCost": "Uses 1 AI credit",
+  "saveFromLinkDraftInfo": "The imported recipe opens as a draft first, so you can clean up ingredients, adjust instructions, and add your own story before sharing it.",
+  "saveFromLinkImportingLabel": "Importing with AI...",
+  "saveFromLinkCreateDraftButton": "Create Draft From Link",
+  "onboardingNextButton": "Next",
+  "onboardingGetStartedButton": "Get Started",
+  "homeUpgradeFab": "Upgrade",
+  "homeShareRecipeFab": "Share a Recipe",
+  "homeNavHome": "Home",
+  "homeNavCookbook": "Cookbook",
+  "homeNavMyRecipes": "My Recipes",
+  "homeNavFamily": "Family",
+  "homeNavSettings": "Settings",
+  "homeTierLegacyCollection": "Legacy Collection",
+  "homeTierHeritageKeeper": "Heritage Keeper",
+  "homeSubscriptionActive": "Premium plan active",
+  "homeSubscriptionUnlock": "Unlock premium family features",
+  "profileTitle": "My Profile",
+  "profileNoRecipesTitle": "No recipes yet",
+  "profileNoRecipesSubtitle": "Share your first family recipe!",
+  "profileLoadRecipesError": "Failed to load recipes: {error}",
+  "@profileLoadRecipesError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "holidayRecipesEmptyTitle": "No recipes tagged for {holidayName} yet",
+  "@holidayRecipesEmptyTitle": {
+    "placeholders": {
+      "holidayName": {
+        "type": "String"
+      }
+    }
+  },
+  "holidayRecipesEmptyBody": "Tag a family favorite for this holiday from the web app or upcoming mobile detail enhancements.",
+  "shareInviteTitle": "Share Invite",
+  "shareInviteLinkTab": "Link",
+  "shareInviteCodeTab": "Code",
+  "shareInviteLinkHint": "Opens the app or shows download options",
+  "shareInviteCodeHint": "Recipient enters this code in the app",
+  "shareInviteCopiedSnackbar": "Copied!",
+  "shareInviteCopyButton": "Copy",
+  "shareInviteShareButton": "Share",
+  "familySettingsInviteCodeCopied": "Invite code copied!",
+  "familySettingsFamilyHeading": "Family",
+  "familySettingsJoinOrCreateSubtitle": "Join or create a family to start sharing recipes",
+  "familySettingsNoFamilyYet": "No family yet",
+  "familySettingsStartSharingRecipes": "Start sharing recipes with your family members",
+  "familySettingsJoinFamilyButton": "Join Family",
+  "familySettingsCreateFamilyButton": "Create Family",
+  "familySettingsTitle": "Family settings",
+  "familySettingsManageSubtitle": "Manage your family and invite code.",
+  "familySettingsInviteCodeLabel": "Invite code",
+  "familySettingsCopyButton": "Copy",
+  "familySettingsShareCodeHelper": "Share this code so others can join your family.",
+  "familySettingsMembersLabel": "Members",
+  "familySettingsNoMembersYet": "No members yet",
+  "familySettingsKeeperBadge": "Keeper",
+  "recipeCardCookingTime": "{minutes} min",
+  "@recipeCardCookingTime": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "recipeCardServings": "{count} servings",
+  "@recipeCardServings": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "styledSnackbarDismiss": "Dismiss",
+  "celebrationTitle": "Celebration Headquarters",
+  "celebrationNextUp": " — Next up: ",
+  "celebrationNextHoliday": "{emoji} {name} in {days} {days, plural, =1{day} other{days}}",
+  "@celebrationNextHoliday": {
+    "placeholders": {
+      "emoji": {
+        "type": "String"
+      },
+      "name": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "celebrationHolidayCardSubtitle": "{days} {days, plural, =1{day} other{days}} away  •  {recipes} {recipes, plural, =1{recipe} other{recipes}}",
+  "@celebrationHolidayCardSubtitle": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      },
+      "recipes": {
+        "type": "int"
+      }
+    }
+  },
+  "cookbookCardCookingTime": "{minutes} min",
+  "@cookbookCardCookingTime": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "cookbookCardServings": "{count} servings",
+  "@cookbookCardServings": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cookbookCardByAuthor": "by {name}",
+  "@cookbookCardByAuthor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "familyPromptTitle": "Join or Create a Family",
+  "familyPromptSubtitle": "Start sharing recipes with your family members",
+  "familyPromptJoinButton": "Join Family",
+  "familyPromptCreateButton": "Create Family"
+}

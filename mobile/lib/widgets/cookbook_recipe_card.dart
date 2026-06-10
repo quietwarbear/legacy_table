@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../providers/theme_provider.dart';
 import '../config/app_theme.dart';
 import '../models/recipe.dart';
+import '../l10n/app_localizations.dart';
 
 class CookbookRecipeCard extends StatelessWidget {
   final Recipe recipe;
@@ -20,6 +21,7 @@ class CookbookRecipeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
 
@@ -45,9 +47,9 @@ class CookbookRecipeCard extends StatelessWidget {
                   child: _buildRecipeImage(isDark),
                 ),
                 // Selection Indicator
-                Positioned(
+                PositionedDirectional(
                   top: 8,
-                  left: 8,
+                  start: 8,
                   child: Container(
                     width: 28,
                     height: 28,
@@ -109,13 +111,13 @@ class CookbookRecipeCard extends StatelessWidget {
                         if (recipe.cookingTime != null)
                           _buildMetaItem(
                             icon: Icons.access_time,
-                            text: '${recipe.cookingTime} min',
+                            text: l10n.cookbookCardCookingTime(recipe.cookingTime!),
                             isDark: isDark,
                           ),
                         if (recipe.servings != null)
                           _buildMetaItem(
                             icon: Icons.people_outline,
-                            text: '${recipe.servings} servings',
+                            text: l10n.cookbookCardServings(recipe.servings!),
                             isDark: isDark,
                           ),
                       ],
@@ -151,7 +153,7 @@ class CookbookRecipeCard extends StatelessWidget {
                         if (recipe.authorName != null)
                           Expanded(
                             child: Text(
-                              'by ${recipe.authorName!}',
+                              l10n.cookbookCardByAuthor(recipe.authorName!),
                               style: TextStyle(
                                 fontFamily: 'Manrope',
                                  fontSize: 10,

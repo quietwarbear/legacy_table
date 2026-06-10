@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../config/app_theme.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/theme_provider.dart';
 import '../models/family.dart';
 import 'styled_snackbar.dart';
@@ -42,6 +43,7 @@ class _ShareInviteDialogState extends State<ShareInviteDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
 
@@ -55,7 +57,7 @@ class _ShareInviteDialogState extends State<ShareInviteDialog> {
           children: [
             // Header
             Text(
-              'Share Invite',
+              l10n.shareInviteTitle,
               style: TextStyle(
                 fontFamily: 'Playfair Display',
                 fontSize: 22,
@@ -116,7 +118,7 @@ class _ShareInviteDialogState extends State<ShareInviteDialog> {
                             ),
                             const SizedBox(width: 6),
                             Text(
-                              'Link',
+                              l10n.shareInviteLinkTab,
                               style: TextStyle(
                                 fontFamily: 'Manrope',
                                 fontSize: 14,
@@ -166,7 +168,7 @@ class _ShareInviteDialogState extends State<ShareInviteDialog> {
                             ),
                             const SizedBox(width: 6),
                             Text(
-                              'Code',
+                              l10n.shareInviteCodeTab,
                               style: TextStyle(
                                 fontFamily: 'Manrope',
                                 fontSize: 14,
@@ -217,7 +219,7 @@ class _ShareInviteDialogState extends State<ShareInviteDialog> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Opens the app or shows download options',
+                      l10n.shareInviteLinkHint,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontFamily: 'Manrope',
@@ -243,7 +245,7 @@ class _ShareInviteDialogState extends State<ShareInviteDialog> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Recipient enters this code in the app',
+                      l10n.shareInviteCodeHint,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontFamily: 'Manrope',
@@ -270,11 +272,12 @@ class _ShareInviteDialogState extends State<ShareInviteDialog> {
                           _useLinkMode ? _inviteLink : widget.family.inviteCode;
                       await Clipboard.setData(ClipboardData(text: text));
                       if (context.mounted) {
-                        StyledSnackBar.showSuccess(context, 'Copied!');
+                        StyledSnackBar.showSuccess(
+                            context, l10n.shareInviteCopiedSnackbar);
                       }
                     },
                     icon: const Icon(Icons.copy, size: 18),
-                    label: const Text('Copy'),
+                    label: Text(l10n.shareInviteCopyButton),
                     style: OutlinedButton.styleFrom(
                       foregroundColor:
                           isDark ? DarkColors.textPrimary : LightColors.textPrimary,
@@ -297,7 +300,7 @@ class _ShareInviteDialogState extends State<ShareInviteDialog> {
                       if (context.mounted) Navigator.of(context).pop();
                     },
                     icon: const Icon(Icons.share, size: 18),
-                    label: const Text('Share'),
+                    label: Text(l10n.shareInviteShareButton),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: brandPrimary,
                       foregroundColor: Colors.white,
