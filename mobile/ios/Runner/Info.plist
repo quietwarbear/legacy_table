@@ -79,6 +79,8 @@
 	</array>
 	<key>NSUserTrackingUsageDescription</key>
 	<string>Legacy Table uses this to improve our app and measure the effectiveness of ads we run on Facebook and Instagram. You can change this anytime in Settings.</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>GIDClientID</key>
 	<string>229052236659-h4op49fi71nktbtrtp0vjdemaaputub7.apps.googleusercontent.com</string>
 	<key>GIDServerClientID</key>
