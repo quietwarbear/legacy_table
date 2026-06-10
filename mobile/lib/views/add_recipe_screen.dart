@@ -1108,9 +1108,9 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                         ),
                 ),
                 // Remove button
-                Positioned(
+                PositionedDirectional(
                   top: 4,
-                  right: 4,
+                  end: 4,
                   child: GestureDetector(
                     onTap: () => _removeExistingPhoto(index),
                     child: Container(
@@ -1144,9 +1144,9 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                   ),
                 ),
                 // Remove button
-                Positioned(
+                PositionedDirectional(
                   top: 4,
-                  right: 4,
+                  end: 4,
                   child: GestureDetector(
                     onTap: () => _removeImage(imageIndex),
                     child: Container(

@@ -1220,11 +1220,11 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
             ),
             // Page indicators (only show if multiple images)
             if (hasMultipleImages)
-              Positioned(
+              PositionedDirectional(
                 bottom: 16,
 
-                left: 0,
-                right: 0,
+                start: 0,
+                end: 0,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -1637,10 +1637,10 @@ class _FullScreenGalleryViewState extends State<FullScreenGalleryView> {
           ),
           // Page indicators at the bottom
           if (widget.photos.length > 1)
-            Positioned(
+            PositionedDirectional(
               bottom: 32,
-              left: 0,
-              right: 0,
+              start: 0,
+              end: 0,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(

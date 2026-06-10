@@ -287,8 +287,8 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeInOut,
             alignment: _showAnnual
-                ? Alignment.centerRight
-                : Alignment.centerLeft,
+                ? AlignmentDirectional.centerEnd
+                : AlignmentDirectional.centerStart,
             child: FractionallySizedBox(
               widthFactor: 0.5,
               child: Container(
@@ -508,7 +508,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
                         ),
                       ),
                       Padding(
-                        padding: const EdgeInsets.only(bottom: 4, left: 4),
+                        padding: const EdgeInsetsDirectional.only(bottom: 4, start: 4),
                         child: Text(
                           _showAnnual ? l10n.subscriptionPerYear : l10n.subscriptionPerMonth,
                           style: TextStyle(

@@ -311,9 +311,9 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
             radius: 60,
             backgroundImage: MemoryImage(_selectedAvatarBytes!),
           ),
-          Positioned(
+          PositionedDirectional(
             bottom: 0,
-            right: 0,
+            end: 0,
             child: GestureDetector(
               onTap: _pickImage,
               child: Container(
@@ -351,9 +351,9 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
               radius: 60,
               backgroundImage: MemoryImage(imageBytes),
             ),
-            Positioned(
+            PositionedDirectional(
               bottom: 0,
-              right: 0,
+              end: 0,
               child: GestureDetector(
                 onTap: _pickImage,
                 child: Container(
@@ -397,9 +397,9 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
             ),
           ),
         ),
-        Positioned(
+        PositionedDirectional(
           bottom: 0,
-          right: 0,
+          end: 0,
           child: GestureDetector(
             onTap: _pickImage,
             child: Container(

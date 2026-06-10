@@ -164,7 +164,7 @@ class _CelebrationHeadquartersState extends State<CelebrationHeadquarters> {
                 ),
                 const SizedBox(height: 4),
                 Align(
-                  alignment: Alignment.topRight,
+                  alignment: AlignmentDirectional.topEnd,
                   child: Container(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 10, vertical: 4),

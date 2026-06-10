@@ -47,9 +47,9 @@ class CookbookRecipeCard extends StatelessWidget {
                   child: _buildRecipeImage(isDark),
                 ),
                 // Selection Indicator
-                Positioned(
+                PositionedDirectional(
                   top: 8,
-                  left: 8,
+                  start: 8,
                   child: Container(
                     width: 28,
                     height: 28,

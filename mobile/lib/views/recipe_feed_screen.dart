@@ -273,8 +273,8 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
                                     size: 28,
                                   ),
                                   if (_unreadNotificationCount > 0)
-                                    Positioned(
-                                      right: 0,
+                                    PositionedDirectional(
+                                      end: 0,
                                       top: 0,
                                       child: Container(
                                         padding: const EdgeInsets.all(4),
@@ -630,7 +630,7 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
           ),
           suffixIcon: _searchQuery.isNotEmpty
               ? Padding(
-                  padding: const EdgeInsets.only(right: 4),
+                  padding: const EdgeInsetsDirectional.only(end: 4),
                   child: IconButton(
                     icon: Icon(
                       Icons.clear,
@@ -698,7 +698,7 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
           // Category buttons
           ..._categories.map((category) {
             return Padding(
-              padding: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsetsDirectional.only(end: 8),
               child: _buildCategoryButton(
                 label: category.name,
                 isSelected: _selectedCategory == category.name,

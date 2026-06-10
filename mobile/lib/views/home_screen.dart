@@ -91,9 +91,9 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           IndexedStack(index: _currentIndex, children: _screens),
           if (_currentIndex == 0)
-            Positioned(
+            PositionedDirectional(
               top: MediaQuery.of(context).padding.top + 12,
-              right: 16,
+              end: 16,
               child: _buildSubscriptionBanner(
                 context: context,
                 isDark: isDark,
