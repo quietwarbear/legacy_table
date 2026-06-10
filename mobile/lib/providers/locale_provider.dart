@@ -21,6 +21,7 @@ class LocaleProvider extends ChangeNotifier {
     Locale('fr'),
     Locale('ar'),
     Locale('ur'),
+    Locale('pa'),
   ];
 
   /// Display label for each supported language, written in that language so it
@@ -35,6 +36,7 @@ class LocaleProvider extends ChangeNotifier {
     'fr': 'Français',
     'ar': 'العربية',
     'ur': 'اردو',
+    'pa': 'پنجابی',
   };
 
   Locale? _locale;
