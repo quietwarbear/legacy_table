@@ -5,6 +5,7 @@ import '../providers/theme_provider.dart';
 import '../services/session_manager.dart';
 import '../services/storage_service.dart';
 import '../widgets/styled_snackbar.dart';
+import '../l10n/app_localizations.dart';
 import 'login_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -67,7 +68,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
     } catch (e) {
       if (mounted) {
-        String errorMessage = 'Registration failed';
+        final l10n = AppLocalizations.of(context);
+        String errorMessage = l10n.registerRegistrationFailed;
         if (e.toString().contains('Exception:')) {
           errorMessage = e.toString().replaceFirst('Exception: ', '');
         } else {
@@ -86,6 +88,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
     
@@ -147,7 +150,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                     // Subtitle
                     Text(
-                      'Share your culinary heritage',
+                      l10n.registerSubtitle,
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontFamily: 'Manrope',
@@ -159,7 +162,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                     // Name Field
                     Text(
-                      'NAME',
+                      l10n.registerNameLabel,
                       style: TextStyle(
                         fontFamily: 'Manrope',
                         fontSize: 12,
@@ -179,7 +182,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
                       ),
                       decoration: InputDecoration(
-                        hintText: 'Enter your name',
+                        hintText: l10n.registerNameHint,
                         hintStyle: TextStyle(
                           color: isDark ? DarkColors.textMuted : LightColors.textMuted,
                         ),
@@ -213,7 +216,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
-                          return 'Please enter your name';
+                          return l10n.registerNameRequired;
                         }
                         return null;
                       },
@@ -222,7 +225,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                     // Email Field
                     Text(
-                      'EMAIL',
+                      l10n.registerEmailLabel,
                       style: TextStyle(
                         fontFamily: 'Manrope',
                         fontSize: 12,
@@ -242,7 +245,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
                       ),
                       decoration: InputDecoration(
-                        hintText: 'Enter your email',
+                        hintText: l10n.registerEmailHint,
                         hintStyle: TextStyle(
                           color: isDark ? DarkColors.textMuted : LightColors.textMuted,
                         ),
@@ -276,10 +279,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
-                          return 'Please enter your email';
+                          return l10n.registerEmailRequired;
                         }
                         if (!value.contains('@')) {
-                          return 'Please enter a valid email';
+                          return l10n.registerEmailInvalid;
                         }
                         return null;
                       },
@@ -288,7 +291,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                     // Nickname Field (Optional)
                     Text(
-                      'NICKNAME (OPTIONAL)',
+                      l10n.registerNicknameLabel,
                       style: TextStyle(
                         fontFamily: 'Manrope',
                         fontSize: 12,
@@ -308,7 +311,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
                       ),
                       decoration: InputDecoration(
-                        hintText: 'Enter your nickname (optional)',
+                        hintText: l10n.registerNicknameHint,
                         hintStyle: TextStyle(
                           color: isDark ? DarkColors.textMuted : LightColors.textMuted,
                         ),
@@ -342,7 +345,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       validator: (value) {
                         if (value != null && value.trim().isNotEmpty && value.length > 30) {
-                          return 'Nickname must be 30 characters or less';
+                          return l10n.registerNicknameTooLong;
                         }
                         return null;
                       },
@@ -351,7 +354,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                     // Password Field
                     Text(
-                      'PASSWORD',
+                      l10n.registerPasswordLabel,
                       style: TextStyle(
                         fontFamily: 'Manrope',
                         fontSize: 12,
@@ -372,7 +375,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
                       ),
                       decoration: InputDecoration(
-                        hintText: 'Enter your password',
+                        hintText: l10n.registerPasswordHint,
                         hintStyle: TextStyle(
                           color: isDark ? DarkColors.textMuted : LightColors.textMuted,
                         ),
@@ -425,10 +428,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please enter your password';
+                          return l10n.registerPasswordRequired;
                         }
                         if (value.length < 6) {
-                          return 'Password must be at least 6 characters';
+                          return l10n.registerPasswordTooShort;
                         }
                         return null;
                       },
@@ -458,7 +461,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                             )
                           : Text(
-                              'Create Account',
+                              l10n.registerCreateAccountButton,
                               style: TextStyle(
                                 fontFamily: 'Manrope',
                                 fontSize: 16,
@@ -474,7 +477,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          'Already have an account? ',
+                          l10n.registerAlreadyHaveAccount,
                           style: TextStyle(
                             fontFamily: 'Manrope',
                             fontSize: 14,
@@ -490,7 +493,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             );
                           },
                           child: Text(
-                            'Sign in',
+                            l10n.registerSignInLink,
                             style: TextStyle(
                               fontFamily: 'Manrope',
                               fontSize: 14,

@@ -9,6 +9,7 @@ import '../services/session_manager.dart';
 import '../widgets/recipe_card.dart';
 import '../widgets/recipe_card_shimmer.dart';
 import '../widgets/family_prompt_widget.dart';
+import '../l10n/app_localizations.dart';
 import 'recipe_detail_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -73,9 +74,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _isLoading = false;
       });
       if (mounted) {
+        final l10n = AppLocalizations.of(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to load recipes: ${e.toString()}'),
+            content: Text(l10n.profileLoadRecipesError(e.toString())),
             backgroundColor: Colors.red,
           ),
         );
@@ -92,6 +94,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
 
@@ -99,7 +102,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       backgroundColor: isDark ? DarkColors.background : LightColors.background,
       appBar: AppBar(
         title: Text(
-          'My Profile',
+          l10n.profileTitle,
           style: TextStyle(
             fontFamily: 'Playfair Display',
             fontSize: 24,
@@ -159,7 +162,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'No recipes yet',
+                          l10n.profileNoRecipesTitle,
                           style: TextStyle(
                             fontFamily: 'Playfair Display',
                             fontSize: 24,
@@ -169,7 +172,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Share your first family recipe!',
+                          l10n.profileNoRecipesSubtitle,
                           style: TextStyle(
                             fontFamily: 'Manrope',
                             fontSize: 16,

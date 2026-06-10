@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../config/app_theme.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/theme_provider.dart';
 import '../views/join_family_screen.dart';
 import '../views/create_family_screen.dart';
@@ -39,6 +40,7 @@ class FamilyPromptWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
 
@@ -80,7 +82,7 @@ class FamilyPromptWidget extends StatelessWidget {
 
           // Title
           Text(
-            'Join or Create a Family',
+            l10n.familyPromptTitle,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontFamily: 'Playfair Display',
@@ -93,7 +95,7 @@ class FamilyPromptWidget extends StatelessWidget {
 
           // Subtitle
           Text(
-            'Start sharing recipes with your family members',
+            l10n.familyPromptSubtitle,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontFamily: 'Manrope',
@@ -118,7 +120,7 @@ class FamilyPromptWidget extends StatelessWidget {
                     ),
                   ),
                   child: Text(
-                    'Join Family',
+                    l10n.familyPromptJoinButton,
                     style: TextStyle(
                       fontFamily: 'Manrope',
                       fontSize: 14,
@@ -141,7 +143,7 @@ class FamilyPromptWidget extends StatelessWidget {
                     elevation: 0,
                   ),
                   child: Text(
-                    'Create Family',
+                    l10n.familyPromptCreateButton,
                     style: TextStyle(
                       fontFamily: 'Manrope',
                       fontSize: 14,

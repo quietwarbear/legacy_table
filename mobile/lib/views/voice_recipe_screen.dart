@@ -8,6 +8,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:record/record.dart';
 
 import '../config/app_theme.dart';
+import '../l10n/app_localizations.dart';
 import '../services/api_service.dart';
 import '../widgets/styled_snackbar.dart';
 import 'add_recipe_screen.dart';
@@ -43,9 +44,10 @@ class _VoiceRecipeScreenState extends State<VoiceRecipeScreen> {
     final granted = await _requestMicPermission();
     if (!granted) {
       if (mounted) {
+        final l10n = AppLocalizations.of(context);
         StyledSnackBar.showWarning(
           context,
-          'Microphone permission is required to record a recipe',
+          l10n.voiceRecipeMicPermissionRequired,
         );
       }
       return;
@@ -77,7 +79,8 @@ class _VoiceRecipeScreenState extends State<VoiceRecipeScreen> {
       });
     } catch (e) {
       if (mounted) {
-        StyledSnackBar.showError(context, 'Failed to start recording: $e');
+        final l10n = AppLocalizations.of(context);
+        StyledSnackBar.showError(context, l10n.voiceRecipeFailedToStart(e.toString()));
       }
     }
   }
@@ -98,7 +101,8 @@ class _VoiceRecipeScreenState extends State<VoiceRecipeScreen> {
         _isRecording = false;
       });
       if (mounted) {
-        StyledSnackBar.showError(context, 'Failed to stop recording: $e');
+        final l10n = AppLocalizations.of(context);
+        StyledSnackBar.showError(context, l10n.voiceRecipeFailedToStop(e.toString()));
       }
     }
   }
@@ -109,7 +113,8 @@ class _VoiceRecipeScreenState extends State<VoiceRecipeScreen> {
     final file = File(_recordingPath!);
     if (!await file.exists()) {
       if (mounted) {
-        StyledSnackBar.showError(context, 'Recording file not found');
+        final l10n = AppLocalizations.of(context);
+        StyledSnackBar.showError(context, l10n.voiceRecipeFileNotFound);
       }
       return;
     }
@@ -132,9 +137,10 @@ class _VoiceRecipeScreenState extends State<VoiceRecipeScreen> {
 
       // Show success with transcription preview
       if (result.creditsRemaining != null) {
+        final l10n = AppLocalizations.of(context);
         StyledSnackBar.showSuccess(
           context,
-          'Recipe transcribed! ${result.creditsRemaining} credits remaining.',
+          l10n.voiceRecipeTranscribedCredits(result.creditsRemaining!),
         );
       }
 
@@ -185,20 +191,21 @@ class _VoiceRecipeScreenState extends State<VoiceRecipeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final hasRecording = _recordingPath != null && !_isRecording;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(title: const Text('Voice Recipe')),
+      appBar: AppBar(title: Text(l10n.voiceRecipeTitle)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Tell us your recipe out loud — we\'ll transcribe it and turn it into a structured draft.',
+              l10n.voiceRecipeIntro,
               style: theme.textTheme.bodyLarge?.copyWith(
                 color: isDark
                     ? DarkColors.textSecondary
@@ -217,7 +224,7 @@ class _VoiceRecipeScreenState extends State<VoiceRecipeScreen> {
                   const Icon(Icons.auto_awesome, size: 16, color: Color(0xFFD97706)),
                   const SizedBox(width: 8),
                   Text(
-                    'Uses 2 AI credits',
+                    l10n.voiceRecipeUsesCredits,
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: const Color(0xFFD97706),
                       fontWeight: FontWeight.w600,
@@ -272,14 +279,14 @@ class _VoiceRecipeScreenState extends State<VoiceRecipeScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Tap the button to stop',
+                      l10n.voiceRecipeTapToStop,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: isDark ? DarkColors.textSecondary : LightColors.textSecondary,
                       ),
                     ),
                   ] else if (hasRecording) ...[
                     Text(
-                      'Recording: ${_formatDuration(_recordingDuration)}',
+                      l10n.voiceRecipeRecordingDuration(_formatDuration(_recordingDuration)),
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontFamily: 'Manrope',
                         fontWeight: FontWeight.w600,
@@ -287,7 +294,7 @@ class _VoiceRecipeScreenState extends State<VoiceRecipeScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Ready to transcribe',
+                      l10n.voiceRecipeReadyToTranscribe,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: brandPrimary,
                         fontWeight: FontWeight.w500,
@@ -295,7 +302,7 @@ class _VoiceRecipeScreenState extends State<VoiceRecipeScreen> {
                     ),
                   ] else ...[
                     Text(
-                      'Tap to start recording',
+                      l10n.voiceRecipeTapToStart,
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontFamily: 'Manrope',
                         fontWeight: FontWeight.w600,
@@ -303,7 +310,7 @@ class _VoiceRecipeScreenState extends State<VoiceRecipeScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Speak your recipe naturally — include ingredients, amounts, and steps.',
+                      l10n.voiceRecipeSpeakNaturally,
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: isDark ? DarkColors.textSecondary : LightColors.textSecondary,
@@ -331,7 +338,7 @@ class _VoiceRecipeScreenState extends State<VoiceRecipeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Tips for best results',
+                    l10n.voiceRecipeTipsTitle,
                     style: theme.textTheme.titleSmall?.copyWith(
                       fontFamily: 'Manrope',
                       fontWeight: FontWeight.w700,
@@ -339,10 +346,7 @@ class _VoiceRecipeScreenState extends State<VoiceRecipeScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    '• Start with the recipe name\n'
-                    '• List each ingredient with amounts\n'
-                    '• Describe the steps in order\n'
-                    '• Mention cooking time and servings',
+                    l10n.voiceRecipeTipsBody,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: isDark ? DarkColors.textSecondary : LightColors.textSecondary,
                       height: 1.6,
@@ -371,7 +375,7 @@ class _VoiceRecipeScreenState extends State<VoiceRecipeScreen> {
                         )
                       : const Icon(Icons.auto_awesome_outlined),
                   label: Text(
-                    _isProcessing ? 'Transcribing with AI...' : 'Transcribe Into Draft',
+                    _isProcessing ? l10n.voiceRecipeTranscribing : l10n.voiceRecipeTranscribeIntoDraft,
                   ),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
@@ -384,7 +388,7 @@ class _VoiceRecipeScreenState extends State<VoiceRecipeScreen> {
                 child: OutlinedButton.icon(
                   onPressed: _isProcessing ? null : _resetRecording,
                   icon: const Icon(Icons.refresh_outlined),
-                  label: const Text('Record Again'),
+                  label: Text(l10n.voiceRecipeRecordAgain),
                 ),
               ),
             ],

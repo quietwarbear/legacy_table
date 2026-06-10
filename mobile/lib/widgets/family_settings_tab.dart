@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import '../config/app_theme.dart';
+import '../l10n/app_localizations.dart';
 import '../providers/theme_provider.dart';
 import '../services/session_manager.dart';
 import '../services/api_service.dart';
@@ -95,7 +96,8 @@ class _FamilySettingsTabState extends State<FamilySettingsTab> {
   Future<void> _copyInviteCode(String inviteCode) async {
     await Clipboard.setData(ClipboardData(text: inviteCode));
     if (mounted) {
-      StyledSnackBar.showSuccess(context, 'Invite code copied!');
+      final l10n = AppLocalizations.of(context);
+      StyledSnackBar.showSuccess(context, l10n.familySettingsInviteCodeCopied);
     }
   }
 
@@ -125,13 +127,14 @@ class _FamilySettingsTabState extends State<FamilySettingsTab> {
   }
 
   Widget _buildNoFamilyState(bool isDark) {
+    final l10n = AppLocalizations.of(context);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Family',
+            l10n.familySettingsFamilyHeading,
             style: TextStyle(
               fontFamily: 'Playfair Display',
               fontSize: 32,
@@ -141,7 +144,7 @@ class _FamilySettingsTabState extends State<FamilySettingsTab> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Join or create a family to start sharing recipes',
+            l10n.familySettingsJoinOrCreateSubtitle,
             style: TextStyle(
               fontFamily: 'Manrope',
               fontSize: 14,
@@ -168,7 +171,7 @@ class _FamilySettingsTabState extends State<FamilySettingsTab> {
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  'No family yet',
+                  l10n.familySettingsNoFamilyYet,
                   style: TextStyle(
                     fontFamily: 'Playfair Display',
                     fontSize: 24,
@@ -180,7 +183,7 @@ class _FamilySettingsTabState extends State<FamilySettingsTab> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Start sharing recipes with your family members',
+                  l10n.familySettingsStartSharingRecipes,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontFamily: 'Manrope',
@@ -212,7 +215,7 @@ class _FamilySettingsTabState extends State<FamilySettingsTab> {
                         ),
                       ),
                       child: Text(
-                        'Join Family',
+                        l10n.familySettingsJoinFamilyButton,
                         style: TextStyle(
                           fontFamily: 'Manrope',
                           fontWeight: FontWeight.w600,
@@ -242,9 +245,9 @@ class _FamilySettingsTabState extends State<FamilySettingsTab> {
                         ),
                         elevation: 0,
                       ),
-                      child: const Text(
-                        'Create Family',
-                        style: TextStyle(
+                      child: Text(
+                        l10n.familySettingsCreateFamilyButton,
+                        style: const TextStyle(
                           fontFamily: 'Manrope',
                           fontWeight: FontWeight.w600,
                         ),
@@ -261,6 +264,7 @@ class _FamilySettingsTabState extends State<FamilySettingsTab> {
   }
 
   Widget _buildFamilyView(bool isDark) {
+    final l10n = AppLocalizations.of(context);
     final family = _family!;
 
     return RefreshIndicator(
@@ -273,7 +277,7 @@ class _FamilySettingsTabState extends State<FamilySettingsTab> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Family settings',
+              l10n.familySettingsTitle,
               style: TextStyle(
                 fontFamily: 'Playfair Display',
                 fontSize: 32,
@@ -284,7 +288,7 @@ class _FamilySettingsTabState extends State<FamilySettingsTab> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Manage your family and invite code.',
+              l10n.familySettingsManageSubtitle,
               style: TextStyle(
                 fontFamily: 'Manrope',
                 fontSize: 14,
@@ -352,7 +356,7 @@ class _FamilySettingsTabState extends State<FamilySettingsTab> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Invite code',
+                    l10n.familySettingsInviteCodeLabel,
                     style: TextStyle(
                       fontFamily: 'Manrope',
                       fontSize: 14,
@@ -393,7 +397,7 @@ class _FamilySettingsTabState extends State<FamilySettingsTab> {
                             _copyInviteCode(family.inviteCode ?? ''),
                         icon: Icon(Icons.copy, size: 16, color: isDark ? DarkColors.textPrimary : LightColors.textPrimary),
                         label: Text(
-                          'Copy',
+                          l10n.familySettingsCopyButton,
                           style: TextStyle(
                             fontFamily: 'Manrope',
                             fontSize: 14,
@@ -416,7 +420,7 @@ class _FamilySettingsTabState extends State<FamilySettingsTab> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Share this code so others can join your family.',
+                    l10n.familySettingsShareCodeHelper,
                     style: TextStyle(
                       fontFamily: 'Manrope',
                       fontSize: 13,
@@ -445,7 +449,7 @@ class _FamilySettingsTabState extends State<FamilySettingsTab> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Members',
+                    l10n.familySettingsMembersLabel,
                     style: TextStyle(
                       fontFamily: 'Manrope',
                       fontSize: 14,
@@ -458,7 +462,7 @@ class _FamilySettingsTabState extends State<FamilySettingsTab> {
                   const SizedBox(height: 16),
                   if (_familyMembers.isEmpty)
                     Text(
-                      'No members yet',
+                      l10n.familySettingsNoMembersYet,
                       style: TextStyle(
                         fontFamily: 'Manrope',
                         fontSize: 14,
@@ -511,7 +515,7 @@ class _FamilySettingsTabState extends State<FamilySettingsTab> {
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: Text(
-                                    'Keeper',
+                                    l10n.familySettingsKeeperBadge,
                                     style: TextStyle(
                                       fontFamily: 'Manrope',
                                       fontSize: 12,

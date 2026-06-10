@@ -7,8 +7,10 @@ import 'package:provider/provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../providers/theme_provider.dart';
+import '../providers/locale_provider.dart';
 import '../providers/subscription_provider.dart';
 import '../config/app_theme.dart';
+import '../l10n/app_localizations.dart';
 import '../services/session_manager.dart';
 import '../services/api_service.dart';
 import '../models/family.dart';
@@ -30,6 +32,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _isLoadingMembers = false;
 
   Future<void> _openDeleteAccountPage() async {
+    final l10n = AppLocalizations.of(context);
     final uri = Uri.parse('https://legacytable.app/delete-account');
     try {
       final launched = await launchUrl(
@@ -37,13 +40,84 @@ class _SettingsScreenState extends State<SettingsScreen> {
         mode: LaunchMode.externalApplication,
       );
       if (!launched && mounted) {
-        StyledSnackBar.showError(context, 'Could not open delete account page');
+        StyledSnackBar.showError(context, l10n.settingsCouldNotOpenDeleteAccount);
       }
     } catch (_) {
       if (mounted) {
-        StyledSnackBar.showError(context, 'Could not open delete account page');
+        StyledSnackBar.showError(context, l10n.settingsCouldNotOpenDeleteAccount);
       }
     }
+  }
+
+  // Bottom sheet to choose the app language. Updates LocaleProvider, which
+  // rebuilds MaterialApp with the new locale and persists the choice.
+  void _showLanguagePicker(BuildContext context, bool isDark) {
+    final localeProvider =
+        Provider.of<LocaleProvider>(context, listen: false);
+    final l10n = AppLocalizations.of(context);
+    final currentCode = Localizations.localeOf(context).languageCode;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDark ? DarkColors.surface : LightColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) {
+        Widget option(String code, String label) {
+          final selected = currentCode == code;
+          return ListTile(
+            title: Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'Manrope',
+                fontSize: 16,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                color: isDark
+                    ? DarkColors.textPrimary
+                    : LightColors.textPrimary,
+              ),
+            ),
+            trailing:
+                selected ? Icon(Icons.check, color: brandPrimary) : null,
+            onTap: () {
+              localeProvider.setLocale(Locale(code));
+              Navigator.of(sheetContext).pop();
+            },
+          );
+        }
+
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  l10n.selectLanguage,
+                  style: TextStyle(
+                    fontFamily: 'Playfair Display',
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: isDark
+                        ? DarkColors.textPrimary
+                        : LightColors.textPrimary,
+                  ),
+                ),
+              ),
+              ...LocaleProvider.supportedLocales.map(
+                (loc) => option(
+                  loc.languageCode,
+                  LocaleProvider.languageNames[loc.languageCode] ??
+                      loc.languageCode,
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _openSubscription(BuildContext context) async {
@@ -109,7 +183,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         });
         // Show error to user
         if (mounted) {
-          StyledSnackBar.showError(context, 'Failed to load family members');
+          StyledSnackBar.showError(
+            context,
+            AppLocalizations.of(context).settingsFailedToLoadMembers,
+          );
         }
       }
     }
@@ -194,19 +271,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _copyInviteCode(String inviteCode) async {
     await Clipboard.setData(ClipboardData(text: inviteCode));
     if (mounted) {
-      StyledSnackBar.showSuccess(context, 'Invite code copied!');
+      StyledSnackBar.showSuccess(
+        context,
+        AppLocalizations.of(context).settingsInviteCodeCopied,
+      );
     }
   }
 
   Future<void> _shareInviteCode(Family family) async {
+    final l10n = AppLocalizations.of(context);
     final descriptionText =
         family.description != null && family.description!.isNotEmpty
         ? '\n\n${family.description}'
         : '';
 
     final shareText =
-        'Join my family "${family.name}" on Legacy Table!\n\n'
-        'Invite Code: ${family.inviteCode}'
+        '${l10n.settingsShareInviteJoin(family.name)}\n\n'
+        '${l10n.settingsShareInviteCode(family.inviteCode)}'
         '$descriptionText';
 
     await Share.share(shareText);
@@ -238,6 +319,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     final isDark = themeProvider.isDarkMode;
+    final l10n = AppLocalizations.of(context);
 
     // Show confirmation dialog
     final shouldLeave = await showDialog<bool>(
@@ -245,7 +327,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: isDark ? DarkColors.surface : LightColors.surface,
         title: Text(
-          'Leave Family',
+          l10n.settingsLeaveFamily,
           style: TextStyle(
             fontFamily: 'Manrope',
             fontSize: 18,
@@ -254,7 +336,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ),
         content: Text(
-          'Are you sure you want to leave "${_family!.name}"? You will need an invite code to rejoin.',
+          l10n.settingsLeaveFamilyConfirm(_family!.name),
           style: TextStyle(
             fontFamily: 'Manrope',
             fontSize: 14,
@@ -267,7 +349,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: Text(
-              'Cancel',
+              l10n.settingsCancel,
               style: TextStyle(
                 fontFamily: 'Manrope',
                 color: isDark
@@ -279,7 +361,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             child: Text(
-              'Leave',
+              l10n.settingsLeave,
               style: TextStyle(
                 fontFamily: 'Manrope',
                 fontWeight: FontWeight.w600,
@@ -328,7 +410,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       // Show success message
       if (mounted) {
-        StyledSnackBar.showSuccess(context, 'Successfully left family');
+        StyledSnackBar.showSuccess(context, l10n.settingsLeftFamilySuccess);
       }
     } catch (e) {
       // Close loading dialog if still open
@@ -338,11 +420,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       // Show error message
       if (mounted) {
-        String errorMessage = 'Failed to leave family';
+        String errorMessage = l10n.settingsFailedToLeaveFamily;
         if (e.toString().contains('Exception:')) {
           errorMessage = e.toString().replaceFirst('Exception: ', '');
         } else if (e.toString().contains('keeper')) {
-          errorMessage = 'You must transfer the keeper role before leaving';
+          errorMessage = l10n.settingsMustTransferBeforeLeaving;
         }
         StyledSnackBar.showError(context, errorMessage);
       }
@@ -355,6 +437,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     final isDark = themeProvider.isDarkMode;
+    final l10n = AppLocalizations.of(context);
 
     // Get list of members who are not the current keeper
     final otherMembers = _familyMembers
@@ -373,7 +456,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: isDark ? DarkColors.surface : LightColors.surface,
         title: Text(
-          'Transfer Keeper Role',
+          l10n.settingsTransferKeeperRole,
           style: TextStyle(
             fontFamily: 'Manrope',
             fontSize: 18,
@@ -388,7 +471,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'As the keeper, you must transfer your role to another member before leaving. Select a member to become the new keeper:',
+                l10n.settingsTransferKeeperPrompt,
                 style: TextStyle(
                   fontFamily: 'Manrope',
                   fontSize: 14,
@@ -431,7 +514,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           TextButton(
             onPressed: () => Navigator.pop(context, null),
             child: Text(
-              'Cancel',
+              l10n.settingsCancel,
               style: TextStyle(
                 fontFamily: 'Manrope',
                 color: isDark
@@ -453,6 +536,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _transferKeeper(User newKeeper) async {
     final user = sessionManager.currentUser;
     if (user?.familyId == null || _family == null) return;
+
+    final l10n = AppLocalizations.of(context);
 
     try {
       // Show loading indicator
@@ -490,7 +575,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         final newKeeperName = newKeeper.nickname ?? newKeeper.name;
         StyledSnackBar.showSuccess(
           context,
-          'Keeper role transferred to $newKeeperName',
+          l10n.settingsKeeperTransferredTo(newKeeperName),
         );
       }
 
@@ -506,7 +591,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           builder: (context) => AlertDialog(
             backgroundColor: isDark ? DarkColors.surface : LightColors.surface,
             title: Text(
-              'Leave Family?',
+              l10n.settingsLeaveFamilyQuestion,
               style: TextStyle(
                 fontFamily: 'Manrope',
                 fontSize: 18,
@@ -517,7 +602,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             content: Text(
-              'You have successfully transferred the keeper role. Would you like to leave the family now?',
+              l10n.settingsTransferSuccessLeavePrompt,
               style: TextStyle(
                 fontFamily: 'Manrope',
                 fontSize: 14,
@@ -530,7 +615,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
                 child: Text(
-                  'Stay',
+                  l10n.settingsStay,
                   style: TextStyle(
                     fontFamily: 'Manrope',
                     color: isDark
@@ -542,7 +627,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
                 child: Text(
-                  'Leave',
+                  l10n.settingsLeave,
                   style: TextStyle(
                     fontFamily: 'Manrope',
                     fontWeight: FontWeight.w600,
@@ -566,7 +651,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       // Show error message
       if (mounted) {
-        String errorMessage = 'Failed to transfer keeper role';
+        String errorMessage = l10n.settingsFailedToTransferKeeper;
         if (e.toString().contains('Exception:')) {
           errorMessage = e.toString().replaceFirst('Exception: ', '');
         }
@@ -581,6 +666,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     final isDark = themeProvider.isDarkMode;
+    final l10n = AppLocalizations.of(context);
 
     final memberName = member.nickname ?? member.name;
 
@@ -590,7 +676,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       builder: (context) => AlertDialog(
         backgroundColor: isDark ? DarkColors.surface : LightColors.surface,
         title: Text(
-          'Remove Member',
+          l10n.settingsRemoveMember,
           style: TextStyle(
             fontFamily: 'Manrope',
             fontSize: 18,
@@ -599,7 +685,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ),
         content: Text(
-          'Are you sure you want to remove "$memberName" from "${_family!.name}"? They will need an invite code to rejoin.',
+          l10n.settingsRemoveMemberConfirm(memberName, _family!.name),
           style: TextStyle(
             fontFamily: 'Manrope',
             fontSize: 14,
@@ -612,7 +698,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: Text(
-              'Cancel',
+              l10n.settingsCancel,
               style: TextStyle(
                 fontFamily: 'Manrope',
                 color: isDark
@@ -624,7 +710,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             child: Text(
-              'Remove',
+              l10n.settingsRemove,
               style: TextStyle(
                 fontFamily: 'Manrope',
                 fontWeight: FontWeight.w600,
@@ -667,7 +753,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (mounted) {
         StyledSnackBar.showSuccess(
           context,
-          '$memberName has been removed from the family',
+          l10n.settingsMemberRemoved(memberName),
         );
       }
     } catch (e) {
@@ -678,7 +764,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
       // Show error message
       if (mounted) {
-        String errorMessage = 'Failed to remove member';
+        String errorMessage = l10n.settingsFailedToRemoveMember;
         if (e.toString().contains('Exception:')) {
           errorMessage = e.toString().replaceFirst('Exception: ', '');
         }
@@ -689,6 +775,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
     final subscriptionProvider = Provider.of<SubscriptionProvider>(context);
     final isDark = themeProvider.isDarkMode;
@@ -728,7 +815,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       backgroundColor: isDark ? DarkColors.background : LightColors.background,
       appBar: AppBar(
         title: Text(
-          'Settings',
+          l10n.settingsTitle,
           style: TextStyle(
             fontFamily: 'Playfair Display',
             fontSize: 24,
@@ -767,8 +854,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               title: Text(
                 subscriptionProvider.hasAnySubscription
-                    ? 'Manage Subscription'
-                    : 'Upgrade to Premium',
+                    ? l10n.settingsManageSubscription
+                    : l10n.settingsUpgradeToPremium,
                 style: TextStyle(
                   fontFamily: 'Manrope',
                   fontSize: 16,
@@ -780,10 +867,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
               subtitle: Text(
                 switch (subscriptionProvider.tier) {
-                  SubscriptionTier.legacy => 'Legacy Collection is active',
-                  SubscriptionTier.heritage => 'Heritage Keeper is active',
-                  SubscriptionTier.none =>
-                    'Unlock family plans, exports, and premium features',
+                  SubscriptionTier.legacy => l10n.settingsLegacyCollectionActive,
+                  SubscriptionTier.heritage =>
+                    l10n.settingsHeritageKeeperActive,
+                  SubscriptionTier.none => l10n.settingsUnlockPremiumFeatures,
                 },
                 style: TextStyle(
                   fontFamily: 'Manrope',
@@ -847,7 +934,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
-                              'Keeper',
+                              l10n.settingsKeeperBadge,
                               style: TextStyle(
                                 fontFamily: 'Manrope',
                                 fontSize: 12,
@@ -871,7 +958,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
-                              'Member',
+                              l10n.settingsMemberBadge,
                               style: TextStyle(
                                 fontFamily: 'Manrope',
                                 fontSize: 12,
@@ -909,7 +996,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ],
                     const SizedBox(height: 16),
                     Text(
-                      'Invite Code',
+                      l10n.settingsInviteCodeLabel,
                       style: TextStyle(
                         fontFamily: 'Manrope',
                         fontSize: 12,
@@ -974,9 +1061,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       child: ElevatedButton.icon(
                         onPressed: () => _shareInviteCode(_family!),
                         icon: const Icon(Icons.share, size: 20),
-                        label: const Text(
-                          'Share Invite Code',
-                          style: TextStyle(
+                        label: Text(
+                          l10n.settingsShareInviteCodeButton,
+                          style: const TextStyle(
                             fontFamily: 'Manrope',
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -1004,7 +1091,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           color: Colors.red,
                         ),
                         label: Text(
-                          'Leave Family',
+                          l10n.settingsLeaveFamily,
                           style: TextStyle(
                             fontFamily: 'Manrope',
                             fontSize: 14,
@@ -1051,7 +1138,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         Icon(Icons.people, color: brandPrimary, size: 24),
                         const SizedBox(width: 12),
                         Text(
-                          'Family Members',
+                          l10n.settingsFamilyMembers,
                           style: TextStyle(
                             fontFamily: 'Playfair Display',
                             fontSize: 20,
@@ -1079,7 +1166,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       Padding(
                         padding: const EdgeInsets.all(20),
                         child: Text(
-                          'No members found',
+                          l10n.settingsNoMembersFound,
                           style: TextStyle(
                             fontFamily: 'Manrope',
                             fontSize: 14,
@@ -1186,7 +1273,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                                     BorderRadius.circular(6),
                                               ),
                                               child: Text(
-                                                'Keeper',
+                                                l10n.settingsKeeperBadge,
                                                 style: TextStyle(
                                                   fontFamily: 'Manrope',
                                                   fontSize: 10,
@@ -1223,7 +1310,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     size: 20,
                                   ),
                                   onPressed: () => _removeMember(member),
-                                  tooltip: 'Remove member',
+                                  tooltip: l10n.settingsRemoveMemberTooltip,
                                 ),
                             ],
                           ),
@@ -1257,7 +1344,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
               title: Text(
-                'Theme',
+                l10n.settingsTheme,
                 style: TextStyle(
                   fontFamily: 'Manrope',
                   fontSize: 16,
@@ -1268,7 +1355,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
               subtitle: Text(
-                isDark ? 'Dark Mode' : 'Light Mode',
+                isDark ? l10n.settingsDarkMode : l10n.settingsLightMode,
                 style: TextStyle(
                   fontFamily: 'Manrope',
                   fontSize: 14,
@@ -1285,6 +1372,63 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 activeThumbColor: brandPrimary,
               ),
             ),
+          ),
+          const SizedBox(height: 16),
+
+          // Language
+          Builder(
+            builder: (context) {
+              final l10n = AppLocalizations.of(context);
+              final currentCode = Localizations.localeOf(context).languageCode;
+              final currentName =
+                  LocaleProvider.languageNames[currentCode] ?? currentCode;
+              return Card(
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  side: BorderSide(
+                    color: isDark ? DarkColors.border : LightColors.border,
+                    width: 1,
+                  ),
+                ),
+                color: isDark ? DarkColors.surface : LightColors.surface,
+                child: ListTile(
+                  leading: Icon(
+                    Icons.language,
+                    color: isDark
+                        ? DarkColors.textPrimary
+                        : LightColors.textPrimary,
+                  ),
+                  title: Text(
+                    l10n.settingsLanguage,
+                    style: TextStyle(
+                      fontFamily: 'Manrope',
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: isDark
+                          ? DarkColors.textPrimary
+                          : LightColors.textPrimary,
+                    ),
+                  ),
+                  subtitle: Text(
+                    currentName,
+                    style: TextStyle(
+                      fontFamily: 'Manrope',
+                      fontSize: 14,
+                      color: isDark
+                          ? DarkColors.textSecondary
+                          : LightColors.textSecondary,
+                    ),
+                  ),
+                  trailing: Icon(
+                    Icons.chevron_right,
+                    color:
+                        isDark ? DarkColors.textMuted : LightColors.textMuted,
+                  ),
+                  onTap: () => _showLanguagePicker(context, isDark),
+                ),
+              );
+            },
           ),
           const SizedBox(height: 16),
 
@@ -1307,7 +1451,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     : LightColors.textPrimary,
               ),
               title: Text(
-                'Edit Profile',
+                l10n.settingsEditProfile,
                 style: TextStyle(
                   fontFamily: 'Manrope',
                   fontSize: 16,
@@ -1346,7 +1490,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             child: ListTile(
               leading: Icon(Icons.delete_outline, color: Colors.red),
               title: Text(
-                'Delete Account',
+                l10n.settingsDeleteAccount,
                 style: TextStyle(
                   fontFamily: 'Manrope',
                   fontSize: 16,
@@ -1382,7 +1526,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     : LightColors.textPrimary,
               ),
               title: Text(
-                'Notifications',
+                l10n.settingsNotifications,
                 style: TextStyle(
                   fontFamily: 'Manrope',
                   fontSize: 16,
@@ -1428,7 +1572,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         : LightColors.textPrimary,
                   ),
                   title: Text(
-                    'Terms of Use',
+                    l10n.settingsTermsOfUse,
                     style: TextStyle(
                       fontFamily: 'Manrope',
                       fontSize: 16,
@@ -1461,7 +1605,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         : LightColors.textPrimary,
                   ),
                   title: Text(
-                    'Privacy Policy',
+                    l10n.settingsPrivacyPolicy,
                     style: TextStyle(
                       fontFamily: 'Manrope',
                       fontSize: 16,
@@ -1494,7 +1638,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         : LightColors.textPrimary,
                   ),
                   title: Text(
-                    'About',
+                    l10n.settingsAbout,
                     style: TextStyle(
                       fontFamily: 'Manrope',
                       fontSize: 16,
@@ -1505,7 +1649,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ),
                   subtitle: Text(
-                    'Legacy Table Family Recipes v2.0.0',
+                    l10n.settingsAboutVersion,
                     style: TextStyle(
                       fontFamily: 'Manrope',
                       fontSize: 14,
@@ -1523,7 +1667,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       context: context,
                       applicationName: 'Legacy Table',
                       applicationVersion: '2.0.0',
-                      applicationLegalese: '© 2026 Ubuntu Market LLC. All rights reserved.',
+                      applicationLegalese: l10n.settingsLegalese,
                     );
                   },
                 ),
@@ -1551,7 +1695,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 colorFilter: ColorFilter.mode(Colors.red, BlendMode.srcIn),
               ),
               title: Text(
-                'Logout',
+                l10n.settingsLogout,
                 style: TextStyle(
                   fontFamily: 'Manrope',
                   fontSize: 16,
@@ -1563,12 +1707,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 showDialog(
                   context: context,
                   builder: (dialogContext) => AlertDialog(
-                    title: const Text('Logout'),
-                    content: const Text('Are you sure you want to logout?'),
+                    title: Text(l10n.settingsLogout),
+                    content: Text(l10n.settingsLogoutConfirm),
                     actions: [
                       TextButton(
                         onPressed: () => Navigator.pop(dialogContext),
-                        child: const Text('Cancel'),
+                        child: Text(l10n.settingsCancel),
                       ),
                       TextButton(
                         onPressed: () async {
@@ -1607,7 +1751,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             }
                           }
                         },
-                        child: const Text('Logout'),
+                        child: Text(l10n.settingsLogout),
                       ),
                     ],
                   ),

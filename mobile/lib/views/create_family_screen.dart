@@ -9,6 +9,7 @@ import '../services/session_manager.dart';
 import '../models/family.dart';
 import '../widgets/styled_snackbar.dart';
 import '../widgets/share_invite_dialog.dart';
+import '../l10n/app_localizations.dart';
 
 class CreateFamilyScreen extends StatefulWidget {
   const CreateFamilyScreen({super.key});
@@ -31,6 +32,7 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
   }
 
   Future<void> _handleCreateFamily() async {
+    final l10n = AppLocalizations.of(context);
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
@@ -61,11 +63,11 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
       }
     } catch (e) {
       if (mounted) {
-        String errorMessage = 'Failed to create family';
+        String errorMessage = l10n.createFamilyErrorGeneric;
         if (e.toString().contains('Exception:')) {
           errorMessage = e.toString().replaceFirst('Exception: ', '');
         } else if (e.toString().contains('409')) {
-          errorMessage = 'You are already part of a family.';
+          errorMessage = l10n.createFamilyErrorAlreadyMember;
         } else {
           errorMessage = e.toString();
         }
@@ -82,6 +84,7 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
     final isDark = themeProvider.isDarkMode;
 
@@ -89,7 +92,7 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
       backgroundColor: isDark ? DarkColors.background : LightColors.background,
       appBar: AppBar(
         title: Text(
-          'Create Family',
+          l10n.createFamilyAppBarTitle,
           style: TextStyle(
             fontFamily: 'Playfair Display',
             fontSize: 24,
@@ -135,7 +138,7 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
 
                   // Title
                   Text(
-                    'Create a Family',
+                    l10n.createFamilyHeading,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontFamily: 'Playfair Display',
@@ -148,7 +151,7 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
 
                   // Subtitle
                   Text(
-                    'Start sharing recipes with your family members',
+                    l10n.createFamilySubtitle,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontFamily: 'Manrope',
@@ -160,7 +163,7 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
 
                   // Family Name Field
                   Text(
-                    'FAMILY NAME',
+                    l10n.createFamilyNameLabel,
                     style: TextStyle(
                       fontFamily: 'Manrope',
                       fontSize: 12,
@@ -180,7 +183,7 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
                       color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
                     ),
                     decoration: InputDecoration(
-                      hintText: 'e.g., Smith Family',
+                      hintText: l10n.createFamilyNameHint,
                       hintStyle: TextStyle(
                         color: isDark ? DarkColors.textMuted : LightColors.textMuted,
                       ),
@@ -214,13 +217,13 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
                     ),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
-                        return 'Please enter a family name';
+                        return l10n.createFamilyNameRequired;
                       }
                       if (value.trim().length < 2) {
-                        return 'Family name must be at least 2 characters';
+                        return l10n.createFamilyNameTooShort;
                       }
                       if (value.trim().length > 50) {
-                        return 'Family name must be 50 characters or less';
+                        return l10n.createFamilyNameTooLong;
                       }
                       return null;
                     },
@@ -229,7 +232,7 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
 
                   // Description Field (Optional)
                   Text(
-                    'DESCRIPTION (OPTIONAL)',
+                    l10n.createFamilyDescriptionLabel,
                     style: TextStyle(
                       fontFamily: 'Manrope',
                       fontSize: 12,
@@ -251,7 +254,7 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
                       color: isDark ? DarkColors.textPrimary : LightColors.textPrimary,
                     ),
                     decoration: InputDecoration(
-                      hintText: 'Tell us about your family...',
+                      hintText: l10n.createFamilyDescriptionHint,
                       hintStyle: TextStyle(
                         color: isDark ? DarkColors.textMuted : LightColors.textMuted,
                       ),
@@ -285,7 +288,7 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
                     ),
                     validator: (value) {
                       if (value != null && value.trim().length > 500) {
-                        return 'Description must be 500 characters or less';
+                        return l10n.createFamilyDescriptionTooLong;
                       }
                       return null;
                     },
@@ -314,7 +317,7 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
                             ),
                           )
                         : Text(
-                            'Create Family',
+                            l10n.createFamilySubmitButton,
                             style: TextStyle(
                               fontFamily: 'Manrope',
                               fontSize: 16,
@@ -327,7 +330,7 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
 
                   // Info Text
                   Text(
-                    'You will become the family keeper and can invite others',
+                    l10n.createFamilyKeeperInfo,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontFamily: 'Manrope',
@@ -345,6 +348,7 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
   }
 
   Future<void> _showInviteCodeDialog(BuildContext context, Family family) async {
+    final l10n = AppLocalizations.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     final isDark = themeProvider.isDarkMode;
     
@@ -383,7 +387,7 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
                 
                 // Title
                 Text(
-                  'Family Created!',
+                  l10n.createFamilySuccessTitle,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontFamily: 'Playfair Display',
@@ -430,7 +434,7 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
                 
                 // Invite Code Section
                 Text(
-                  'Invite Code',
+                  l10n.createFamilyInviteCodeLabel,
                   style: TextStyle(
                     fontFamily: 'Manrope',
                     fontSize: 12,
@@ -480,7 +484,7 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
                         ),
                         onPressed: () {
                           Clipboard.setData(ClipboardData(text: family.inviteCode));
-                          StyledSnackBar.showSuccess(context, 'Invite code copied!');
+                          StyledSnackBar.showSuccess(context, l10n.createFamilyInviteCodeCopied);
                         },
                       ),
                     ],
@@ -489,7 +493,7 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
                 const SizedBox(height: 8),
                 
                 Text(
-                  'Share this code with family members to invite them',
+                  l10n.createFamilyShareCodeHint,
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontFamily: 'Manrope',
@@ -508,9 +512,9 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
                     );
                   },
                   icon: const Icon(Icons.share, size: 20),
-                  label: const Text(
-                    'Share Invite',
-                    style: TextStyle(
+                  label: Text(
+                    l10n.createFamilyShareInviteButton,
+                    style: const TextStyle(
                       fontFamily: 'Manrope',
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -534,7 +538,7 @@ class _CreateFamilyScreenState extends State<CreateFamilyScreen> {
                     Navigator.of(context).pop();
                   },
                   child: Text(
-                    'Done',
+                    l10n.createFamilyDoneButton,
                     style: TextStyle(
                       fontFamily: 'Manrope',
                       fontSize: 16,

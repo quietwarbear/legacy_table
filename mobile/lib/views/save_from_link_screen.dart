@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../config/app_theme.dart';
+import '../l10n/app_localizations.dart';
 import '../services/api_service.dart';
 import '../widgets/styled_snackbar.dart';
 import 'add_recipe_screen.dart';
@@ -23,11 +24,12 @@ class _SaveFromLinkScreenState extends State<SaveFromLinkScreen> {
   }
 
   Future<void> _importRecipe() async {
+    final l10n = AppLocalizations.of(context);
     final url = _urlController.text.trim();
     if (url.isEmpty) {
       StyledSnackBar.showWarning(
         context,
-        'Paste a cooking video or recipe link first',
+        l10n.saveFromLinkEmptyUrlWarning,
       );
       return;
     }
@@ -36,7 +38,7 @@ class _SaveFromLinkScreenState extends State<SaveFromLinkScreen> {
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
       StyledSnackBar.showWarning(
         context,
-        'Please enter a valid URL starting with http:// or https://',
+        l10n.saveFromLinkInvalidUrlWarning,
       );
       return;
     }
@@ -54,7 +56,7 @@ class _SaveFromLinkScreenState extends State<SaveFromLinkScreen> {
       if (result.creditsRemaining != null) {
         StyledSnackBar.showSuccess(
           context,
-          'Recipe imported! ${result.creditsRemaining} credits remaining.',
+          l10n.saveFromLinkImportSuccess(result.creditsRemaining!),
         );
       }
 
@@ -92,19 +94,20 @@ class _SaveFromLinkScreenState extends State<SaveFromLinkScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(title: const Text('Save From Link')),
+      appBar: AppBar(title: Text(l10n.saveFromLinkAppBarTitle)),
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Paste a TikTok, Instagram, YouTube, or recipe link and turn it into a shareable Legacy Table draft.',
+              l10n.saveFromLinkIntro,
               style: theme.textTheme.bodyLarge?.copyWith(
                 color: isDark
                     ? DarkColors.textSecondary
@@ -123,7 +126,7 @@ class _SaveFromLinkScreenState extends State<SaveFromLinkScreen> {
                   Icon(Icons.auto_awesome, size: 16, color: brandPrimary),
                   const SizedBox(width: 8),
                   Text(
-                    'Uses 1 AI credit',
+                    l10n.saveFromLinkCreditCost,
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: brandPrimary,
                       fontWeight: FontWeight.w600,
@@ -166,7 +169,7 @@ class _SaveFromLinkScreenState extends State<SaveFromLinkScreen> {
                 ),
               ),
               child: Text(
-                'The imported recipe opens as a draft first, so you can clean up ingredients, adjust instructions, and add your own story before sharing it.',
+                l10n.saveFromLinkDraftInfo,
                 style: theme.textTheme.bodyMedium,
               ),
             ),
@@ -186,7 +189,9 @@ class _SaveFromLinkScreenState extends State<SaveFromLinkScreen> {
                       )
                     : const Icon(Icons.link_outlined),
                 label: Text(
-                  _isImporting ? 'Importing with AI...' : 'Create Draft From Link',
+                  _isImporting
+                      ? l10n.saveFromLinkImportingLabel
+                      : l10n.saveFromLinkCreateDraftButton,
                 ),
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),

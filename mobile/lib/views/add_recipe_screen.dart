@@ -12,6 +12,7 @@ import '../config/app_theme.dart';
 import '../services/api_service.dart';
 import '../models/recipe.dart';
 import '../widgets/styled_snackbar.dart';
+import '../l10n/app_localizations.dart';
 
 class AddRecipeScreen extends StatefulWidget {
   final Recipe? recipe; // Optional - if provided, we're in edit mode
@@ -135,6 +136,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
   }
 
   Future<bool> _requestGalleryPermission() async {
+    final l10n = AppLocalizations.of(context);
     try {
       if (Platform.isAndroid) {
         // Try Permission.photos first (Android 13+)
@@ -151,8 +153,8 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
           if (photosRequest.isPermanentlyDenied) {
             if (mounted) {
               _showPermissionDeniedDialog(
-                'Photo Library Permission',
-                'Photo library permission is required to select images.\n\nTo enable:\n1. Tap "Open Settings"\n2. Go to "Permissions"\n3. Enable "Photos and videos"',
+                l10n.addRecipePhotoPermissionTitle,
+                l10n.addRecipePhotoPermissionAndroidMessage,
               );
             }
             return false; 
@@ -173,8 +175,8 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
         if (storageRequest.isPermanentlyDenied) {
           if (mounted) {
             _showPermissionDeniedDialog(
-              'Storage Permission',
-              'Storage permission is required to select images.\n\nTo enable:\n1. Tap "Open Settings"\n2. Go to "Permissions"\n3. Enable "Storage" or "Files and media"',
+              l10n.addRecipeStoragePermissionTitle,
+              l10n.addRecipeStoragePermissionMessage,
             );
           } 
         }
@@ -194,8 +196,8 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
         if (requestStatus.isPermanentlyDenied) {
           if (mounted) {
             _showPermissionDeniedDialog(
-              'Photo Library Permission',
-              'Photo library permission is required to select images.\n\nTo enable:\n1. Tap "Open Settings"\n2. Find "Legacy Table"\n3. Tap "Photos"\n4. Select "All Photos" or "Selected Photos"',
+              l10n.addRecipePhotoPermissionTitle,
+              l10n.addRecipePhotoPermissionIosMessage,
             );
           }
         }
@@ -210,6 +212,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
   }
 
   Future<bool> _requestCameraPermission() async {
+    final l10n = AppLocalizations.of(context);
     final status = await Permission.camera.request();
     if (status.isGranted) {
       return true;
@@ -218,19 +221,20 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
     if (status.isPermanentlyDenied) {
       if (mounted) {
         _showPermissionDeniedDialog(
-          'Camera Permission',
-          'Camera permission is permanently denied. Please enable it from app settings.',
+          l10n.addRecipeCameraPermissionTitle,
+          l10n.addRecipeCameraPermissionDeniedMessage,
         );
       }
     } else if (status.isDenied) {
       if (mounted) {
-        StyledSnackBar.showWarning(context, 'Camera permission is required to take photos');
+        StyledSnackBar.showWarning(context, l10n.addRecipeCameraPermissionRequired);
       }
     }
     return false;
   }
 
   void _showPermissionDeniedDialog(String title, String message) {
+    final l10n = AppLocalizations.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context, listen: false);
     final isDark = themeProvider.isDarkMode;
     
@@ -259,7 +263,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
-              'Cancel',
+              l10n.addRecipeCancel,
               style: TextStyle(
                 fontFamily: 'Manrope',
                 color: isDark ? DarkColors.textSecondary : LightColors.textSecondary,
@@ -278,8 +282,8 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                 SnackBar(
                   content: Text(
                     Platform.isAndroid
-                        ? 'Look for "Photos and videos" or "Media" permission in App Settings'
-                        : 'Look for "Photos" permission in App Settings',
+                        ? l10n.addRecipeSettingsHintAndroid
+                        : l10n.addRecipeSettingsHintIos,
                     style: const TextStyle(fontFamily: 'Manrope'),
                   ),
                   duration: const Duration(seconds: 4),
@@ -287,7 +291,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
               );
             },
             child: Text(
-              'Open Settings',
+              l10n.addRecipeOpenSettings,
               style: TextStyle(
                 fontFamily: 'Manrope',
                 fontWeight: FontWeight.w600,
@@ -319,7 +323,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Couldn\'t select images. Please try again.'),
+            content: Text(AppLocalizations.of(context).addRecipeImageSelectError),
             backgroundColor: Colors.red,
           ),
         );
@@ -352,7 +356,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('Couldn\'t take photo. Please try again.'),
+            content: Text(AppLocalizations.of(context).addRecipeTakePhotoError),
             backgroundColor: Colors.red,
           ),
         );
@@ -452,6 +456,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
   }
 
   Future<void> _onShareRecipe() async {
+    final l10n = AppLocalizations.of(context);
     // Validate form first
     if (!_formKey.currentState!.validate()) {
       // Scroll to first error field
@@ -460,7 +465,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
     }
 
     if (_selectedCategory == null || _selectedCategory!.isEmpty) {
-      StyledSnackBar.showWarning(context, 'Please select a category');
+      StyledSnackBar.showWarning(context, l10n.addRecipeSelectCategoryWarning);
       return;
     }
 
@@ -471,7 +476,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
         .toList();
 
     if (ingredients.isEmpty) {
-      StyledSnackBar.showWarning(context, 'Please add at least one ingredient');
+      StyledSnackBar.showWarning(context, l10n.addRecipeAddIngredientWarning);
       return;
     }
 
@@ -492,7 +497,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                   const CircularProgressIndicator(),
                   const SizedBox(height: 16),
                   Text(
-                    _isEditing ? 'Updating recipe...' : 'Sharing recipe...',
+                    _isEditing ? l10n.addRecipeUpdatingRecipe : l10n.addRecipeSharingRecipe,
                     style: const TextStyle(fontSize: 16),
                   ),
                 ],
@@ -519,7 +524,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
-                      'Image "${imageFile.path.split('/').last}" is too large. Maximum size is 5MB.',
+                      l10n.addRecipeImageTooLarge(imageFile.path.split('/').last),
                     ),
                     backgroundColor: Colors.orange,
                     duration: const Duration(seconds: 4),
@@ -543,8 +548,8 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
           if (!mounted) return;
           Navigator.pop(context); // Close loading dialog
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Failed to process images. Please try selecting different images.'),
+            SnackBar(
+              content: Text(l10n.addRecipeProcessImagesError),
               backgroundColor: Colors.orange,
             ),
           );
@@ -587,7 +592,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
         Navigator.pop(context, updatedRecipe); // Return updated recipe
 
         if (mounted) {
-          StyledSnackBar.showSuccess(context, 'Recipe updated successfully!');
+          StyledSnackBar.showSuccess(context, l10n.addRecipeUpdateSuccess);
         }
       } else {
         // Create new recipe
@@ -612,7 +617,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
         Navigator.pop(context, true);
 
         if (mounted) {
-          StyledSnackBar.showSuccess(context, 'Recipe shared successfully!');
+          StyledSnackBar.showSuccess(context, l10n.addRecipeShareSuccess);
         }
       }
     } catch (e) {
@@ -632,6 +637,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     try {
       final themeProvider = Provider.of<ThemeProvider>(context);
       final isDark = themeProvider.isDarkMode;
@@ -640,7 +646,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
         backgroundColor: isDark ? DarkColors.background : LightColors.background,
         appBar: AppBar(
           title: Text(
-            _isEditing ? 'Edit Recipe' : 'Share a Recipe',
+            _isEditing ? l10n.addRecipeEditTitle : l10n.addRecipeShareTitle,
             style: TextStyle(
               fontFamily: 'Playfair Display',
               fontSize: 24,
@@ -661,8 +667,8 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
               // Subtitle
               Text(
                 _isEditing
-                    ? 'Update your recipe details'
-                    : 'Add a new dish to the family collection',
+                    ? l10n.addRecipeEditSubtitle
+                    : l10n.addRecipeShareSubtitle,
                 style: TextStyle(
                   fontFamily: 'Manrope',
                   fontSize: 14,
@@ -672,7 +678,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
               const SizedBox(height: 32),
 
               // PHOTOS Section
-              _buildSectionLabel('PHOTOS', isDark),
+              _buildSectionLabel(l10n.addRecipePhotosLabel, isDark),
               const SizedBox(height: 12),
               // Show all images together (existing + new)
               if ((_isEditing && _remainingExistingPhotos.isNotEmpty) || _selectedImages.isNotEmpty)
@@ -695,15 +701,15 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
               const SizedBox(height: 32),
 
               // RECIPE TITLE
-              _buildSectionLabel('RECIPE TITLE *', isDark),
+              _buildSectionLabel(l10n.addRecipeTitleLabel, isDark),
               const SizedBox(height: 12),
               _buildTextField(
                 controller: _titleController,
-                placeholder: "e.g., Grandma's Special Jollof Rice",
+                placeholder: l10n.addRecipeTitlePlaceholder,
                 isDark: isDark,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Recipe title is required';
+                    return l10n.addRecipeTitleRequired;
                   }
                   return null;
                 },
@@ -719,11 +725,11 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildSectionLabel('CATEGORY *', isDark),
+                        _buildSectionLabel(l10n.addRecipeCategoryLabel, isDark),
                         const SizedBox(height: 12),
                         _buildDropdown(
                           value: _selectedCategory,
-                          placeholder: 'Select category',
+                          placeholder: l10n.addRecipeCategoryPlaceholder,
                           items: ['Appetizer', 'Main Course', 'Dessert', 'Beverage', 'Side Dish'],
                           onChanged: (value) {
                             setState(() {
@@ -733,7 +739,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                           isDark: isDark,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Category is required';
+                              return l10n.addRecipeCategoryRequired;
                             }
                             return null;
                           },
@@ -746,11 +752,11 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildSectionLabel('DIFFICULTY', isDark),
+                        _buildSectionLabel(l10n.addRecipeDifficultyLabel, isDark),
                         const SizedBox(height: 12),
                         _buildDropdown(
                           value: _selectedDifficulty,
-                          placeholder: 'Select difficulty',
+                          placeholder: l10n.addRecipeDifficultyPlaceholder,
                           items: ['Easy', 'Medium', 'Hard'],
                           onChanged: (value) {
                             setState(() {
@@ -773,7 +779,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildSectionLabel('COOKING TIME\n(MINUTES)', isDark),
+                        _buildSectionLabel(l10n.addRecipeCookingTimeLabel, isDark),
                         const SizedBox(height: 12),
                         _buildNumberField(
                           value: _cookingTime,
@@ -792,7 +798,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildSectionLabel('\nSERVINGS', isDark),
+                        _buildSectionLabel(l10n.addRecipeServingsLabel, isDark),
                         const SizedBox(height: 12),
                         _buildNumberField(
                           value: _servings,
@@ -811,7 +817,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
               const SizedBox(height: 24),
 
               // INGREDIENTS
-              _buildSectionLabel('INGREDIENTS *', isDark),
+              _buildSectionLabel(l10n.addRecipeIngredientsLabel, isDark),
               const SizedBox(height: 12),
               ...List.generate(_ingredientControllers.length, (index) {
                 return Padding(
@@ -821,11 +827,11 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                       Expanded(
                         child: _buildTextField(
                           controller: _ingredientControllers[index],
-                          placeholder: 'Ingredient ${index + 1}',
+                          placeholder: l10n.addRecipeIngredientPlaceholder(index + 1),
                           isDark: isDark,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Ingredient is required';
+                              return l10n.addRecipeIngredientRequired;
                             }
                             return null;
                           },
@@ -846,22 +852,22 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
               const SizedBox(height: 8),
               _buildAddButton(
                 icon: Icons.add,
-                label: 'Add ingredient',
+                label: l10n.addRecipeAddIngredient,
                 onPressed: _addIngredient,
                 isDark: isDark,
               ),
               const SizedBox(height: 24),
 
               // INSTRUCTIONS
-              _buildSectionLabel('INSTRUCTIONS *', isDark),
+              _buildSectionLabel(l10n.addRecipeInstructionsLabel, isDark),
               const SizedBox(height: 12),
               _buildTextArea(
                 controller: _instructionsController,
-                placeholder: 'Write the step-by-step cooking instructions...',
+                placeholder: l10n.addRecipeInstructionsPlaceholder,
                 isDark: isDark,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Instructions are required';
+                    return l10n.addRecipeInstructionsRequired;
                   }
                   return null;
                 },
@@ -869,10 +875,10 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
               const SizedBox(height: 24),
 
               // THE STORY BEHIND THIS RECIPE
-              _buildSectionLabel('THE STORY BEHIND THIS RECIPE (optional)', isDark),
+              _buildSectionLabel(l10n.addRecipeStoryLabel, isDark),
               const SizedBox(height: 8),
               Text(
-                'Share the story of this recipe... Where did it come from? Who passed it down? What memories does it hold for your family?',
+                l10n.addRecipeStoryDescription,
                 style: TextStyle(
                   fontFamily: 'Manrope',
                   fontSize: 12,
@@ -882,7 +888,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
               const SizedBox(height: 12),
               _buildTextArea(
                 controller: _storyController,
-                placeholder: 'Tell us about the history, traditions, or special memories connected to this dish.',
+                placeholder: l10n.addRecipeStoryPlaceholder,
                 isDark: isDark,
                 minLines: 4,
               ),
@@ -904,7 +910,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                         ),
                       ),
                       child: Text(
-                        'Cancel',
+                        l10n.addRecipeCancel,
                         style: TextStyle(
                           fontFamily: 'Manrope',
                           fontSize: 16,
@@ -928,7 +934,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                         ),
                       ),
                       child: Text(
-                        _isEditing ? 'Update Recipe' : 'Share Recipe',
+                        _isEditing ? l10n.addRecipeUpdateButton : l10n.addRecipeShareButton,
                         style: TextStyle(
                           fontFamily: 'Manrope',
                           fontSize: 16,
@@ -954,7 +960,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
       return Scaffold(
         backgroundColor: Colors.grey[100],
         appBar: AppBar(
-          title: const Text('Share a Recipe'),
+          title: Text(l10n.addRecipeShareTitle),
         ),
         body: Center(
           child: Padding(
@@ -968,22 +974,22 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
                   color: Colors.red,
                 ),
                 const SizedBox(height: 16),
-                const Text(
-                  'Something went wrong',
-                  style: TextStyle(
+                Text(
+                  l10n.addRecipeErrorTitle,
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Please try again or restart the app.',
+                Text(
+                  l10n.addRecipeErrorMessage,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Go Back'),
+                  child: Text(l10n.addRecipeGoBack),
                 ),
               ],
             ),
@@ -1166,6 +1172,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
   }
 
   Widget _buildPhotoUploadArea(bool isDark) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       height: 150,
       decoration: BoxDecoration(
@@ -1190,7 +1197,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Upload from gallery',
+              l10n.addRecipeUploadFromGallery,
               style: TextStyle(
                 fontFamily: 'Manrope',
                 fontSize: 14,
@@ -1204,6 +1211,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
   }
 
   Widget _buildTakePhotoButton(bool isDark) {
+    final l10n = AppLocalizations.of(context);
     return SizedBox(
       height: 150,
       child: OutlinedButton(
@@ -1247,7 +1255,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Take Photo',
+              l10n.addRecipeTakePhoto,
               style: TextStyle(
                 fontFamily: 'Manrope',
                 fontSize: 14,

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../config/app_theme.dart';
+import '../l10n/app_localizations.dart';
 import '../models/notification.dart';
 import '../services/api_service.dart';
 import '../widgets/styled_snackbar.dart';
@@ -55,7 +56,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         _isLoading = false;
       });
       if (mounted) {
-        StyledSnackBar.showError(context, 'Failed to load notifications. Please try again.');
+        StyledSnackBar.showError(context, AppLocalizations.of(context).notificationsLoadError);
       }
     }
   }
@@ -73,14 +74,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       await _loadNotifications();
 
       if (mounted) {
-        StyledSnackBar.showSuccess(context, 'All notifications marked as read');
+        StyledSnackBar.showSuccess(context, AppLocalizations.of(context).notificationsAllMarkedRead);
       }
     } catch (e) {
       if (kDebugMode) {
         print('Error marking all as read: $e');
       }
       if (mounted) {
-        StyledSnackBar.showError(context, 'Failed to mark all as read. Please try again.');
+        StyledSnackBar.showError(context, AppLocalizations.of(context).notificationsMarkAllError);
       }
     } finally {
       if (mounted) {
@@ -179,6 +180,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final textColor = isDark ? DarkColors.textPrimary : LightColors.textPrimary;
@@ -190,7 +192,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       backgroundColor: isDark ? DarkColors.background : LightColors.background,
       appBar: AppBar(
         title: Text(
-          'Notifications',
+          l10n.notificationsTitle,
           style: TextStyle(
             fontFamily: 'Playfair Display',
             fontSize: 24,
@@ -211,9 +213,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.done_all, size: 18),
-              label: const Text(
-                'Mark all as read',
-                style: TextStyle(
+              label: Text(
+                l10n.notificationsMarkAllButton,
+                style: const TextStyle(
                   fontFamily: 'Manrope',
                   fontSize: 14,
                 ),
@@ -235,7 +237,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'No notifications',
+                        l10n.notificationsEmptyTitle,
                         style: theme.textTheme.headlineSmall?.copyWith(
                           fontFamily: 'Manrope',
                           fontWeight: FontWeight.w600,
@@ -244,7 +246,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'You\'re all caught up!',
+                        l10n.notificationsEmptySubtitle,
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: secondaryTextColor,
                           fontFamily: 'Manrope',
