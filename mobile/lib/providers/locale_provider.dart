@@ -19,6 +19,8 @@ class LocaleProvider extends ChangeNotifier {
     Locale('fa'),
     Locale('pt'),
     Locale('fr'),
+    Locale('ar'),
+    Locale('ur'),
   ];
 
   /// Display label for each supported language, written in that language so it
@@ -31,6 +33,8 @@ class LocaleProvider extends ChangeNotifier {
     'fa': 'فارسی',
     'pt': 'Português (Brasil)',
     'fr': 'Français',
+    'ar': 'العربية',
+    'ur': 'اردو',
   };
 
   Locale? _locale;
