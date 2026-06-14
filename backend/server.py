@@ -578,6 +578,68 @@ async def register(user_data: UserCreate):
     )
     return TokenResponse(token=token, user=user_response)
 
+
+class SSOExchangeRequest(BaseModel):
+    email: str
+    secret: str
+    name: str = ""
+
+
+@api_router.post("/auth/exchange", response_model=TokenResponse)
+async def auth_exchange(payload: SSOExchangeRequest):
+    """Ubuntu Markets single-identity exchange.
+
+    A trusted sibling product (e.g. Kindred) presents a verified user's email plus the
+    shared UBUNTU_SSO_SECRET; we find-or-create that user and return a normal Legacy
+    Table session. No password is exchanged. The secret is server-side only and must be
+    set identically in both products' environments. Only trust products you control.
+    """
+    expected = os.environ.get("UBUNTU_SSO_SECRET", "")
+    if not expected or payload.secret != expected:
+        raise HTTPException(status_code=403, detail="Invalid SSO secret")
+
+    email = (payload.email or "").strip().lower()
+    if not email or "@" not in email:
+        raise HTTPException(status_code=400, detail="A valid email is required")
+
+    user = await db.users.find_one({"email": email}, {"_id": 0})
+    if not user:
+        user_id = str(uuid.uuid4())
+        initial_credits = get_credits_for_tier(None)
+        credits_refresh = next_refresh_date()
+        user = {
+            "id": user_id,
+            "name": (payload.name or email.split("@")[0]),
+            "nickname": None,
+            "email": email,
+            "password_hash": None,
+            "avatar": None,
+            "auth_provider": "ubuntu-sso",
+            "credits_balance": initial_credits,
+            "credits_refresh_at": credits_refresh,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+        await db.users.insert_one(dict(user))
+    else:
+        user = await refresh_credits_if_needed(user)
+
+    token = create_token(user["id"])
+    user_response = UserResponse(
+        id=user["id"],
+        name=user.get("name", ""),
+        nickname=user.get("nickname"),
+        email=user["email"],
+        avatar=user.get("avatar"),
+        family_id=user.get("family_id"),
+        role=user.get("role"),
+        subscription_tier=user.get("subscription_tier"),
+        credits_balance=user.get("credits_balance", 0),
+        credits_refresh_at=user.get("credits_refresh_at"),
+        created_at=user["created_at"],
+    )
+    return TokenResponse(token=token, user=user_response)
+
+
 @api_router.post("/auth/login", response_model=TokenResponse)
 async def login(credentials: UserLogin):
     user = await db.users.find_one({"email": credentials.email.lower()}, {"_id": 0})
