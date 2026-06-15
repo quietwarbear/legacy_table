@@ -617,6 +617,35 @@ const Navigation = () => {
   );
 };
 
+// Ubuntu Markets SSO handoff — redeems a one-time code from a sibling product (Kindred)
+// and signs the user in. Reached at /sso?code=… ; the code is single-use and short-lived.
+const SSOHandoffPage = () => {
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const [error, setError] = useState("");
+  useEffect(() => {
+    const code = new URLSearchParams(window.location.search).get("code");
+    if (!code) {
+      setError("Missing sign-in code. Please try again from Kindred.");
+      return;
+    }
+    (async () => {
+      try {
+        const res = await axios.post(`${API}/auth/sso-redeem`, { code });
+        login(res.data.token, res.data.user);
+        navigate("/home", { replace: true });
+      } catch (e) {
+        setError("This sign-in link has expired or was already used. Please try again from Kindred.");
+      }
+    })();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  return (
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif", padding: 24, textAlign: "center" }}>
+      <div>{error ? <p style={{ color: "#b91c1c", fontSize: 16 }}>{error}</p> : <p style={{ fontSize: 16, color: "#5a4a3a" }}>Signing you in to Legacy Table…</p>}</div>
+    </div>
+  );
+};
+
 // Login Page
 const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID;
 
@@ -6379,6 +6408,7 @@ function App() {
             <SubscriptionProvider>
               <Routes>
                 <Route path="/login" element={<LoginPage />} />
+                <Route path="/sso" element={<SSOHandoffPage />} />
                 <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
                 <Route path="/terms" element={<TermsOfServicePage />} />
                 <Route path="/delete-account" element={<DeleteAccountPage />} />

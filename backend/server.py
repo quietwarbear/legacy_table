@@ -640,6 +640,94 @@ async def auth_exchange(payload: SSOExchangeRequest):
     return TokenResponse(token=token, user=user_response)
 
 
+class SSOCodeRequest(BaseModel):
+    email: str
+    secret: str
+    name: str = ""
+
+
+class SSORedeemRequest(BaseModel):
+    code: str
+
+
+@api_router.post("/auth/sso-code")
+async def sso_mint_code(payload: SSOCodeRequest):
+    """Mint a short-lived, single-use SSO handoff code (server-to-server, secret-gated).
+
+    A trusted sibling product (Kindred) calls this to start a cross-product 'jump'. The
+    code — not a session token — goes in the jump URL and is redeemed once via /sso-redeem.
+    """
+    expected = os.environ.get("UBUNTU_SSO_SECRET", "")
+    if not expected or payload.secret != expected:
+        raise HTTPException(status_code=403, detail="Invalid SSO secret")
+    email = (payload.email or "").strip().lower()
+    if not email or "@" not in email:
+        raise HTTPException(status_code=400, detail="A valid email is required")
+
+    user = await db.users.find_one({"email": email})
+    if not user:
+        user_id = str(uuid.uuid4())
+        user = {
+            "id": user_id,
+            "name": payload.name or email.split("@")[0],
+            "nickname": None,
+            "email": email,
+            "password_hash": None,
+            "avatar": None,
+            "auth_provider": "ubuntu-sso",
+            "credits_balance": get_credits_for_tier(None),
+            "credits_refresh_at": next_refresh_date(),
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+        await db.users.insert_one(dict(user))
+
+    code = uuid.uuid4().hex
+    await db.sso_codes.insert_one({
+        "code": code,
+        "user_id": user["id"],
+        "expires_at": datetime.now(timezone.utc) + timedelta(minutes=5),
+        "used": False,
+        "created_at": datetime.now(timezone.utc),
+    })
+    return {"code": code, "expires_in": 300}
+
+
+@api_router.post("/auth/sso-redeem", response_model=TokenResponse)
+async def sso_redeem_code(payload: SSORedeemRequest):
+    """Redeem a single-use SSO code for a Legacy Table session. No secret needed — the
+    code itself is the one-time credential."""
+    rec = await db.sso_codes.find_one({"code": payload.code})
+    now = datetime.now(timezone.utc)
+    if not rec or rec.get("used"):
+        raise HTTPException(status_code=400, detail="This sign-in link is invalid or already used.")
+    expires_at = rec.get("expires_at")
+    if isinstance(expires_at, datetime):
+        exp = expires_at if expires_at.tzinfo else expires_at.replace(tzinfo=timezone.utc)
+        if exp < now:
+            raise HTTPException(status_code=400, detail="This sign-in link has expired.")
+    await db.sso_codes.update_one({"code": payload.code}, {"$set": {"used": True, "used_at": now}})
+
+    user = await db.users.find_one({"id": rec["user_id"]})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+    user = await refresh_credits_if_needed(user)
+    token = create_token(user["id"])
+    user_response = UserResponse(
+        id=user["id"],
+        name=user.get("name", ""),
+        nickname=user.get("nickname"),
+        email=user["email"],
+        avatar=user.get("avatar"),
+        family_id=user.get("family_id"),
+        role=user.get("role"),
+        subscription_tier=user.get("subscription_tier"),
+        credits_balance=user.get("credits_balance", 0),
+        credits_refresh_at=user.get("credits_refresh_at"),
+        created_at=user["created_at"],
+    )
+    return TokenResponse(token=token, user=user_response)
+
+
 @api_router.post("/auth/login", response_model=TokenResponse)
 async def login(credentials: UserLogin):
     user = await db.users.find_one({"email": credentials.email.lower()}, {"_id": 0})
