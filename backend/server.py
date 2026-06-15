@@ -46,6 +46,12 @@ async def lifespan(_app: FastAPI):
         logger.info("Database connection OK")
     except PyMongoError as e:
         logger.error("Database connection failed at startup: type=%s message=%s", type(e).__name__, e)
+    try:
+        # One-time SSO handoff codes are valid 5 min; TTL on the BSON `expires_at` date
+        # lets Mongo auto-purge spent/expired codes so the collection never grows unbounded.
+        await db.sso_codes.create_index("expires_at", expireAfterSeconds=0)
+    except PyMongoError as e:
+        logger.warning("Could not create sso_codes TTL index: %s", e)
     yield
     client.close()
 
