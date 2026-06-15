@@ -728,6 +728,34 @@ async def sso_redeem_code(payload: SSORedeemRequest):
     return TokenResponse(token=token, user=user_response)
 
 
+@api_router.post("/federation/open-kindred")
+async def lt_open_kindred(user: dict = Depends(get_current_user)):
+    """Start an 'Open in Kindred' jump from Legacy Table. Mints a single-use code at
+    Kindred (shared secret) and returns the jump URL — only a one-time code in the URL."""
+    kindred_api = os.environ.get("KINDRED_API_URL", "https://kindred-production-badd.up.railway.app/api").rstrip("/")
+    kindred_web = os.environ.get("KINDRED_WEB_URL", "https://www.heykindred.org").rstrip("/")
+    secret = os.environ.get("UBUNTU_SSO_SECRET", "")
+    if not secret:
+        raise HTTPException(status_code=503, detail="Cross-product sign-in isn't configured.")
+    email = (user.get("email") or "").strip()
+    if not email:
+        raise HTTPException(status_code=400, detail="Your account has no email to carry over.")
+    try:
+        async with httpx.AsyncClient(timeout=20) as client:
+            resp = await client.post(
+                f"{kindred_api}/auth/sso-code",
+                json={"email": email, "secret": secret, "name": user.get("name", "")},
+            )
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=f"Couldn't reach Kindred ({exc}).")
+    if resp.status_code != 200:
+        raise HTTPException(status_code=502, detail=f"Kindred declined the handoff (HTTP {resp.status_code}).")
+    code = resp.json().get("code")
+    if not code:
+        raise HTTPException(status_code=502, detail="Kindred returned no code.")
+    return {"url": f"{kindred_web}/sso?code={code}"}
+
+
 @api_router.post("/auth/login", response_model=TokenResponse)
 async def login(credentials: UserLogin):
     user = await db.users.find_one({"email": credentials.email.lower()}, {"_id": 0})

@@ -4556,6 +4556,15 @@ const FamilyPage = () => {
     }
   };
 
+  const openKindred = async () => {
+    try {
+      const res = await axios.post(`${API}/federation/open-kindred`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      window.open(res.data.url, "_blank", "noopener");
+    } catch {
+      toast.error("Couldn't open Kindred.");
+    }
+  };
+
   const fetchFamilyData = useCallback(async () => {
     if (!user?.family_id || !token) return;
     setLoading(true);
@@ -4846,7 +4855,10 @@ const FamilyPage = () => {
       <Navigation />
       <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8">
         <h1 className="font-serif text-3xl md:text-4xl font-bold text-foreground mb-2">Family settings</h1>
-        <p className="text-muted-foreground mb-8">Manage your family and invite code.</p>
+        <p className="text-muted-foreground mb-2">Manage your family and invite code.</p>
+        <button onClick={openKindred} data-testid="open-kindred-btn" type="button" className="mb-8 inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline">
+          Open your family circle in Kindred →
+        </button>
 
         {loading ? (
           <div className="flex justify-center py-12">
