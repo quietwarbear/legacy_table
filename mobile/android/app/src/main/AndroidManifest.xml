@@ -5,6 +5,8 @@
     <!-- Permissions for camera and storage -->
     <!-- Camera permission -->
     <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Microphone: required by the Voice Recipe feature (record package) -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
     
     <application
         android:label="Legacy Table"
