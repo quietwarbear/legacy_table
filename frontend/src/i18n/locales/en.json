@@ -21,6 +21,19 @@
     "voiceRecipe": "Voice a Recipe",
     "saveFromLink": "Save from Link"
   },
+  "menu": {
+    "title": "Menu",
+    "upgradePlan": "Upgrade Plan",
+    "profileSettings": "Profile Settings"
+  },
+  "addRecipe": {
+    "title": "Share a Recipe",
+    "subtitle": "Add a new dish to the family collection"
+  },
+  "voice": {
+    "title": "Voice a Recipe",
+    "subtitle": "Speak a recipe out loud and AI will transcribe and structure it"
+  },
   "language": {
     "label": "Language"
   }

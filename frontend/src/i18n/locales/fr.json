@@ -21,6 +21,19 @@
     "voiceRecipe": "Dicter une recette",
     "saveFromLink": "Enregistrer depuis un lien"
   },
+  "menu": {
+    "title": "Menu",
+    "upgradePlan": "Améliorer le forfait",
+    "profileSettings": "Paramètres du profil"
+  },
+  "addRecipe": {
+    "title": "Partager une recette",
+    "subtitle": "Ajoutez un nouveau plat à la collection familiale"
+  },
+  "voice": {
+    "title": "Dicter une recette",
+    "subtitle": "Dictez une recette à voix haute et l'IA la transcrira et la structurera"
+  },
   "language": {
     "label": "Langue"
   }

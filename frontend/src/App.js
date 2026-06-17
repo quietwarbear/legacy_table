@@ -502,7 +502,7 @@ const Navigation = () => {
       <div className={`mobile-menu ${mobileMenuOpen ? 'open' : ''} bg-card`} data-testid="mobile-menu">
         <div className="p-4 border-b border-border">
           <div className="flex items-center justify-between">
-            <span className="font-serif text-lg font-semibold">Menu</span>
+            <span className="font-serif text-lg font-semibold">{t("menu.title")}</span>
             <button onClick={() => setMobileMenuOpen(false)} className="p-2 hover:bg-muted rounded-lg">
               <X className="w-5 h-5" />
             </button>
@@ -515,7 +515,7 @@ const Navigation = () => {
             className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted"
           >
             <Home className="w-5 h-5 text-primary" />
-            <span className="font-medium">Home</span>
+            <span className="font-medium">{t("nav.home")}</span>
           </Link>
           <Link 
             to="/add-recipe" 
@@ -523,7 +523,7 @@ const Navigation = () => {
             className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted"
           >
             <Plus className="w-5 h-5 text-primary" />
-            <span className="font-medium">Add Recipe</span>
+            <span className="font-medium">{t("nav.addRecipe")}</span>
           </Link>
           <Link 
             to="/profile" 
@@ -531,7 +531,7 @@ const Navigation = () => {
             className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted"
           >
             <User className="w-5 h-5 text-primary" />
-            <span className="font-medium">My Recipes</span>
+            <span className="font-medium">{t("nav.myRecipes")}</span>
           </Link>
           <Link 
             to="/cookbook" 
@@ -539,7 +539,7 @@ const Navigation = () => {
             className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted"
           >
             <BookOpen className="w-5 h-5 text-primary" />
-            <span className="font-medium">Family Cookbook</span>
+            <span className="font-medium">{t("nav.familyCookbook")}</span>
           </Link>
           <Link 
             to="/family" 
@@ -548,10 +548,13 @@ const Navigation = () => {
             data-testid="mobile-nav-family"
           >
             <Users className="w-5 h-5 text-primary" />
-            <span className="font-medium">Family</span>
+            <span className="font-medium">{t("nav.family")}</span>
           </Link>
           <div className="flex items-center gap-2 p-3">
             <CreditsBadge />
+          </div>
+          <div className="p-3">
+            <LanguageSwitcher />
           </div>
           <Link
             to="/subscribe"
@@ -560,7 +563,7 @@ const Navigation = () => {
             data-testid="mobile-nav-upgrade"
           >
             <Crown className="w-5 h-5 text-primary" />
-            <span className="font-medium text-primary">Upgrade Plan</span>
+            <span className="font-medium text-primary">{t("menu.upgradePlan")}</span>
           </Link>
           <Link
             to="/settings"
@@ -568,7 +571,7 @@ const Navigation = () => {
             className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted"
           >
             <Settings className="w-5 h-5 text-primary" />
-            <span className="font-medium">Profile Settings</span>
+            <span className="font-medium">{t("menu.profileSettings")}</span>
           </Link>
           <div className="pt-4 border-t border-border mt-4">
             <div className="flex items-center gap-3 px-3 py-2">
@@ -1359,6 +1362,7 @@ const HomePage = () => {
 
 // Add Recipe Page
 const AddRecipePage = () => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     title: "",
     ingredients: [""],
@@ -1536,8 +1540,8 @@ const AddRecipePage = () => {
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-8">
         <div className="mb-8 animate-fade-in">
-          <h1 className="font-serif text-3xl md:text-4xl font-bold text-foreground mb-2">Share a Recipe</h1>
-          <p className="text-muted-foreground">Add a new dish to the family collection</p>
+          <h1 className="font-serif text-3xl md:text-4xl font-bold text-foreground mb-2">{t("addRecipe.title")}</h1>
+          <p className="text-muted-foreground">{t("addRecipe.subtitle")}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-8 animate-slide-up">
@@ -3608,6 +3612,7 @@ const ScanRecipePage = () => {
 // ===================== VOICE-TO-RECIPE (Milestone 2.2) =====================
 
 const VoiceRecipePage = () => {
+  const { t } = useTranslation();
   const [recording, setRecording] = useState(false);
   const [audioBlob, setAudioBlob] = useState(null);
   const [processing, setProcessing] = useState(false);
@@ -3738,8 +3743,8 @@ const VoiceRecipePage = () => {
           <div className="w-16 h-16 rounded-2xl bg-amber-500/10 flex items-center justify-center mx-auto mb-4">
             <Volume2 className="w-8 h-8 text-amber-600" />
           </div>
-          <h1 className="font-serif text-3xl font-bold mb-2">Voice a Recipe</h1>
-          <p className="text-muted-foreground">Speak a recipe out loud and AI will transcribe and structure it</p>
+          <h1 className="font-serif text-3xl font-bold mb-2">{t("voice.title")}</h1>
+          <p className="text-muted-foreground">{t("voice.subtitle")}</p>
           {credits && (
             <p className="text-xs text-muted-foreground mt-2">Uses 2 credits · {credits.balance} remaining</p>
           )}
