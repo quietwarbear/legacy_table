@@ -34,6 +34,26 @@
     "title": "Dicter une recette",
     "subtitle": "Dictez une recette à voix haute et l'IA la transcrira et la structurera"
   },
+  "feed": {
+    "searchPlaceholder": "Rechercher des recettes...",
+    "all": "Toutes",
+    "showingFamily": "Affichage des recettes familiales.",
+    "showingLegacy": "Affichage des recettes héritées.",
+    "createOrJoinFamily": "Créez une famille ou rejoignez-en une avec un code d'invitation",
+    "emptyTitle": "Pas encore de recettes",
+    "emptySubtitle": "Soyez le premier à partager une recette de famille !"
+  },
+  "recipe": {
+    "min": "min",
+    "servings_one": "{{count}} portion",
+    "servings_other": "{{count}} portions",
+    "by": "par {{name}}",
+    "difficulty": {
+      "easy": "Facile",
+      "medium": "Moyen",
+      "hard": "Difficile"
+    }
+  },
   "language": {
     "label": "Langue"
   }

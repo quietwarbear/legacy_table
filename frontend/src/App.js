@@ -910,6 +910,7 @@ const LoginPage = () => {
 
 // Recipe Card Component
 const RecipeCard = ({ recipe, onClick }) => {
+  const { t } = useTranslation();
   const getDifficultyClass = (difficulty) => {
     switch (difficulty?.toLowerCase()) {
       case 'easy': return 'difficulty-easy';
@@ -942,17 +943,17 @@ const RecipeCard = ({ recipe, onClick }) => {
         <div className="flex items-start justify-between gap-2">
           <h3 className="font-serif text-xl font-semibold text-foreground line-clamp-2">{recipe.title}</h3>
           <span className={`difficulty-badge shrink-0 ${getDifficultyClass(recipe.difficulty)}`}>
-            {recipe.difficulty}
+            {t(`recipe.difficulty.${recipe.difficulty?.toLowerCase()}`, { defaultValue: recipe.difficulty })}
           </span>
         </div>
         <div className="flex items-center gap-4 text-sm text-muted-foreground">
           <span className="flex items-center gap-1">
             <Clock className="w-4 h-4" />
-            {recipe.cooking_time} min
+            {recipe.cooking_time} {t("recipe.min")}
           </span>
           <span className="flex items-center gap-1">
             <Users className="w-4 h-4" />
-            {recipe.servings} servings
+            {t("recipe.servings", { count: recipe.servings })}
           </span>
         </div>
         <div className="flex items-center gap-2 mt-1">
@@ -960,7 +961,7 @@ const RecipeCard = ({ recipe, onClick }) => {
             {recipe.category}
           </Badge>
         </div>
-        <p className="text-sm text-muted-foreground mt-1">by {recipe.author_name}</p>
+        <p className="text-sm text-muted-foreground mt-1">{t("recipe.by", { name: recipe.author_name })}</p>
       </CardContent>
     </Card>
   );
@@ -1264,7 +1265,7 @@ const HomePage = () => {
           <div className="relative w-full md:w-72">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input
-              placeholder="Search recipes..."
+              placeholder={t("feed.searchPlaceholder")}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 rounded-full border-2 border-border/50"
@@ -1277,7 +1278,7 @@ const HomePage = () => {
               className={`category-tag ${!selectedCategory ? 'active' : ''}`}
               data-testid="category-all"
             >
-              All
+              {t("feed.all")}
             </button>
             {categories.map((cat) => (
               <button
@@ -1296,7 +1297,7 @@ const HomePage = () => {
         {!loading && (
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mt-2">
             <p className="text-sm text-muted-foreground">
-              {user?.family_id ? "Showing family recipes." : "Showing legacy recipes."}
+              {user?.family_id ? t("feed.showingFamily") : t("feed.showingLegacy")}
             </p>
             {!user?.family_id && (
               <Button
@@ -1306,7 +1307,7 @@ const HomePage = () => {
                 onClick={() => navigate("/family")}
                 data-testid="create-join-family-cta"
               >
-                Create a family or join with invite code
+                {t("feed.createOrJoinFamily")}
               </Button>
             )}
           </div>
@@ -1343,15 +1344,15 @@ const HomePage = () => {
             <div className="empty-state-icon">
               <Utensils className="w-10 h-10" />
             </div>
-            <h3 className="font-serif text-2xl font-semibold mb-2">No recipes yet</h3>
-            <p className="text-muted-foreground mb-6">Be the first to share a family recipe!</p>
+            <h3 className="font-serif text-2xl font-semibold mb-2">{t("feed.emptyTitle")}</h3>
+            <p className="text-muted-foreground mb-6">{t("feed.emptySubtitle")}</p>
             <Button 
               onClick={() => navigate("/add-recipe")}
               className="rounded-full bg-primary text-primary-foreground"
               data-testid="empty-add-recipe-btn"
             >
               <Plus className="w-4 h-4 mr-2" />
-              Add Recipe
+              {t("nav.addRecipe")}
             </Button>
           </div>
         )}

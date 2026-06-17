@@ -34,6 +34,26 @@
     "title": "Ditar uma receita",
     "subtitle": "Fale uma receita em voz alta e a IA irá transcrevê-la e estruturá-la"
   },
+  "feed": {
+    "searchPlaceholder": "Buscar receitas...",
+    "all": "Todas",
+    "showingFamily": "Mostrando receitas da família.",
+    "showingLegacy": "Mostrando receitas herdadas.",
+    "createOrJoinFamily": "Crie uma família ou entre com um código de convite",
+    "emptyTitle": "Ainda não há receitas",
+    "emptySubtitle": "Seja o primeiro a compartilhar uma receita da família!"
+  },
+  "recipe": {
+    "min": "min",
+    "servings_one": "{{count}} porção",
+    "servings_other": "{{count}} porções",
+    "by": "por {{name}}",
+    "difficulty": {
+      "easy": "Fácil",
+      "medium": "Médio",
+      "hard": "Difícil"
+    }
+  },
   "language": {
     "label": "Idioma"
   }

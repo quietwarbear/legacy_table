@@ -34,6 +34,26 @@
     "title": "Dictar una receta",
     "subtitle": "Di una receta en voz alta y la IA la transcribirá y la estructurará"
   },
+  "feed": {
+    "searchPlaceholder": "Buscar recetas...",
+    "all": "Todas",
+    "showingFamily": "Mostrando recetas familiares.",
+    "showingLegacy": "Mostrando recetas heredadas.",
+    "createOrJoinFamily": "Crea una familia o únete con un código de invitación",
+    "emptyTitle": "Aún no hay recetas",
+    "emptySubtitle": "¡Sé el primero en compartir una receta familiar!"
+  },
+  "recipe": {
+    "min": "min",
+    "servings_one": "{{count}} porción",
+    "servings_other": "{{count}} porciones",
+    "by": "por {{name}}",
+    "difficulty": {
+      "easy": "Fácil",
+      "medium": "Media",
+      "hard": "Difícil"
+    }
+  },
   "language": {
     "label": "Idioma"
   }

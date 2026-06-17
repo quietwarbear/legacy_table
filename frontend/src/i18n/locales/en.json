@@ -34,6 +34,26 @@
     "title": "Voice a Recipe",
     "subtitle": "Speak a recipe out loud and AI will transcribe and structure it"
   },
+  "feed": {
+    "searchPlaceholder": "Search recipes...",
+    "all": "All",
+    "showingFamily": "Showing family recipes.",
+    "showingLegacy": "Showing legacy recipes.",
+    "createOrJoinFamily": "Create a family or join with invite code",
+    "emptyTitle": "No recipes yet",
+    "emptySubtitle": "Be the first to share a family recipe!"
+  },
+  "recipe": {
+    "min": "min",
+    "servings_one": "{{count}} serving",
+    "servings_other": "{{count}} servings",
+    "by": "by {{name}}",
+    "difficulty": {
+      "easy": "Easy",
+      "medium": "Medium",
+      "hard": "Hard"
+    }
+  },
   "language": {
     "label": "Language"
   }
