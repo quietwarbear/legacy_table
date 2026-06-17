@@ -1,0 +1,18 @@
+{
+  "nav": {
+    "home": "Home",
+    "addRecipe": "Add Recipe",
+    "myRecipes": "My Recipes",
+    "familyCookbook": "Family Cookbook",
+    "family": "Family",
+    "upgrade": "Upgrade"
+  },
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "signOut": "Sign Out"
+  },
+  "language": {
+    "label": "Language"
+  }
+}

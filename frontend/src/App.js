@@ -5,6 +5,8 @@ import axios from "axios";
 import { Toaster, toast } from "sonner";
 import { ChefHat, Utensils, Camera, Clock, Users, Flame, Heart, Plus, LogOut, Menu, X, Home, User, Search, Download, BookOpen, Moon, Sun, Edit, MessageCircle, Trash2, Send, Bell, Settings, Upload, Copy, Crown, UserPlus, Sparkles, Share2, Volume2, VolumeX, SkipForward, SkipBack, ChevronLeft, ChevronRight, Calendar, Gift, Tag, Link2, Video } from "lucide-react";
 import * as familiesApi from "./api/families";
+import { useTranslation } from "react-i18next";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import jsPDF from "jspdf";
 import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
@@ -222,6 +224,7 @@ const FamilyLogo = ({ size = "md", showText = true }) => {
 const Navigation = () => {
   const { user, logout, getDisplayName, token } = useAuth();
   const { isDark, toggleTheme } = useTheme();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -328,7 +331,7 @@ const Navigation = () => {
                 data-testid="nav-home"
               >
                 <Home className="w-4 h-4" />
-                Home
+                {t("nav.home")}
               </Link>
               <Link 
                 to="/add-recipe" 
@@ -336,7 +339,7 @@ const Navigation = () => {
                 data-testid="nav-add-recipe"
               >
                 <Plus className="w-4 h-4" />
-                Add Recipe
+                {t("nav.addRecipe")}
               </Link>
               <Link 
                 to="/profile" 
@@ -344,7 +347,7 @@ const Navigation = () => {
                 data-testid="nav-profile"
               >
                 <User className="w-4 h-4" />
-                My Recipes
+                {t("nav.myRecipes")}
               </Link>
               <Link 
                 to="/cookbook" 
@@ -352,7 +355,7 @@ const Navigation = () => {
                 data-testid="nav-cookbook"
               >
                 <BookOpen className="w-4 h-4" />
-                Family Cookbook
+                {t("nav.familyCookbook")}
               </Link>
               <Link 
                 to="/family" 
@@ -360,11 +363,14 @@ const Navigation = () => {
                 data-testid="nav-family"
               >
                 <Users className="w-4 h-4" />
-                Family
+                {t("nav.family")}
               </Link>
             </div>
 
             <div className="hidden md:flex items-center gap-3">
+              {/* Language Switcher */}
+              <LanguageSwitcher />
+
               {/* Credits Badge */}
               <CreditsBadge />
 

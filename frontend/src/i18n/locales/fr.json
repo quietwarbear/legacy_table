@@ -1,0 +1,18 @@
+{
+  "nav": {
+    "home": "Accueil",
+    "addRecipe": "Ajouter une recette",
+    "myRecipes": "Mes recettes",
+    "familyCookbook": "Livre de recettes familial",
+    "family": "Famille",
+    "upgrade": "Améliorer"
+  },
+  "actions": {
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "signOut": "Se déconnecter"
+  },
+  "language": {
+    "label": "Langue"
+  }
+}
