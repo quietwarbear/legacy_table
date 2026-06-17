@@ -12,6 +12,15 @@
     "cancel": "Cancel",
     "signOut": "Sign Out"
   },
+  "home": {
+    "heroTitle": "Family Recipes",
+    "heroSubtitle": "Preserve and share our family's culinary traditions with love",
+    "shareRecipe": "Share a Recipe",
+    "familyCookbook": "Family Cookbook",
+    "scanRecipe": "Scan a Recipe",
+    "voiceRecipe": "Voice a Recipe",
+    "saveFromLink": "Save from Link"
+  },
   "language": {
     "label": "Language"
   }

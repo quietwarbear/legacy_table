@@ -12,6 +12,15 @@
     "cancel": "Annuler",
     "signOut": "Se déconnecter"
   },
+  "home": {
+    "heroTitle": "Recettes de famille",
+    "heroSubtitle": "Préservez et partagez les traditions culinaires de notre famille avec amour",
+    "shareRecipe": "Partager une recette",
+    "familyCookbook": "Livre de recettes familial",
+    "scanRecipe": "Scanner une recette",
+    "voiceRecipe": "Dicter une recette",
+    "saveFromLink": "Enregistrer depuis un lien"
+  },
   "language": {
     "label": "Langue"
   }

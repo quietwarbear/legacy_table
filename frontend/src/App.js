@@ -1145,6 +1145,7 @@ const HolidayHeadquarters = () => {
 
 // Home Page
 const HomePage = () => {
+  const { t } = useTranslation();
   const [recipes, setRecipes] = useState([]);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -1199,10 +1200,10 @@ const HomePage = () => {
               <FamilyLogo size="xl" showText={false} />
             </div>
             <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-4">
-              Legacy Table<br />Family Recipes
+              Legacy Table<br />{t("home.heroTitle")}
             </h1>
             <p className="text-lg text-muted-foreground mb-8">
-              Preserve and share our family's culinary traditions with love
+              {t("home.heroSubtitle")}
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Button 
@@ -1211,7 +1212,7 @@ const HomePage = () => {
                 data-testid="hero-add-recipe-btn"
               >
                 <Plus className="w-5 h-5 mr-2" />
-                Share a Recipe
+                {t("home.shareRecipe")}
               </Button>
               <Button 
                 onClick={() => navigate("/cookbook")}
@@ -1220,7 +1221,7 @@ const HomePage = () => {
                 data-testid="hero-cookbook-btn"
               >
                 <BookOpen className="w-5 h-5 mr-2" />
-                Family Cookbook
+                {t("home.familyCookbook")}
               </Button>
             </div>
             {/* AI Quick Actions */}
@@ -1230,21 +1231,21 @@ const HomePage = () => {
                 className="flex items-center gap-2 px-4 py-2 rounded-full bg-background/80 backdrop-blur border border-border/50 text-sm text-foreground hover:border-primary/50 hover:bg-primary/5 transition-all"
               >
                 <Camera className="w-4 h-4 text-primary" />
-                Scan a Recipe
+                {t("home.scanRecipe")}
               </button>
               <button
                 onClick={() => navigate("/voice-recipe")}
                 className="flex items-center gap-2 px-4 py-2 rounded-full bg-background/80 backdrop-blur border border-border/50 text-sm text-foreground hover:border-amber-500/50 hover:bg-amber-500/5 transition-all"
               >
                 <Volume2 className="w-4 h-4 text-amber-600" />
-                Voice a Recipe
+                {t("home.voiceRecipe")}
               </button>
               <button
                 onClick={() => navigate("/save-from-link")}
                 className="flex items-center gap-2 px-4 py-2 rounded-full bg-background/80 backdrop-blur border border-border/50 text-sm text-foreground hover:border-pink-500/50 hover:bg-pink-500/5 transition-all"
               >
                 <Link2 className="w-4 h-4 text-pink-600" />
-                Save from Link
+                {t("home.saveFromLink")}
               </button>
             </div>
           </div>
