@@ -15,7 +15,7 @@ class AppLocalizationsYo extends AppLocalizations {
   String get selectLanguage => 'Yan Èdè';
 
   @override
-  String get languageEnglish => 'Gẹ̀ẹ́sì';
+  String get languageEnglish => 'èdè Gèésì';
 
   @override
   String get languageSpanish => 'Español';
@@ -25,10 +25,10 @@ class AppLocalizationsYo extends AppLocalizations {
 
   @override
   String get settingsCouldNotOpenDeleteAccount =>
-      'Kò lè ṣí ojú-ìwé ìparẹ́ àkàǹtì';
+      'ko le ṣii,se paarẹ oju-iwe akọọlẹ';
 
   @override
-  String get settingsFailedToLoadMembers => 'Kò lè gbé àwọn ọmọ ìdílé wọlé';
+  String get settingsFailedToLoadMembers => 'Kuna lati se akojọ awọn ọmọ ẹbi.';
 
   @override
   String get settingsInviteCodeCopied => 'A ti ṣàdàkọ kóòdù ìpè!';
@@ -72,7 +72,7 @@ class AppLocalizationsYo extends AppLocalizations {
 
   @override
   String get settingsTransferKeeperPrompt =>
-      'Gẹ́gẹ́ bí olùtọ́jú, o gbọ́dọ̀ gbé ipa rẹ lọ sí ọmọ ẹgbẹ́ mìíràn kí o tó kúrò. Yan ọmọ ẹgbẹ́ kan láti di olùtọ́jú tuntun:';
+      'Gẹ́gẹ́ bí olùtọ́jú, o gbọ́dọ̀ gbé ipa rẹ lè fún ọmọ ẹgbẹ́ mìíràn kí o tó kúrò. Yan ọmọ ẹgbẹ́ kan láti di olùtọ́jú tuntun:';
 
   @override
   String settingsKeeperTransferredTo(String name) {
@@ -90,7 +90,7 @@ class AppLocalizationsYo extends AppLocalizations {
   String get settingsStay => 'Dúró';
 
   @override
-  String get settingsFailedToTransferKeeper => 'Kò lè gbé ipa olùtọ́jú lọ';
+  String get settingsFailedToTransferKeeper => 'Kò láti gbé ipa olùtọ́jú lé';
 
   @override
   String get settingsRemoveMember => 'Yọ Ọmọ Ẹgbẹ́ Kúrò';
@@ -125,7 +125,7 @@ class AppLocalizationsYo extends AppLocalizations {
 
   @override
   String get settingsUnlockPremiumFeatures =>
-      'Ṣí àwọn ètò ìdílé, ìkójáde, àti àwọn ẹ̀yà premium';
+      'Ṣí àwọn ètò ìdílé, ìkójáde, àti àwọn ẹ̀yà ojúlòwò ';
 
   @override
   String get settingsKeeperBadge => 'Olùtọ́jú';
@@ -149,19 +149,19 @@ class AppLocalizationsYo extends AppLocalizations {
   String get settingsRemoveMemberTooltip => 'Yọ ọmọ ẹgbẹ́ kúrò';
 
   @override
-  String get settingsTheme => 'Àwòrán Àtòjọ';
+  String get settingsTheme => 'Àkòrí';
 
   @override
   String get settingsDarkMode => 'Ipò Dúdú';
 
   @override
-  String get settingsLightMode => 'Ipò Mọ́lẹ̀';
+  String get settingsLightMode => 'Ipò imọ́lẹ̀';
 
   @override
-  String get settingsEditProfile => 'Ṣàtúnṣe Profáìlì';
+  String get settingsEditProfile => 'Ṣàtúnṣe ìrísí olúlo';
 
   @override
-  String get settingsDeleteAccount => 'Pa Àkàǹtì Rẹ́';
+  String get settingsDeleteAccount => 'Pa Àkóòlé Rẹ́';
 
   @override
   String get settingsNotifications => 'Àwọn Ìfìtọ́nilẹ́tí';
@@ -180,10 +180,10 @@ class AppLocalizationsYo extends AppLocalizations {
 
   @override
   String get settingsLegalese =>
-      '© 2026 Ubuntu Market LLC. A pa gbogbo ẹ̀tọ́ mọ́.';
+      '© 2026 Ubuntu Market LLC. Gbogbo ètó wa ní àbójútó';
 
   @override
-  String get settingsLogout => 'Jáde';
+  String get settingsLogout => 'Jàde kúrò';
 
   @override
   String get settingsLogoutConfirm => 'Ṣé ó dájú pé o fẹ́ jáde?';
@@ -194,7 +194,7 @@ class AppLocalizationsYo extends AppLocalizations {
 
   @override
   String get recipeDetailLoadCommentsError =>
-      'Kò lè gbé àwọn àríwí wọlé. Jọ̀wọ́ tún gbìyànjú.';
+      'Kò see se làti gbe àwon àlàyé wolé. Jòwó gbìyànjú léèkansi';
 
   @override
   String get recipeDetailLoginToComment => 'Jọ̀wọ́ wọlé láti fi àríwí sílẹ̀';
@@ -236,7 +236,7 @@ class AppLocalizationsYo extends AppLocalizations {
 
   @override
   String get recipeDetailRecipeUpdated =>
-      'A ti ṣàtúnṣe ìlànà oúnjẹ ní àṣeyọrí!';
+      'A ti ṣàtúnṣe ìlànà oúnjẹ náà ní àṣeyọrí!';
 
   @override
   String get recipeDetailDeleteRecipeTitle => 'Pa Ìlànà Oúnjẹ Rẹ́';
@@ -278,7 +278,7 @@ class AppLocalizationsYo extends AppLocalizations {
   }
 
   @override
-  String get recipeDetailStatServes => 'Ìpín Àbọ̀';
+  String get recipeDetailStatServes => 'Ó tó fún';
 
   @override
   String get recipeDetailStatCategory => 'Ẹ̀ka';
@@ -301,33 +301,33 @@ class AppLocalizationsYo extends AppLocalizations {
   String get recipeDetailFamilyComments => 'Àwọn Àríwí Ìdílé';
 
   @override
-  String get recipeDetailRefreshComments => 'Tún àwọn àríwí ṣe';
+  String get recipeDetailRefreshComments => 'Mú àwon ìpèjòrò wá sí ìpè';
 
   @override
   String get recipeDetailCommentHint =>
       'Pín ohun tó wà lọ́kàn rẹ nípa ìlànà oúnjẹ yìí...';
 
   @override
-  String get recipeDetailClear => 'Nù Ún Dànù';
+  String get recipeDetailClear => 'Páré';
 
   @override
-  String get recipeDetailPosting => 'Ń fi sílẹ̀...';
+  String get recipeDetailPosting => 'Fifiransé';
 
   @override
-  String get recipeDetailPost => 'Fi Sílẹ̀';
+  String get recipeDetailPost => 'Firansé';
 
   @override
-  String get recipeDetailNoComments => 'Kò sí àríwí kankan síbẹ̀';
+  String get recipeDetailNoComments => 'Kò sí àwon ìpèjòrò sibèsibè';
 
   @override
   String get recipeDetailBeFirstToComment =>
-      'Jẹ́ ẹni àkọ́kọ́ láti pín ohun tó wà lọ́kàn rẹ!';
+      'Jẹ́ ẹni àkọ́kọ́ láti pín èrò tó wà lọ́kàn rẹ!';
 
   @override
-  String get recipeDetailNoImage => 'Kò sí àwòrán';
+  String get recipeDetailNoImage => 'Kò sí àwòrán tí ó wà';
 
   @override
-  String get recipeDetailDeleteCommentTooltip => 'Pa àríwí rẹ́';
+  String get recipeDetailDeleteCommentTooltip => 'Pa ìpèjòrò rẹ́';
 
   @override
   String get addRecipePhotoPermissionTitle => 'Àṣẹ Ilé-ìkàwé Àwòrán';
@@ -348,25 +348,26 @@ class AppLocalizationsYo extends AppLocalizations {
       'Àṣẹ ilé-ìkàwé àwòrán pọn dandan láti yan àwọn àwòrán.\n\nLáti mu ṣiṣẹ́:\n1. Tẹ \"Ṣí Ìṣàtúntò\"\n2. Wá \"Legacy Table\"\n3. Tẹ \"Àwòrán\"\n4. Yan \"Gbogbo Àwòrán\" tàbí \"Àwòrán Tí A Yàn\"';
 
   @override
-  String get addRecipeCameraPermissionTitle => 'Àṣẹ Kámẹ́rà';
+  String get addRecipeCameraPermissionTitle => 'Ìyònda láti lo èro ayàwòrán';
 
   @override
   String get addRecipeCameraPermissionDeniedMessage =>
-      'A ti kọ àṣẹ kámẹ́rà pátápátá. Jọ̀wọ́ mu un ṣiṣẹ́ láti inú ìṣàtúntò app.';
+      'A ti kọ lí lò èro ayáwòrá pátápátá. Jọ̀wọ́ mu un ṣiṣẹ́ láti inú ìṣàtúntò ètò ìsàfílólé.';
 
   @override
   String get addRecipeCameraPermissionRequired =>
-      'Àṣẹ kámẹ́rà pọn dandan láti ya àwòrán';
+      'Ìyònda láti lo èro ayàwòrán pọn dandan láti ya àwòrán';
 
   @override
   String get addRecipeCancel => 'Fagilé';
 
   @override
   String get addRecipeSettingsHintAndroid =>
-      'Wá àṣẹ \"Àwòrán àti fídíò\" tàbí \"Mídíà\" nínú Ìṣàtúntò App';
+      'Wá àṣẹ \"Àwòrán àti fídíò\" tàbí \"Mídíà\" nínú Ìṣàtúntò ètó ìsàfílólé ';
 
   @override
-  String get addRecipeSettingsHintIos => 'Wá àṣẹ \"Àwòrán\" nínú Ìṣàtúntò App';
+  String get addRecipeSettingsHintIos =>
+      'Wá àṣẹ \"Àwòrán\" nínú Ìṣàtúntò ètò ìsàfílólé ';
 
   @override
   String get addRecipeOpenSettings => 'Ṣí Ìṣàtúntò';
@@ -383,7 +384,7 @@ class AppLocalizationsYo extends AppLocalizations {
 
   @override
   String get addRecipeAddIngredientWarning =>
-      'Jọ̀wọ́ fi èròjà kan kún ún ó kéré jù';
+      'Jọ̀wọ́ fi èròjà  kún ó kéré jù eyókàn';
 
   @override
   String get addRecipeUpdatingRecipe => 'Ń ṣàtúnṣe ìlànà oúnjẹ...';
@@ -426,7 +427,7 @@ class AppLocalizationsYo extends AppLocalizations {
 
   @override
   String get addRecipeTitlePlaceholder =>
-      'f.a., Ìrẹsì Jollof Pàtàkì ti Ìyá Àgbà';
+      'fún àpere , Ìrẹsì Jollof Pàtàkì, ti Ìyá Àgbà';
 
   @override
   String get addRecipeTitleRequired => 'Orúkọ ìlànà oúnjẹ pọn dandan';
@@ -447,10 +448,10 @@ class AppLocalizationsYo extends AppLocalizations {
   String get addRecipeDifficultyPlaceholder => 'Yan ìṣòro';
 
   @override
-  String get addRecipeCookingTimeLabel => 'ÀKÓKÒ ÌSÈ\n(ÌṢẸ́JÚ)';
+  String get addRecipeCookingTimeLabel => 'ÀKÓKÒ ÓNJÉ SÌSÈ\n(ÌṢẸ́JÚ)';
 
   @override
-  String get addRecipeServingsLabel => '\nÌPÍN ÀBỌ̀';
+  String get addRecipeServingsLabel => '\nÌPÍN ';
 
   @override
   String get addRecipeIngredientsLabel => 'ÀWỌN ÈRÒJÀ *';
@@ -471,7 +472,7 @@ class AppLocalizationsYo extends AppLocalizations {
 
   @override
   String get addRecipeInstructionsPlaceholder =>
-      'Kọ àwọn ìtọ́sọ́nà ìsè oúnjẹ ní ìgbésẹ̀ kọ̀ọ̀kan...';
+      'Kọ àwọn ìtọ́sọ́nà sìsè oúnjẹ ní ìgbésẹ̀ kọ̀ọ̀kan...';
 
   @override
   String get addRecipeInstructionsRequired => 'Àwọn ìtọ́sọ́nà pọn dandan';
@@ -481,7 +482,7 @@ class AppLocalizationsYo extends AppLocalizations {
 
   @override
   String get addRecipeStoryDescription =>
-      'Pín ìtàn ìlànà oúnjẹ yìí... Níbo ni ó ti wá? Ta ni ó gbé e kalẹ̀? Ìrántí wo ni ó di mú fún ìdílé rẹ?';
+      'Pípà ìtàn ìlànà oúnjẹ yìí... Níbo ni ó ti wá? Ta ni ó gbé e kalẹ̀? Ìrántí wo ni ó di mú fún ìdílé rẹ?';
 
   @override
   String get addRecipeStoryPlaceholder =>
@@ -498,13 +499,13 @@ class AppLocalizationsYo extends AppLocalizations {
 
   @override
   String get addRecipeErrorMessage =>
-      'Jọ̀wọ́ tún gbìyànjú tàbí tún app náà bẹ̀rẹ̀.';
+      'Jọ̀wọ́ tún gbìyànjú tàbí tún ètó ìsàfílólé náà bẹ̀rẹ̀.';
 
   @override
   String get addRecipeGoBack => 'Padà Sẹ́yìn';
 
   @override
-  String get addRecipeUploadFromGallery => 'Gbé wọlé láti inú gálárì';
+  String get addRecipeUploadFromGallery => 'Gbé wọlé láti inú gbàgede àwòrán';
 
   @override
   String get addRecipeTakePhoto => 'Ya Àwòrán';
@@ -523,7 +524,7 @@ class AppLocalizationsYo extends AppLocalizations {
 
   @override
   String get subscriptionHeaderSubtitle =>
-      'Ṣí àwọn ẹ̀yà premium láti jẹ́ kí àwọn\nìlànà oúnjẹ ìdílé rẹ wà láàyè fún ìran-dé-ìran.';
+      'Ṣí àwọn ẹ̀yà pataki láti jẹ́ kí àwọn\nìlànà oúnjẹ ìdílé rẹ wà láàyè fún ìran-dé-ìran.';
 
   @override
   String get subscriptionTierHeritageName => 'Heritage Keeper';
@@ -543,7 +544,7 @@ class AppLocalizationsYo extends AppLocalizations {
 
   @override
   String get subscriptionFeatureFamilySharing =>
-      'Ìpínkiri ìdílé (dé ọmọ ẹgbẹ́ 10)';
+      'Ìpínkiri ìdílé (dé ọmọ ẹgbẹ́ méwàá)';
 
   @override
   String get subscriptionFeaturePhotoUploads =>
@@ -612,11 +613,11 @@ class AppLocalizationsYo extends AppLocalizations {
 
   @override
   String get subscriptionErrorLoadPlans =>
-      'Kò lè gbé àwọn ètò ìforúkọsílẹ̀ wọlé. Jọ̀wọ́ ṣàyẹ̀wò ìsopọ̀ íńtánẹ́ẹ̀tì rẹ kí o sì tún gbìyànjú.';
+      'Kò lè gbé àwọn ètò ìforúkọsílẹ̀ wọlé. Jọ̀wọ́ ṣàyẹ̀wò ìsopọ̀ ayélujára rẹ kí o sì tún gbìyànjú.';
 
   @override
   String get subscriptionErrorNoPlansAvailable =>
-      'Kò sí ètò ìforúkọsílẹ̀ kankan tó wà nísinsìnyí. Jọ̀wọ́ ṣàyẹ̀wò ètò RevenueCat àti App Store Connect.';
+      'Kò sí ètò ìforúkọsílẹ̀ kankan tó wà nísinsìnyí. Jọ̀wọ́ ṣàyẹ̀wò ètò èro ìsàkóso owó ìforukosílè  ,ètò ìsàfílólé ala sopo.';
 
   @override
   String get subscriptionErrorAnnualUnavailable =>
@@ -679,7 +680,7 @@ class AppLocalizationsYo extends AppLocalizations {
   String get recipeFeedEmptyNoResultsTitle => 'A kò rí ìlànà oúnjẹ kankan';
 
   @override
-  String get recipeFeedEmptyNoRecipesTitle => 'Kò sí ìlànà oúnjẹ síbẹ̀';
+  String get recipeFeedEmptyNoRecipesTitle => 'Síbè síbè kò sí ìlànà oúnjẹ ';
 
   @override
   String get recipeFeedEmptyNoResultsBody =>
@@ -687,34 +688,35 @@ class AppLocalizationsYo extends AppLocalizations {
 
   @override
   String get recipeFeedEmptyNoRecipesBody =>
-      'Pín ìlànà oúnjẹ ìdílé àkọ́kọ́ rẹ kí o sì bẹ̀rẹ̀ àkójọ rẹ!';
+      'Pín ìlànà oúnjẹ ìdílé re àkọ́kọ́ ,kí o sì bẹ̀rẹ̀ sì í kò àkójọpo rẹ! ';
 
   @override
-  String get recipeFeedClearSearch => 'Nù Ìwáàrí Dànù';
+  String get recipeFeedClearSearch => 'Pa ìsàwáàrí ré';
 
   @override
-  String get recipeFeedSmartToolsTitle => 'Àwọn Irinṣẹ́ Ìlànà Oúnjẹ Tó Gbọ́n';
+  String get recipeFeedSmartToolsTitle =>
+      'Àwọn Irinṣẹ́ ògbọ́n fún Ìlànà Oúnjẹ .';
 
   @override
   String get recipeFeedSmartToolsSubtitle =>
-      'Mú àwọn ìlànà oúnjẹ wọlé bí app wẹ́ẹ̀bù ti ń ṣe é: ṣàwárí káàdì tàbí sọ ọ̀nà ìjápọ̀ fídíò di àkọ̀wé.';
+      'Mú àwọn ìlànà oúnjẹ wọlé bí ètò ìsàfílólé wẹ́ẹ̀bù ti ń ṣe é: ṣàwárí káàdì tàbí yí ojú-òná fídíò padà sí àkọ̀síé àkókó';
 
   @override
   String get recipeFeedFeatureScanTitle => 'Ṣàwárí Ìlànà Oúnjẹ';
 
   @override
   String get recipeFeedFeatureScanDescription =>
-      'Lo àwòrán káàdì àfọwọ́kọ tàbí ojú-ìwé ìwé oúnjẹ.';
+      'Lo àwòrán káàdì àfọwọ́kọ tàbí ojú-ìwé  oúnjẹ.';
 
   @override
-  String get recipeFeedFeatureLinkTitle => 'Fipamọ́ Láti Ọ̀nà Ìjápọ̀';
+  String get recipeFeedFeatureLinkTitle => 'Fipamọ́ Láti inú ìsopò';
 
   @override
   String get recipeFeedFeatureLinkDescription =>
-      'Sọ ọ̀nà ìjápọ̀ TikTok, Instagram, tàbí YouTube di àkọ̀wé.';
+      'Sọ ọ̀nà ìjápọ̀ TikTok, Instagram, tàbí YouTube di àkosílè àkókó';
 
   @override
-  String get recipeFeedCelebrationHeadquarters => 'Ilé-iṣẹ́ Àjọyọ̀';
+  String get recipeFeedCelebrationHeadquarters => 'Ilé-iṣẹ́  àgbà Àjọyọ̀';
 
   @override
   String recipeFeedSeasonTheme(String season, String theme) {
@@ -723,7 +725,7 @@ class AppLocalizationsYo extends AppLocalizations {
 
   @override
   String recipeFeedDaysAway(int days) {
-    return 'ọjọ́ $days kù';
+    return 'àwon ọjọ́ $days tó kù';
   }
 
   @override
@@ -739,50 +741,51 @@ class AppLocalizationsYo extends AppLocalizations {
 
   @override
   String get profileSettingsLoginRequired =>
-      'Jọ̀wọ́ wọlé láti dé ìṣàtúntò profáìlì';
+      'Jọ̀wọ́ wọlé láti dé ìṣàtúntò àpèjúwe ara eni ';
 
   @override
   String get profileSettingsLoadFailed =>
-      'Kò lè gbé dátà olùmúlò wọlé. Jọ̀wọ́ tún gbìyànjú.';
+      'Kò lè gbé àwon ìsofúnni olùmúlò wọlé. Jọ̀wọ́ tún gbìyànjú.';
 
   @override
   String get profileSettingsPhotoSourceTitle => 'Yan Orísun Àwòrán';
 
   @override
-  String get profileSettingsCamera => 'Kámẹ́rà';
+  String get profileSettingsCamera => 'Íyàwòrán';
 
   @override
-  String get profileSettingsGallery => 'Gálárì';
+  String get profileSettingsGallery => 'Àkosílè àwòrán ';
 
   @override
   String get profileSettingsCancel => 'Fagilé';
 
   @override
   String get profileSettingsCameraPermissionRequired =>
-      'Àṣẹ kámẹ́rà pọn dandan láti ya àwòrán';
+      'Àṣẹ íyàwòrán pọn dandan láti ya àwòrán';
 
   @override
   String get profileSettingsPickImageFailed =>
       'Kò lè yan àwòrán. Jọ̀wọ́ tún gbìyànjú.';
 
   @override
-  String get profileSettingsUpdateSuccess => 'A ti ṣàtúnṣe profáìlì ní àṣeyọrí';
+  String get profileSettingsUpdateSuccess =>
+      'A ti ṣàtúnṣe àpèjúwe ara eni ní àṣeyọrí';
 
   @override
-  String get profileSettingsUpdateFailed => 'Kò lè ṣàtúnṣe profáìlì';
+  String get profileSettingsUpdateFailed => 'Kò lè ṣàtúnṣe àpèjúwe ara eni ';
 
   @override
-  String get profileSettingsTitle => 'Ìṣàtúntò Profáìlì';
+  String get profileSettingsTitle => 'Ìṣàtúntò àpèjúwe ara eni ';
 
   @override
-  String get profileSettingsSubtitle => 'Ṣàtúnṣe bí o ṣe fara hàn sí ìdílé';
+  String get profileSettingsSubtitle => 'Ṣàtúnṣe bí o ṣe fe fara hàn sí ìdílé';
 
   @override
-  String get profileSettingsProfilePicture => 'Àwòrán Profáìlì';
+  String get profileSettingsProfilePicture => 'Àwòrán àpèjúwe ara eni ';
 
   @override
   String get profileSettingsUploadPhotoHint =>
-      'Gbé àwòrán wọlé láti ṣe àkànṣe profáìlì rẹ';
+      'Gbé àwòrán wọlé láti ṣe se àdàni  àpèjúwe ara rẹ';
 
   @override
   String get profileSettingsDisplayName => 'Orúkọ Àfihàn';
@@ -791,7 +794,7 @@ class AppLocalizationsYo extends AppLocalizations {
   String get profileSettingsFullName => 'Orúkọ Kíkún';
 
   @override
-  String get profileSettingsNicknameLabel => 'Ìnagijẹ (yíyàn)';
+  String get profileSettingsNicknameLabel => 'Ìnagijẹ (kì ì se dandan)';
 
   @override
   String get profileSettingsNicknameHint => 'Tẹ ìnagijẹ kan...';
@@ -801,7 +804,7 @@ class AppLocalizationsYo extends AppLocalizations {
       'Ìnagijẹ rẹ ni a óò fihàn dípò orúkọ kíkún rẹ lórí àwọn ìlànà oúnjẹ àti àríwí.';
 
   @override
-  String get profileSettingsAccountInformation => 'Àlàyé Àkàǹtì';
+  String get profileSettingsAccountInformation => 'Àlàyé ìforukosílè ';
 
   @override
   String get profileSettingsEmail => 'Ímeèlì';
@@ -810,7 +813,7 @@ class AppLocalizationsYo extends AppLocalizations {
   String get profileSettingsMemberSince => 'Ọmọ Ẹgbẹ́ Láti';
 
   @override
-  String get profileSettingsSaveButton => 'Fipamọ́ Àwọn Àyípadà';
+  String get profileSettingsSaveButton => 'Fi Àwọn Àyípadà pamó';
 
   @override
   String get cookbookLoadError =>
@@ -840,29 +843,29 @@ class AppLocalizationsYo extends AppLocalizations {
   String get cookbookShare => 'Pín';
 
   @override
-  String get cookbookPreviewPrint => 'Àkọ́wòye/Ìtẹ̀wé';
+  String get cookbookPreviewPrint => 'Ìwòye sáájú/Tẹ̀ jádé';
 
   @override
   String get cookbookCancel => 'Fagilé';
 
   @override
-  String get cookbookSavingPdf => 'Ń fipamọ́ PDF...';
+  String get cookbookSavingPdf => 'Ń fi PDF pamó';
 
   @override
   String get cookbookPdfSavedSuccess =>
-      'A ti fipamọ́ PDF ní àṣeyọrí sí fódà Downloads!';
+      'A ti fi PDF pamó ní àṣeyọrí sí àpótí ìkójopo gba kalè!';
 
   @override
   String get cookbookPdfSharedSuccess => 'A ti pín PDF ní àṣeyọrí!';
 
   @override
-  String get cookbookSavePdfError => 'Kò lè fipamọ́ PDF';
+  String get cookbookSavePdfError => 'Kò lè fi PDF pamó ';
 
   @override
   String get cookbookSharePdfError => 'Kò lè pín PDF';
 
   @override
-  String get cookbookPreviewPdfError => 'Kò lè ṣe àkọ́wòye PDF';
+  String get cookbookPreviewPdfError => 'Kò lè ṣe ìwòye sáájú PDF';
 
   @override
   String get cookbookTitle => 'Ìwé Oúnjẹ Ìdílé';
@@ -872,7 +875,7 @@ class AppLocalizationsYo extends AppLocalizations {
       'Yan àwọn ìlànà oúnjẹ láti ṣẹ̀dá ìwé oúnjẹ PDF tí a lè tẹ̀';
 
   @override
-  String get cookbookClear => 'Nù Ún Dànù';
+  String get cookbookClear => 'Nù Ún ';
 
   @override
   String cookbookRecipesSelected(int selectedCount) {
@@ -906,7 +909,7 @@ class AppLocalizationsYo extends AppLocalizations {
   String get createFamilyNameLabel => 'ORÚKỌ ÌDÍLÉ';
 
   @override
-  String get createFamilyNameHint => 'f.a., Ìdílé Adéwálé';
+  String get createFamilyNameHint => 'fun àpere., Ìdílé Adéwálé';
 
   @override
   String get createFamilyNameRequired => 'Jọ̀wọ́ tẹ orúkọ ìdílé kan';
@@ -917,17 +920,17 @@ class AppLocalizationsYo extends AppLocalizations {
 
   @override
   String get createFamilyNameTooLong =>
-      'Orúkọ ìdílé gbọ́dọ̀ jẹ́ àmì 50 tàbí kéré sí i';
+      'Orúkọ ìdílé gbọ́dọ̀ jẹ́ àmì ààdóta tàbí kéré sí i';
 
   @override
-  String get createFamilyDescriptionLabel => 'ÀPÈJÚWE (YÍYÀN)';
+  String get createFamilyDescriptionLabel => 'ÀPÈJÚWE (kì í se dandan)';
 
   @override
   String get createFamilyDescriptionHint => 'Sọ fún wa nípa ìdílé rẹ...';
 
   @override
   String get createFamilyDescriptionTooLong =>
-      'Àpèjúwe gbọ́dọ̀ jẹ́ àmì 500 tàbí kéré sí i';
+      'Àpèjúwe gbọ́dọ̀ jẹ́ àmì egbèta  tàbí kéré sí i';
 
   @override
   String get createFamilySubmitButton => 'Dá Ìdílé';
@@ -959,10 +962,10 @@ class AppLocalizationsYo extends AppLocalizations {
   String get createFamilyShareInviteButton => 'Pín Ìpè';
 
   @override
-  String get createFamilyDoneButton => 'Ó Tán';
+  String get createFamilyDoneButton => 'se tán';
 
   @override
-  String get loginSubtitle => 'Pín ogún ìdáná rẹ';
+  String get loginSubtitle => 'Pín Ajogùn àsà oúnje rẹ';
 
   @override
   String get loginEmailLabel => 'ÍMEÈLÌ';
@@ -1012,7 +1015,7 @@ class AppLocalizationsYo extends AppLocalizations {
 
   @override
   String get voiceRecipeMicPermissionRequired =>
-      'Àṣẹ máíkíròfóònù pọn dandan láti ṣàkọsílẹ̀ ìlànà oúnjẹ';
+      'Àṣẹ èro ìgbéòhùn pọn dandan láti ṣàkọsílẹ̀ ìlànà oúnjẹ';
 
   @override
   String voiceRecipeFailedToStart(String error) {
@@ -1025,22 +1028,22 @@ class AppLocalizationsYo extends AppLocalizations {
   }
 
   @override
-  String get voiceRecipeFileNotFound => 'A kò rí fáìlì ìṣàkọsílẹ̀';
+  String get voiceRecipeFileNotFound => 'A kò rí ìwé àkọsílẹ̀';
 
   @override
   String voiceRecipeTranscribedCredits(int credits) {
-    return 'A ti kọ ìlànà oúnjẹ sílẹ̀! Kírẹ́dítì $credits ló kù.';
+    return 'A ti kọ ìlànà oúnjẹ sílẹ̀! ìyìn $credits ló kù.';
   }
 
   @override
-  String get voiceRecipeTitle => 'Ìlànà Oúnjẹ Ohùn';
+  String get voiceRecipeTitle => 'Ìlànà Oúnjẹ ni Ohùn';
 
   @override
   String get voiceRecipeIntro =>
       'Sọ ìlànà oúnjẹ rẹ sókè — a óò kọ ọ́ sílẹ̀ kí a sì sọ ọ́ di àkọ̀wé tí a ṣètò.';
 
   @override
-  String get voiceRecipeUsesCredits => 'Ó lo kírẹ́dítì AI 2';
+  String get voiceRecipeUsesCredits => 'Ó lo ìyìn AI méjì';
 
   @override
   String get voiceRecipeTapToStop => 'Tẹ bọ́tìnì láti dúró';
@@ -1065,19 +1068,19 @@ class AppLocalizationsYo extends AppLocalizations {
 
   @override
   String get voiceRecipeTipsBody =>
-      '• Bẹ̀rẹ̀ pẹ̀lú orúkọ ìlànà oúnjẹ\n• Tò èròjà kọ̀ọ̀kan pẹ̀lú ìwọ̀n\n• Ṣàpèjúwe àwọn ìgbésẹ̀ ní ìtẹ̀léǹtẹ̀lé\n• Mẹ́nu àkókò ìsè àti ìpín àbọ̀';
+      '• Bẹ̀rẹ̀ pẹ̀lú orúkọ ìlànà oúnjẹ\n• Tò èròjà kọ̀ọ̀kan pẹ̀lú ìwọ̀n\n• Ṣàpèjúwe àwọn ìgbésẹ̀ ní ìtẹ̀léǹtẹ̀lé\n• Mẹ́nu àkókò ìsè àti ìpín ';
 
   @override
   String get voiceRecipeTranscribing => 'Ń kọ sílẹ̀ pẹ̀lú AI...';
 
   @override
-  String get voiceRecipeTranscribeIntoDraft => 'Kọ Sílẹ̀ Di Àkọ̀wé';
+  String get voiceRecipeTranscribeIntoDraft => 'Kọ Sílẹ̀ Di àkosílè ';
 
   @override
   String get voiceRecipeRecordAgain => 'Tún Ṣàkọsílẹ̀';
 
   @override
-  String get registerSubtitle => 'Pín ogún ìdáná rẹ';
+  String get registerSubtitle => 'Pín ajogún Ìlànà oúnje rẹ';
 
   @override
   String get registerNameLabel => 'ORÚKỌ';
@@ -1101,14 +1104,14 @@ class AppLocalizationsYo extends AppLocalizations {
   String get registerEmailInvalid => 'Jọ̀wọ́ tẹ ímeèlì tó tọ́';
 
   @override
-  String get registerNicknameLabel => 'ÌNAGIJẸ (YÍYÀN)';
+  String get registerNicknameLabel => 'ÌNAGIJẸ (kì se dandan)';
 
   @override
-  String get registerNicknameHint => 'Tẹ ìnagijẹ rẹ (yíyàn)';
+  String get registerNicknameHint => 'Tẹ ìnagijẹ rẹ (kì se dandan)';
 
   @override
   String get registerNicknameTooLong =>
-      'Ìnagijẹ gbọ́dọ̀ jẹ́ àmì 30 tàbí kéré sí i';
+      'Ìnagijẹ gbọ́dọ̀ jẹ́ àmì Ogbòn tàbí kéré sí i';
 
   @override
   String get registerPasswordLabel => 'Ọ̀RỌ̀ ÌGBÀWỌLÉ';
@@ -1124,10 +1127,10 @@ class AppLocalizationsYo extends AppLocalizations {
       'Ọ̀rọ̀ ìgbàwọlé gbọ́dọ̀ jẹ́ àmì mẹ́fà ó kéré jù';
 
   @override
-  String get registerCreateAccountButton => 'Dá Àkàǹtì';
+  String get registerCreateAccountButton => 'Forúkosílè';
 
   @override
-  String get registerAlreadyHaveAccount => 'O ti ní àkàǹtì tẹ́lẹ̀? ';
+  String get registerAlreadyHaveAccount => 'O ti forúkosílè tẹ́lẹ̀?';
 
   @override
   String get registerSignInLink => 'Wọlé';
@@ -1137,11 +1140,11 @@ class AppLocalizationsYo extends AppLocalizations {
 
   @override
   String get scanRecipeCameraPermission =>
-      'Àṣẹ kámẹ́rà pọn dandan láti ṣàwárí ìlànà oúnjẹ';
+      'Àṣẹ íyàwòrán pọn dandan láti ṣàwárí ìlànà oúnjẹ';
 
   @override
   String scanRecipeScannedSuccess(int credits) {
-    return 'A ti ṣàwárí ìlànà oúnjẹ! Kírẹ́dítì $credits ló kù.';
+    return 'A ti ṣàwárí ìlànà oúnjẹ!Ìgbori ìyìn $credits ló kù.';
   }
 
   @override
@@ -1152,7 +1155,7 @@ class AppLocalizationsYo extends AppLocalizations {
       'Sọ káàdì àfọwọ́kọ tàbí ojú-ìwé ìwé oúnjẹ di àkọ̀wé ìlànà oúnjẹ tí a lè ṣàtúnṣe.';
 
   @override
-  String get scanRecipeCreditCost => 'Ó lo kírẹ́dítì AI 1';
+  String get scanRecipeCreditCost => 'Ó lo oríyin AI kan';
 
   @override
   String get scanRecipeEmptyTitle => 'Fi àwòrán ìlànà oúnjẹ kún ún láti ṣàwárí';
@@ -1171,7 +1174,7 @@ class AppLocalizationsYo extends AppLocalizations {
   String get scanRecipeScanning => 'Ń ṣàwárí pẹ̀lú AI...';
 
   @override
-  String get scanRecipeScanButton => 'Ṣàwárí Di Àkọ̀wé';
+  String get scanRecipeScanButton => 'Ṣàwárí Di àkosílè ';
 
   @override
   String get notificationsLoadError =>
@@ -1247,7 +1250,7 @@ class AppLocalizationsYo extends AppLocalizations {
 
   @override
   String saveFromLinkImportSuccess(int creditsRemaining) {
-    return 'A ti mú ìlànà oúnjẹ wọlé! Kírẹ́dítì $creditsRemaining ló kù.';
+    return 'A ti mú ìlànà oúnjẹ wọlé! Ori yìn$creditsRemaining ló kù.';
   }
 
   @override
@@ -1258,17 +1261,17 @@ class AppLocalizationsYo extends AppLocalizations {
       'Lẹ̀ ọ̀nà ìjápọ̀ TikTok, Instagram, YouTube, tàbí ìlànà oúnjẹ kún ún kí o sì sọ ọ́ di àkọ̀wé Legacy Table tí a lè pín.';
 
   @override
-  String get saveFromLinkCreditCost => 'Ó lo kírẹ́dítì AI 1';
+  String get saveFromLinkCreditCost => 'Ó lo oríyin AI kan';
 
   @override
   String get saveFromLinkDraftInfo =>
-      'Ìlànà oúnjẹ tí a mú wọlé yóò ṣí gẹ́gẹ́ bí àkọ̀wé ní àkọ́kọ́, kí o lè ṣàtúnṣe àwọn èròjà, ṣàtúnṣe àwọn ìtọ́sọ́nà, kí o sì fi ìtàn tìrẹ kún un kí o tó pín in.';
+      'Ìlànà oúnjẹ tí a mú wọlé yóò ṣí gẹ́gẹ́ bí àkosílè ní àkọ́kọ́, kí o lè ṣàtúnṣe àwọn èròjà, ṣàtúnṣe àwọn ìtọ́sọ́nà, kí o sì fi ìtàn tìrẹ kún un kí o tó pín in.';
 
   @override
   String get saveFromLinkImportingLabel => 'Ń mú wọlé pẹ̀lú AI...';
 
   @override
-  String get saveFromLinkCreateDraftButton => 'Dá Àkọ̀wé Láti Ọ̀nà Ìjápọ̀';
+  String get saveFromLinkCreateDraftButton => 'Dá Àkosílè Láti Ọ̀nà Ìjápọ̀';
 
   @override
   String get onboardingNextButton => 'Tó Kàn';
@@ -1307,10 +1310,10 @@ class AppLocalizationsYo extends AppLocalizations {
   String get homeSubscriptionActive => 'Ètò Premium ti ń ṣiṣẹ́';
 
   @override
-  String get homeSubscriptionUnlock => 'Ṣí àwọn ẹ̀yà ìdílé premium';
+  String get homeSubscriptionUnlock => 'Ṣí àwọn ẹ̀yà ìdílé èyà pataki ';
 
   @override
-  String get profileTitle => 'Profáìlì Mi';
+  String get profileTitle => 'Àpèjúwe ara eni ';
 
   @override
   String get profileNoRecipesTitle => 'Kò sí ìlànà oúnjẹ síbẹ̀';
@@ -1460,7 +1463,7 @@ class AppLocalizationsYo extends AppLocalizations {
 
   @override
   String cookbookCardServings(int count) {
-    return 'ìpín àbọ̀ $count';
+    return '$count ìpín àbọ̀ ';
   }
 
   @override
@@ -1469,7 +1472,7 @@ class AppLocalizationsYo extends AppLocalizations {
   }
 
   @override
-  String get familyPromptTitle => 'Darapọ̀ Mọ́ tàbí Dá Ìdílé Kan';
+  String get familyPromptTitle => 'Darapọ̀ Mọ́ tàbí Dá Ìdílé Kan sílè ';
 
   @override
   String get familyPromptSubtitle =>
