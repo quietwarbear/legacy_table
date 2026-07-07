@@ -30,6 +30,7 @@ import {
 import { SubscriptionProvider, useSubscription, PricingPage, SubscriptionSuccessPage, CreditsBadge, CreditsGate } from "./subscription";
 import LandingPage from "./landing/LandingPage";
 import PublicPricingPage from "./landing/PricingPage";
+import { GiftPage, GiftSuccessPage, RedeemPage } from "./landing/GiftPages";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "";
 const API = `${BACKEND_URL}/api`;
@@ -6484,6 +6485,9 @@ function App() {
                 <Route path="/subscription-success" element={<ProtectedRoute><SubscriptionSuccessPage /></ProtectedRoute>} />
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/pricing" element={<PublicPricingPage />} />
+                <Route path="/gift" element={<GiftPage />} />
+                <Route path="/gift/success" element={<GiftSuccessPage />} />
+                <Route path="/redeem" element={<RedeemPage />} />
                 <Route path="/home" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
                 <Route path="/add-recipe" element={<ProtectedRoute><AddRecipePage /></ProtectedRoute>} />
                 <Route path="/scan-recipe" element={<ProtectedRoute><ScanRecipePage /></ProtectedRoute>} />

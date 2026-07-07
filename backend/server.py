@@ -225,9 +225,10 @@ openai_client = AsyncOpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 
 # Monthly credit allocation per subscription tier
 TIER_CREDITS = {
-    None: 3,          # Free tier — enough to try AI features
-    "heritage": 15,   # Heritage Keeper
-    "legacy": 50,     # Legacy Collection
+    None: 3,               # Free tier — enough to try AI features
+    "heritage": 15,        # Heritage Keeper
+    "legacy": 50,          # Legacy Collection
+    "family_legacy": 50,   # Family Legacy (gift, web-only, 1 year + printed cookbook)
 }
 
 # Credit costs per AI feature (used when features are built)
@@ -499,6 +500,21 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         if not user:
             logger.warning("Auth failed: user_id=%s not found", user_id)
             raise HTTPException(status_code=401, detail="User not found")
+
+        # Family Legacy gifts run one year; lazily downgrade on expiry so no
+        # scheduler is needed (cheap string compare on the hot path).
+        if user.get("subscription_tier") == "family_legacy":
+            expires = user.get("gift_expires_at")
+            if expires and expires < datetime.now(timezone.utc).isoformat():
+                await db.users.update_one(
+                    {"id": user_id},
+                    {"$unset": {"subscription_tier": "", "gift_expires_at": ""},
+                     "$set": {"credits_balance": TIER_CREDITS[None],
+                              "credits_refresh_at": next_refresh_date()}})
+                user.pop("subscription_tier", None)
+                user.pop("gift_expires_at", None)
+                user["credits_balance"] = TIER_CREDITS[None]
+
         return user
     except jwt.ExpiredSignatureError:
         logger.warning("Auth failed: token expired")
@@ -2155,6 +2171,35 @@ async def stripe_webhook(request: Request):
             )
             logger.info("Set subscription_tier=%s credits=%d for email=%s", tier, new_credits, customer_email)
 
+    elif event_type == "checkout.session.completed":
+        # Family Legacy gift purchase (mode=payment). Mint the gift code
+        # here — payment confirmation is the source of truth.
+        session_obj = subscription_obj
+        metadata = session_obj.get("metadata") or {}
+        if metadata.get("kind") == "family_legacy_gift" and session_obj.get("payment_status") == "paid":
+            existing = await db.gifts.find_one({"stripe_session_id": session_obj["id"]})
+            if not existing:
+                code = _generate_gift_code()
+                while await db.gifts.find_one({"code": code}):
+                    code = _generate_gift_code()
+                purchaser_email = (
+                    (session_obj.get("customer_details") or {}).get("email")
+                    or session_obj.get("customer_email")
+                    or ""
+                ).lower()
+                await db.gifts.insert_one({
+                    "id": str(uuid.uuid4()),
+                    "kind": "family_legacy",
+                    "code": code,
+                    "stripe_session_id": session_obj["id"],
+                    "purchaser_email": purchaser_email,
+                    "recipient_name": metadata.get("recipient_name") or None,
+                    "status": "unredeemed",
+                    "cookbook_status": "not_started",  # print pipeline claims this later
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                })
+                logger.info("Minted family_legacy gift for %s", purchaser_email)
+
     elif event_type == "customer.subscription.deleted":
         customer_id = subscription_obj.get("customer")
         if customer_id:
@@ -2551,6 +2596,127 @@ async def send_weekly_prompt_now(user: dict = Depends(get_current_user)):
         _current_week_prompt(now),
         {"route": "/voice-recipe"},
     )
+
+
+# ---- Family Legacy gift (third offering: $99 one-time, web-only) ----
+#
+# The Storyworth-shaped move: bought by the keeper's daughter as a gift,
+# one payment (never a recurring charge on the buyer's card), the recipient
+# redeems a code for one year of family_legacy + a printed cookbook credit.
+# Existing Heritage/Legacy store tiers are untouched.
+
+FAMILY_LEGACY_PRICE_CENTS = 9900
+_GIFT_CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"  # no 0/O/1/I/L
+
+
+def _generate_gift_code() -> str:
+    import secrets
+    raw = "".join(secrets.choice(_GIFT_CODE_ALPHABET) for _ in range(8))
+    return f"GIFT-{raw[:4]}-{raw[4:]}"
+
+
+class GiftCheckoutRequest(BaseModel):
+    purchaser_email: EmailStr
+    recipient_name: Optional[str] = None
+    success_url: str = "https://legacytable.app/gift/success"
+    cancel_url: str = "https://legacytable.app/gift"
+
+
+@api_router.post("/gift/checkout")
+async def create_gift_checkout(body: GiftCheckoutRequest):
+    """Public — the buyer usually has no Legacy Table account. One-time
+    payment with inline price_data (no Stripe dashboard setup needed)."""
+    stripe_secret = os.environ.get("STRIPE_SECRET_KEY", "")
+    if not stripe_secret:
+        raise HTTPException(status_code=500, detail="Stripe not configured")
+
+    import stripe as stripe_lib
+    stripe_lib.api_key = stripe_secret
+
+    try:
+        session = stripe_lib.checkout.Session.create(
+            mode="payment",
+            customer_email=body.purchaser_email,
+            line_items=[{
+                "price_data": {
+                    "currency": "usd",
+                    "unit_amount": FAMILY_LEGACY_PRICE_CENTS,
+                    "product_data": {
+                        "name": "Family Legacy — one year",
+                        "description": (
+                            "A year of Legacy Table for their whole family, "
+                            "plus a printed heirloom cookbook whose pages "
+                            "play the voices behind the recipes."
+                        ),
+                    },
+                },
+                "quantity": 1,
+            }],
+            metadata={
+                "kind": "family_legacy_gift",
+                "recipient_name": body.recipient_name or "",
+            },
+            success_url=body.success_url + "?session_id={CHECKOUT_SESSION_ID}",
+            cancel_url=body.cancel_url,
+            allow_promotion_codes=True,
+        )
+        return {"checkout_url": session.url}
+    except Exception as e:
+        logger.error("Failed to create gift checkout session: %s", e)
+        raise HTTPException(status_code=500, detail="Could not create checkout session")
+
+
+@api_router.get("/gift/by-session/{session_id}")
+async def get_gift_by_session(session_id: str):
+    """Success-page lookup. Knowledge of the Stripe session id (from the
+    redirect URL) is the capability; returns 404 while the webhook is still
+    minting so the page can poll briefly."""
+    gift = await db.gifts.find_one(
+        {"stripe_session_id": session_id},
+        {"_id": 0, "code": 1, "status": 1, "recipient_name": 1})
+    if not gift:
+        raise HTTPException(status_code=404, detail="Gift not ready yet")
+    return gift
+
+
+class GiftRedeemRequest(BaseModel):
+    code: str
+
+
+@api_router.post("/gift/redeem")
+async def redeem_gift(body: GiftRedeemRequest, user: dict = Depends(get_current_user)):
+    code = body.code.strip().upper()
+    gift = await db.gifts.find_one({"code": code})
+    if not gift:
+        raise HTTPException(status_code=404, detail="That gift code isn't valid")
+    if gift.get("status") != "unredeemed":
+        raise HTTPException(status_code=400, detail="This gift has already been redeemed")
+
+    now = datetime.now(timezone.utc)
+    expires_at = (now + timedelta(days=365)).isoformat()
+
+    # Claim atomically so two simultaneous redemptions can't both win.
+    claimed = await db.gifts.find_one_and_update(
+        {"code": code, "status": "unredeemed"},
+        {"$set": {
+            "status": "redeemed",
+            "redeemed_by": user["id"],
+            "redeemed_at": now.isoformat(),
+            "expires_at": expires_at,
+        }})
+    if not claimed:
+        raise HTTPException(status_code=400, detail="This gift has already been redeemed")
+
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {
+            "subscription_tier": "family_legacy",
+            "gift_expires_at": expires_at,
+            "credits_balance": get_credits_for_tier("family_legacy"),
+            "credits_refresh_at": next_refresh_date(),
+        }})
+    logger.info("Gift %s redeemed by user=%s", code, user["id"])
+    return {"ok": True, "tier": "family_legacy", "expires_at": expires_at}
 
 
 # ---- Marketing ----

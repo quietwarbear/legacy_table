@@ -372,6 +372,29 @@ const PricingPage = () => {
         )}
       </section>
 
+      {/* Family Legacy gift — flag-gated until the print pipeline ships.
+          Enable with REACT_APP_SHOW_FAMILY_LEGACY=true in Vercel env. */}
+      {process.env.REACT_APP_SHOW_FAMILY_LEGACY === "true" && (
+        <section className="px-4 md:px-6 lg:px-8 py-16 md:py-20">
+          <div className="max-w-3xl mx-auto text-center rounded-2xl border-2 border-primary/30 bg-card shadow-md p-10">
+            <p className="text-sm uppercase tracking-widest text-primary font-semibold mb-3">
+              OR GIVE IT AS A GIFT
+            </p>
+            <h2 className="font-serif text-3xl md:text-4xl font-bold mb-4">
+              Family Legacy — $99, once.
+            </h2>
+            <p className="text-muted-foreground leading-relaxed mb-8 max-w-xl mx-auto">
+              A year of Legacy Table for their whole family, plus a printed
+              heirloom cookbook whose pages play the voices behind the
+              recipes. Bought with a card, given with a code.
+            </p>
+            <Button size="lg" className="rounded-full" asChild>
+              <Link to="/gift">Give Family Legacy</Link>
+            </Button>
+          </div>
+        </section>
+      )}
+
       {/* FAQ */}
       <section className="px-4 md:px-6 lg:px-8 py-16 md:py-20 bg-muted">
         <div className="max-w-3xl mx-auto">
