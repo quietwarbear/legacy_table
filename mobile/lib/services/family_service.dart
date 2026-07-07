@@ -1,6 +1,7 @@
 import '../config/api_config.dart';
 import '../models/family.dart';
 import '../models/user.dart';
+import 'analytics_service.dart';
 import 'api_client.dart';
 
 // Re-export TransferKeeperRequest for convenience
@@ -17,6 +18,7 @@ class FamilyService {
       ApiConfig.families,
       data: request.toJson(),
     );
+    await analytics.capture('family_created');
     return Family.fromJson(response.data);
   }
 
@@ -25,6 +27,7 @@ class FamilyService {
   /// Returns {family_id, family_name, recipes_created, message}.
   Future<Map<String, dynamic>> seedSampleFamily() async {
     final response = await _apiClient.post(ApiConfig.seedSampleFamily);
+    await analytics.capture('sample_family_created');
     return Map<String, dynamic>.from(response.data);
   }
 
@@ -34,6 +37,9 @@ class FamilyService {
       ApiConfig.joinFamily,
       data: request.toJson(),
     );
+    // The other half of the invite loop — invite_shared is captured in
+    // the share dialog; this is the accept side.
+    await analytics.capture('family_joined');
     return JoinFamilyResponse.fromJson(response.data);
   }
 

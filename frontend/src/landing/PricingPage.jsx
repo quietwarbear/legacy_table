@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../App";
+import { trackStoreClick } from "../lib/track";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Check, Menu } from "lucide-react";
@@ -46,6 +47,7 @@ const StoreBadges = ({ size = "default", align = "center", className = "" }) => 
         href={APP_STORE_URL}
         target="_blank"
         rel="noopener noreferrer"
+        onClick={() => trackStoreClick("apple", "pricing")}
         aria-label="Download Legacy Table on the App Store"
         className="inline-block transition-transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-primary rounded-md"
       >
@@ -59,6 +61,7 @@ const StoreBadges = ({ size = "default", align = "center", className = "" }) => 
         href={PLAY_STORE_URL}
         target="_blank"
         rel="noopener noreferrer"
+        onClick={() => trackStoreClick("google", "pricing")}
         aria-label="Get Legacy Table on Google Play"
         className="inline-block transition-transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-primary rounded-md"
       >

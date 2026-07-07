@@ -48,6 +48,14 @@
                 <data android:scheme="https" android:host="legacytable.app" android:pathPrefix="/invite" />
             </intent-filter>
         </activity>
+        <!-- Meta (Facebook) SDK — mirrors ios/Runner/Info.plist config so
+             facebook_app_events works on Android too (ad attribution). -->
+        <meta-data
+            android:name="com.facebook.sdk.ApplicationId"
+            android:value="@string/facebook_app_id" />
+        <meta-data
+            android:name="com.facebook.sdk.ClientToken"
+            android:value="@string/facebook_client_token" />
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

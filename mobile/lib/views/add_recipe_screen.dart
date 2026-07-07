@@ -10,6 +10,7 @@ import 'package:dio/dio.dart';
 import '../providers/theme_provider.dart';
 import '../config/app_theme.dart';
 import 'package:in_app_review/in_app_review.dart';
+import '../services/analytics_service.dart';
 import '../services/api_service.dart';
 import '../services/storage_service.dart';
 import '../models/recipe.dart';
@@ -613,15 +614,21 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
         );
 
         updatedRecipe = await apiService.recipes.createRecipe(request);
+        await analytics.capture('recipe_created', {
+          'has_story': request.story != null,
+          'has_photos': photoBase64List.isNotEmpty,
+        });
 
         // First-value milestone: remember it (gates the deferred paywall)
         // and ask for a store review while the delight is fresh.
         final storageService = StorageService();
         if (!(await storageService.getHasCreatedFirstRecipe())) {
           await storageService.setHasCreatedFirstRecipe(true);
+          await analytics.capture('first_recipe_created');
           try {
             final inAppReview = InAppReview.instance;
             if (await inAppReview.isAvailable()) {
+              await analytics.capture('review_prompt_requested');
               await inAppReview.requestReview();
             }
           } catch (_) {

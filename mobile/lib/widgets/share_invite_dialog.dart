@@ -6,6 +6,7 @@ import '../config/app_theme.dart';
 import '../l10n/app_localizations.dart';
 import '../providers/theme_provider.dart';
 import '../models/family.dart';
+import '../services/analytics_service.dart';
 import 'styled_snackbar.dart';
 
 /// Dialog that lets the sender choose between sharing a deep link
@@ -300,6 +301,9 @@ class _ShareInviteDialogState extends State<ShareInviteDialog> {
                   child: ElevatedButton.icon(
                     onPressed: () async {
                       await Share.share(_shareText);
+                      await analytics.capture('invite_shared', {
+                        'mode': _useLinkMode ? 'link' : 'code',
+                      });
                       if (context.mounted) Navigator.of(context).pop();
                     },
                     icon: const Icon(Icons.share, size: 18),
