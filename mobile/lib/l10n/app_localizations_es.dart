@@ -1537,4 +1537,13 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get familyPromptSampleFailed =>
       'No se pudo crear el recetario de ejemplo. Inténtalo de nuevo.';
+
+  @override
+  String get shareRecipeTitle => 'Compartir esta receta';
+
+  @override
+  String get shareRecipeAsCard => 'Compartir como tarjeta';
+
+  @override
+  String get shareRecipeAsText => 'Compartir como texto';
 }

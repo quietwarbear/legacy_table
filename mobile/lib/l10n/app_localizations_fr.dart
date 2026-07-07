@@ -1539,4 +1539,13 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get familyPromptSampleFailed =>
       'Impossible de créer le livre d\'exemple. Veuillez réessayer.';
+
+  @override
+  String get shareRecipeTitle => 'Partager cette recette';
+
+  @override
+  String get shareRecipeAsCard => 'Partager en carte';
+
+  @override
+  String get shareRecipeAsText => 'Partager en texte';
 }

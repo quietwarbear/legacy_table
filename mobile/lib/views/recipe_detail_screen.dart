@@ -9,6 +9,7 @@ import '../models/comment.dart';
 import '../models/recipe.dart';
 import '../services/api_service.dart';
 import '../services/session_manager.dart';
+import '../widgets/recipe_share_sheet.dart';
 import '../widgets/styled_snackbar.dart';
 import 'add_recipe_screen.dart';
 
@@ -434,6 +435,20 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                 onPressed: () => Navigator.of(context).pop(),
               ),
             ),
+            actions: [
+              Container(
+                margin: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.3),
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.ios_share, color: Colors.white),
+                  tooltip: AppLocalizations.of(context).shareRecipeTitle,
+                  onPressed: () => RecipeShareSheet.show(context, _recipe!),
+                ),
+              ),
+            ],
             flexibleSpace: FlexibleSpaceBar(
               background: _buildHeroImage(isDark),
             ),

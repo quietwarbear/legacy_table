@@ -2693,6 +2693,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t create the sample cookbook. Please try again.'**
   String get familyPromptSampleFailed;
+
+  /// No description provided for @shareRecipeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Share this recipe'**
+  String get shareRecipeTitle;
+
+  /// No description provided for @shareRecipeAsCard.
+  ///
+  /// In en, this message translates to:
+  /// **'Share as card'**
+  String get shareRecipeAsCard;
+
+  /// No description provided for @shareRecipeAsText.
+  ///
+  /// In en, this message translates to:
+  /// **'Share as text'**
+  String get shareRecipeAsText;
 }
 
 class _AppLocalizationsDelegate
