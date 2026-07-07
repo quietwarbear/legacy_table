@@ -429,5 +429,8 @@
   "familyPromptCreateButton": "Criar família",
   "familyPromptSampleButton": "Só explorando? Experimente um livro de receitas de exemplo",
   "familyPromptSampleSuccess": "Bem-vindo! Adicionamos algumas receitas de exemplo para começar.",
-  "familyPromptSampleFailed": "Não foi possível criar o livro de exemplo. Tente novamente."
+  "familyPromptSampleFailed": "Não foi possível criar o livro de exemplo. Tente novamente.",
+  "shareRecipeTitle": "Compartilhar esta receita",
+  "shareRecipeAsCard": "Compartilhar como cartão",
+  "shareRecipeAsText": "Compartilhar como texto"
 }
