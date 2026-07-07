@@ -25,15 +25,22 @@ Source: growth audit, July 6, 2026.
    proper set is shot).
 2. **Version string** — next release, submit `2.3.3` (no trailing period; the
    live listing shows `2.3.1.`).
-3. **Subtitle** (30 chars max) — replace `Preserve Recipes Together` with a
-   keyword-bearing subtitle. Candidates (pick one, A/B later):
-   - `Family Recipes & Voice Notes` (28)
-   - `Save Grandma's Recipes` (22)
-   - `Family Cookbook & Recipes` (25)
-4. **Keyword field** (100 chars, private) — suggested:
-   `family,recipe,cookbook,heirloom,grandma,preserve,voice,notes,keeper,heritage,traditions,archive`
-5. **App name** — consider `Legacy Table: Family Recipes` (adds the head term
-   to the indexed title; verify 30-char limit fit = 28 chars ✓).
+3. **App name** (30 chars max) — `Legacy Table: Family Recipes` (28 ✓).
+4. **Subtitle** (30 chars max) — `Preserve Grandma's Cookbook` (27 ✓).
+   Adds three new index tokens (preserve/grandma/cookbook); Apple ignores
+   tokens duplicated across name/subtitle/keywords, so no repeats.
+5. **Keyword field** (100 chars, private) — final, 99 chars:
+   `heirloom,keeper,heritage,tradition,voice,notes,nana,abuela,kitchen,organizer,scan,handwritten,story`
+   Excludes tokens already in name/subtitle and competitor brand names.
+   Note: iOS name/subtitle/keywords only change WITH a version submission —
+   enter all of these while submitting the 2.3.3 build.
+
+### Play full-description opening (Play indexes this text; iOS doesn't)
+
+> Legacy Table is the private family cookbook app for preserving heirloom
+> recipes — with the stories and voice notes of the people who taught them.
+> Scan handwritten recipe cards, record Grandma explaining the roux, and
+> build a family recipe archive your whole family writes together.
 
 ## Both stores — 5-shot screenshot narrative
 
