@@ -1,7 +1,7 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../App";
-import { trackStoreClick } from "../lib/track";
+import { trackStoreClick, trackEvent } from "../lib/track";
 import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
 import {
@@ -196,6 +196,159 @@ const TopNav = () => {
   );
 };
 
+// ----------------------------------------------------------------------------
+// Voice demo — the product's most differentiated moment, shown, not told:
+// spoken words on the left become a structured recipe (with the voice kept)
+// on the right. Pure CSS animation; no video weight.
+// ----------------------------------------------------------------------------
+const VoiceDemo = () => (
+  <section className="py-20 md:py-32 px-4 md:px-6 lg:px-8 bg-background">
+    <style>{`
+      @keyframes lt-bar { 0%,100% { transform: scaleY(0.3); } 50% { transform: scaleY(1); } }
+      @keyframes lt-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+      .lt-wave span { display:inline-block; width:3px; border-radius:2px; margin-right:3px;
+        height:18px; transform-origin:center; animation: lt-bar 1.1s ease-in-out infinite; }
+      .lt-rise { animation: lt-rise 0.7s ease-out both; }
+      @media (prefers-reduced-motion: reduce) {
+        .lt-wave span, .lt-rise { animation: none; }
+      }
+    `}</style>
+    <div className="max-w-7xl mx-auto">
+      <p className="text-sm uppercase tracking-widest text-primary font-semibold mb-4 text-center">
+        SAY IT OUT LOUD
+      </p>
+      <h2 className="font-serif text-4xl md:text-5xl font-bold text-center mb-6">
+        She talks. Legacy Table writes it down forever.
+      </h2>
+      <p className="text-lg text-muted-foreground text-center max-w-2xl mx-auto mb-16 leading-relaxed">
+        Press record while the cook explains it in her own words. The app turns
+        the recording into a structured recipe — and keeps her voice attached
+        to it, for good.
+      </p>
+
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-8 items-center max-w-5xl mx-auto">
+        {/* What she says */}
+        <div className="rounded-2xl bg-muted p-8 shadow-md lt-rise">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
+              <Mic className="w-5 h-5 text-primary" />
+            </div>
+            <div className="lt-wave text-primary" aria-hidden="true">
+              <span style={{ background: "currentColor", animationDelay: "0s" }} />
+              <span style={{ background: "currentColor", animationDelay: "0.15s" }} />
+              <span style={{ background: "currentColor", animationDelay: "0.3s" }} />
+              <span style={{ background: "currentColor", animationDelay: "0.45s" }} />
+              <span style={{ background: "currentColor", animationDelay: "0.6s" }} />
+            </div>
+            <span className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+              Recording
+            </span>
+          </div>
+          <p className="font-serif text-xl md:text-2xl italic text-foreground leading-relaxed">
+            “A cup of flour, a cup of oil — and you stir, baby. Don't rush it.
+            You stir until it looks like Louisiana…”
+          </p>
+          <p className="text-sm text-muted-foreground mt-4">Grandma Rose, explaining the roux</p>
+        </div>
+
+        {/* Arrow */}
+        <div className="hidden lg:flex flex-col items-center text-primary" aria-hidden="true">
+          <span className="text-3xl">→</span>
+        </div>
+
+        {/* What the family keeps */}
+        <div className="rounded-2xl bg-card border border-border p-8 shadow-xl lt-rise" style={{ animationDelay: "0.35s" }}>
+          <h3 className="font-serif text-2xl font-bold text-foreground mb-4">
+            Grandma Rose's Gumbo
+          </h3>
+          <ul className="text-sm text-muted-foreground space-y-2 mb-5">
+            <li>· 1 cup flour</li>
+            <li>· 1 cup vegetable oil</li>
+            <li>· Stir 30–45 min, “until it looks like Louisiana”</li>
+          </ul>
+          <div className="flex items-center gap-3 rounded-full bg-primary/10 px-4 py-2 w-fit">
+            <span className="text-primary" aria-hidden="true">▶</span>
+            <span className="text-sm font-semibold text-foreground">Grandma Rose · 0:47</span>
+          </div>
+          <p className="text-xs text-muted-foreground mt-4">
+            Her voice stays with the recipe. Forever.
+          </p>
+        </div>
+      </div>
+
+      <p className="text-center text-sm text-muted-foreground mt-12">
+        Three ways to capture: <span className="text-foreground font-medium">speak it</span>,{" "}
+        <span className="text-foreground font-medium">scan the handwritten card</span>, or{" "}
+        <span className="text-foreground font-medium">save from a link</span>.
+      </p>
+    </div>
+  </section>
+);
+
+// ----------------------------------------------------------------------------
+// Email capture — the fallback for visitors who aren't ready to install.
+// Posts to the public marketing endpoint; honeypot field deters bots.
+// ----------------------------------------------------------------------------
+const EmailCapture = () => {
+  const [email, setEmail] = useState("");
+  const [status, setStatus] = useState("idle"); // idle | sending | done | error
+
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!email || status === "sending") return;
+    setStatus("sending");
+    try {
+      const base = process.env.REACT_APP_BACKEND_URL || "";
+      const res = await fetch(`${base}/api/marketing/email-signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, source: "landing_footer" }),
+      });
+      if (!res.ok) throw new Error("bad status");
+      trackEvent("email_signup", { source: "landing_footer" });
+      setStatus("done");
+    } catch {
+      setStatus("error");
+    }
+  };
+
+  if (status === "done") {
+    return (
+      <p className="text-sm opacity-90 mb-12" data-testid="email-capture-done">
+        You're on the list. One gentle idea a month — that's all.
+      </p>
+    );
+  }
+
+  return (
+    <form onSubmit={submit} className="mb-12 max-w-md mx-auto" data-testid="email-capture-form">
+      <p className="text-sm opacity-90 mb-3">
+        Not ready to download? Leave your email — one idea a month for
+        capturing your family's recipes, nothing else.
+      </p>
+      <div className="flex gap-2">
+        <input
+          type="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="you@example.com"
+          className="flex-1 rounded-full px-5 py-3 text-sm text-foreground bg-background/95 border-0 focus:outline-none focus:ring-2 focus:ring-primary"
+          data-testid="email-capture-input"
+        />
+        <Button type="submit" size="lg" className="rounded-full" disabled={status === "sending"}>
+          {status === "sending" ? "…" : "Keep me posted"}
+        </Button>
+      </div>
+      {status === "error" && (
+        <p className="text-xs mt-2 opacity-90">
+          That didn't go through — mind trying again?
+        </p>
+      )}
+    </form>
+  );
+};
+
 const LandingPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -323,6 +476,9 @@ const LandingPage = () => {
         </div>
       </section>
 
+      {/* Voice → recipe demo */}
+      <VoiceDemo />
+
       {/* Founder & Heritage Story Section */}
       <section
         id="why"
@@ -397,6 +553,32 @@ const LandingPage = () => {
         </div>
       </section>
 
+      {/* The Keeper — name the buyer, and say the honest thing about time. */}
+      <section className="py-20 md:py-28 px-4 md:px-6 lg:px-8 bg-muted">
+        <div className="max-w-3xl mx-auto text-center">
+          <p className="text-sm uppercase tracking-widest text-primary font-semibold mb-4">
+            FOR THE KEEPER OF THE RECIPES
+          </p>
+          <h2 className="font-serif text-4xl md:text-5xl font-bold text-foreground mb-6">
+            Every family has one person who keeps the recipes.
+          </h2>
+          <p className="text-lg md:text-xl text-muted-foreground leading-relaxed mb-4">
+            If you're reading this, it's probably you.
+          </p>
+          <p className="text-lg md:text-xl text-foreground leading-relaxed font-medium mb-10">
+            The hardest part of this work is that it can't be done later.
+            Record them while they can still tell you how.
+          </p>
+          <Button
+            size="lg"
+            className="rounded-full"
+            onClick={() => scrollToId("get-the-app")}
+          >
+            Start your family's cookbook
+          </Button>
+        </div>
+      </section>
+
       {/* Final CTA / Get The App Section
           No pricing on the landing page — subscriptions live in the app
           (App Store / Play Store handle billing). Visitors download free,
@@ -416,7 +598,7 @@ const LandingPage = () => {
 
           <StoreBadges size="large" align="center" className="mb-6" placement="footer_cta" />
 
-          <p className="text-sm opacity-75 mb-12">
+          <p className="text-sm opacity-75 mb-10">
             Already have an account?{" "}
             <Link
               to="/login"
@@ -425,6 +607,8 @@ const LandingPage = () => {
               Sign in
             </Link>
           </p>
+
+          <EmailCapture />
 
           <div className="text-xs opacity-75 space-y-1">
             <p>
