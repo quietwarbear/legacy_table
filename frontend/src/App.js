@@ -5,7 +5,7 @@ import axios from "axios";
 import { Toaster, toast } from "sonner";
 import { ChefHat, Utensils, Camera, Clock, Users, Flame, Heart, Plus, LogOut, Menu, X, Home, User, Search, Download, BookOpen, Moon, Sun, Edit, MessageCircle, Trash2, Send, Bell, Settings, Upload, Copy, Crown, UserPlus, Sparkles, Share2, Volume2, VolumeX, SkipForward, SkipBack, ChevronLeft, ChevronRight, Calendar, Gift, Tag, Link2, Video } from "lucide-react";
 import * as familiesApi from "./api/families";
-import { trackStoreClick } from "./lib/track";
+import { trackStoreClick, identifyUser, resetAnalytics } from "./lib/track";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import jsPDF from "jspdf";
@@ -122,6 +122,16 @@ const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem("token"));
   const [loading, setLoading] = useState(true);
+
+  // Analytics identity follows the user: identify on login/restore,
+  // reset on logout so the next login isn't merged into the old person.
+  useEffect(() => {
+    if (user?.id) {
+      identifyUser(user);
+    } else {
+      resetAnalytics();
+    }
+  }, [user?.id]);
 
   useEffect(() => {
     const fetchUser = async () => {
