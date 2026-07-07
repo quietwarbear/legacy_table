@@ -7,7 +7,7 @@ repo; supply them at build/deploy time and the SDKs activate.
 
 | Surface | Tool | How to supply the key |
 |---|---|---|
-| Mobile (Flutter) | PostHog | `--dart-define=POSTHOG_API_KEY=phc_xxx` (optionally `POSTHOG_HOST`, defaults to US cloud) |
+| Mobile (Flutter) | PostHog | built-in default (public `phc_…` client token, EU host) — `--dart-define=POSTHOG_API_KEY` overrides |
 | Mobile (Flutter) | Sentry | `--dart-define=SENTRY_DSN=https://xxx@oXXX.ingest.sentry.io/XXX` |
 | Backend (FastAPI/Railway) | Sentry | Set `SENTRY_DSN` service variable in Railway (optional `SENTRY_ENVIRONMENT`) |
 | Web (marketing + web app) | GA4 | Already live (`G-Z0GP0D3ET0` in `frontend/public/index.html`) |
