@@ -15,13 +15,12 @@ class AppConfig {
   // API prefix
   static const String apiPrefix = '/api';
 
-  // Observability keys. PostHog project tokens are public client-side
-  // tokens (like the RevenueCat keys in subscription_service.dart), so the
-  // real one ships as the default — every build has analytics without any
-  // --dart-define plumbing. A dart-define still overrides for testing.
-  // Sentry DSNs stay out of the repo; supply via:
-  //   flutter build ipa --dart-define=SENTRY_DSN=https://xxx@oXXXX.ingest.sentry.io/XXXX
-  // An empty value disables the SDK entirely.
+  // Observability keys. PostHog project tokens and Sentry DSNs are both
+  // publishable client-side values (like the RevenueCat keys in
+  // subscription_service.dart), so the real ones ship as defaults — every
+  // build has analytics + crash reporting with no --dart-define plumbing.
+  // A dart-define still overrides either for testing, and an empty value
+  // disables the respective SDK entirely.
   static const String posthogApiKey = String.fromEnvironment(
     'POSTHOG_API_KEY',
     defaultValue: 'phc_m3uewVirngKNvpwdZ6DYkwMaWXjCscBf5iPwCSpJGm68',
@@ -30,8 +29,11 @@ class AppConfig {
     'POSTHOG_HOST',
     defaultValue: 'https://eu.i.posthog.com', // project lives in PostHog EU
   );
-  static const String sentryDsn =
-      String.fromEnvironment('SENTRY_DSN', defaultValue: '');
+  static const String sentryDsn = String.fromEnvironment(
+    'SENTRY_DSN',
+    defaultValue:
+        'https://6673dabfdb3831f9277bb2c98dea72b9@o4511694752120832.ingest.us.sentry.io/4511694759395328',
+  );
   
   // Get base URL based on environment
   static String get baseUrl => _isProduction ? _prodBaseUrl : _devBaseUrl;
