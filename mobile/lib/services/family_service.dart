@@ -20,6 +20,14 @@ class FamilyService {
     return Family.fromJson(response.data);
   }
 
+  /// Seed a sample family with demo recipes (first-run Quick Start).
+  /// Backend rejects if the user is already in a family.
+  /// Returns {family_id, family_name, recipes_created, message}.
+  Future<Map<String, dynamic>> seedSampleFamily() async {
+    final response = await _apiClient.post(ApiConfig.seedSampleFamily);
+    return Map<String, dynamic>.from(response.data);
+  }
+
   /// Join a family using invite code
   Future<JoinFamilyResponse> joinFamily(JoinFamilyRequest request) async {
     final response = await _apiClient.post(

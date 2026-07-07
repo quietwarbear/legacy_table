@@ -1498,4 +1498,16 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get familyPromptCreateButton => 'خاندان بنائیں';
+
+  @override
+  String get familyPromptSampleButton =>
+      'Just exploring? Try a sample cookbook';
+
+  @override
+  String get familyPromptSampleSuccess =>
+      'Welcome! We\'ve added a few sample recipes to get you started.';
+
+  @override
+  String get familyPromptSampleFailed =>
+      'Couldn\'t create the sample cookbook. Please try again.';
 }

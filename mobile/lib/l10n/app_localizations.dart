@@ -2675,6 +2675,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Create Family'**
   String get familyPromptCreateButton;
+
+  /// No description provided for @familyPromptSampleButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Just exploring? Try a sample cookbook'**
+  String get familyPromptSampleButton;
+
+  /// No description provided for @familyPromptSampleSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome! We\'ve added a few sample recipes to get you started.'**
+  String get familyPromptSampleSuccess;
+
+  /// No description provided for @familyPromptSampleFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t create the sample cookbook. Please try again.'**
+  String get familyPromptSampleFailed;
 }
 
 class _AppLocalizationsDelegate

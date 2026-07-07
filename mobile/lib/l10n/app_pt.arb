@@ -426,5 +426,8 @@
   "familyPromptTitle": "Entre em uma família ou crie uma",
   "familyPromptSubtitle": "Comece a compartilhar receitas com os membros da sua família",
   "familyPromptJoinButton": "Entrar na família",
-  "familyPromptCreateButton": "Criar família"
+  "familyPromptCreateButton": "Criar família",
+  "familyPromptSampleButton": "Só explorando? Experimente um livro de receitas de exemplo",
+  "familyPromptSampleSuccess": "Bem-vindo! Adicionamos algumas receitas de exemplo para começar.",
+  "familyPromptSampleFailed": "Não foi possível criar o livro de exemplo. Tente novamente."
 }

@@ -3,8 +3,10 @@ import 'package:provider/provider.dart';
 import '../config/app_theme.dart';
 import '../l10n/app_localizations.dart';
 import '../providers/theme_provider.dart';
+import '../services/api_service.dart';
 import '../views/join_family_screen.dart';
 import '../views/create_family_screen.dart';
+import 'styled_snackbar.dart';
 
 class FamilyPromptWidget extends StatelessWidget {
   final VoidCallback? onFamilyJoined;
@@ -35,6 +37,24 @@ class FamilyPromptWidget extends StatelessWidget {
 
     if (result != null && result['success'] == true && context.mounted) {
       onFamilyJoined?.call();
+    }
+  }
+
+  Future<void> _handleTrySample(BuildContext context) async {
+    final l10n = AppLocalizations.of(context);
+    try {
+      final result = await apiService.families.seedSampleFamily();
+      if (context.mounted) {
+        StyledSnackBar.showSuccess(
+          context,
+          (result['message'] as String?) ?? l10n.familyPromptSampleSuccess,
+        );
+        onFamilyJoined?.call();
+      }
+    } catch (_) {
+      if (context.mounted) {
+        StyledSnackBar.showError(context, l10n.familyPromptSampleFailed);
+      }
     }
   }
 
@@ -153,6 +173,24 @@ class FamilyPromptWidget extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 8),
+
+          // Quick Start: seed a sample cookbook so first-run users see value
+          // before committing to creating or joining a real family.
+          TextButton(
+            onPressed: () => _handleTrySample(context),
+            child: Text(
+              l10n.familyPromptSampleButton,
+              style: TextStyle(
+                fontFamily: 'Manrope',
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: isDark
+                    ? DarkColors.textSecondary
+                    : LightColors.textSecondary,
+              ),
+            ),
           ),
         ],
       ),

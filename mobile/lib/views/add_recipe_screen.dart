@@ -9,7 +9,9 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:dio/dio.dart';
 import '../providers/theme_provider.dart';
 import '../config/app_theme.dart';
+import 'package:in_app_review/in_app_review.dart';
 import '../services/api_service.dart';
+import '../services/storage_service.dart';
 import '../models/recipe.dart';
 import '../widgets/styled_snackbar.dart';
 import '../l10n/app_localizations.dart';
@@ -611,6 +613,21 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
         );
 
         updatedRecipe = await apiService.recipes.createRecipe(request);
+
+        // First-value milestone: remember it (gates the deferred paywall)
+        // and ask for a store review while the delight is fresh.
+        final storageService = StorageService();
+        if (!(await storageService.getHasCreatedFirstRecipe())) {
+          await storageService.setHasCreatedFirstRecipe(true);
+          try {
+            final inAppReview = InAppReview.instance;
+            if (await inAppReview.isAvailable()) {
+              await inAppReview.requestReview();
+            }
+          } catch (_) {
+            // Review prompt is best-effort; never block the save flow.
+          }
+        }
 
         if (!mounted) return;
         Navigator.pop(context);

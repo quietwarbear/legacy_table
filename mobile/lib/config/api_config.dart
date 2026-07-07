@@ -46,6 +46,9 @@ class ApiConfig {
   static String leaveFamily(String familyId) => '/families/$familyId/leave';
   static String transferKeeper(String familyId) => '/families/$familyId/transfer-keeper';
 
+  // Onboarding endpoints (relative paths)
+  static String get seedSampleFamily => '/onboarding/seed-sample-family';
+
   // Subscription endpoints (relative paths)
   static String get subscriptionStatus => '/subscriptions/status';
   static String get subscriptionWebhook => '/subscriptions/webhook';

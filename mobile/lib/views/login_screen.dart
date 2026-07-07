@@ -180,7 +180,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (mounted) {
         Navigator.of(context).pushNamedAndRemoveUntil(
-          isNewGoogleUser ? '/subscription' : '/home',
+          // New users land in the app; the paywall is deferred until after
+          // first value (pending flag + splash gate).
+          '/home',
           (route) => false,
         );
       }
@@ -237,7 +239,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
           if (mounted) {
             Navigator.of(context).pushNamedAndRemoveUntil(
-              isNewFacebookUser ? '/subscription' : '/home',
+              '/home',
               (route) => false,
             );
           }
@@ -305,7 +307,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (mounted) {
         Navigator.of(context).pushNamedAndRemoveUntil(
-          isNewAppleUser ? '/subscription' : '/home',
+          '/home',
           (route) => false,
         );
       }
