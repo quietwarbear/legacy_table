@@ -1548,4 +1548,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get shareRecipeAsText => 'Partager en texte';
+
+  @override
+  String get recipeDetailVoiceNote => 'Note vocale';
 }

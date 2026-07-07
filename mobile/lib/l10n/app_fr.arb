@@ -432,5 +432,6 @@
   "familyPromptSampleFailed": "Impossible de créer le livre d'exemple. Veuillez réessayer.",
   "shareRecipeTitle": "Partager cette recette",
   "shareRecipeAsCard": "Partager en carte",
-  "shareRecipeAsText": "Partager en texte"
+  "shareRecipeAsText": "Partager en texte",
+  "recipeDetailVoiceNote": "Note vocale"
 }

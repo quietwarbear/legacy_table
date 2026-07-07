@@ -6127,6 +6127,75 @@ const InviteLandingPage = () => {
   );
 };
 
+// Public voice-keepsake listen page — where printed QR codes resolve.
+// No auth by design: grandma's cookbook must play in any browser. Shows
+// only title + author, never the recipe body.
+const ListenPage = () => {
+  const { token } = useParams();
+  const [meta, setMeta] = useState(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    fetch(`${API}/listen/${token}/meta`)
+      .then((r) => {
+        if (!r.ok) throw new Error("not found");
+        return r.json();
+      })
+      .then(setMeta)
+      .catch(() => setFailed(true));
+  }, [token]);
+
+  return (
+    <div className="min-h-screen bg-background flex flex-col" data-testid="listen-page">
+      <header className="border-b border-border/50 bg-card/50">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+          <FamilyLogo size="sm" showText={true} />
+        </div>
+      </header>
+      <main className="flex-1 flex items-center justify-center px-4 py-12">
+        <div className="max-w-md w-full text-center space-y-6">
+          {failed ? (
+            <>
+              <h1 className="font-serif text-2xl font-bold">This voice note isn't available</h1>
+              <p className="text-muted-foreground">
+                The recording may have been removed by its family.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-sm uppercase tracking-widest text-primary font-semibold">
+                A voice from the kitchen
+              </p>
+              <h1 className="font-serif text-3xl font-bold" data-testid="listen-title">
+                {meta?.title || "…"}
+              </h1>
+              {meta?.author_name && (
+                <p className="text-muted-foreground">
+                  {meta.author_name}, in their own words
+                </p>
+              )}
+              <audio
+                controls
+                preload="metadata"
+                src={`${API}/listen/${token}`}
+                className="w-full"
+                data-testid="listen-audio"
+              />
+              <p className="text-xs text-muted-foreground pt-6">
+                Preserved with{" "}
+                <a href="https://legacytable.app" className="text-primary hover:underline">
+                  Legacy Table
+                </a>{" "}
+                — where recipes become heirlooms.
+              </p>
+            </>
+          )}
+        </div>
+      </main>
+    </div>
+  );
+};
+
 // 404 Not Found Page
 const NotFoundPage = () => {
   return (
@@ -6480,6 +6549,7 @@ function App() {
                 <Route path="/terms" element={<TermsOfServicePage />} />
                 <Route path="/delete-account" element={<DeleteAccountPage />} />
                 <Route path="/invite/:code" element={<InviteLandingPage />} />
+                <Route path="/listen/:token" element={<ListenPage />} />
                 <Route path="/subscribe" element={<ProtectedRoute><PricingPage /></ProtectedRoute>} />
                 <Route path="/subscription-success" element={<ProtectedRoute><SubscriptionSuccessPage /></ProtectedRoute>} />
                 <Route path="/" element={<LandingPage />} />

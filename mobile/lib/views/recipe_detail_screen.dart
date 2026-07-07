@@ -11,6 +11,7 @@ import '../services/api_service.dart';
 import '../services/session_manager.dart';
 import '../widgets/recipe_share_sheet.dart';
 import '../widgets/styled_snackbar.dart';
+import '../widgets/voice_note_chip.dart';
 import 'add_recipe_screen.dart';
 
 class RecipeDetailScreen extends StatefulWidget {
@@ -894,6 +895,21 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                           ),
                         ),
                       ],
+                    ),
+                  ),
+                ],
+
+                // Voice keepsake — the recording of the cook explaining it.
+                if (_recipe!.hasVoiceNote && _recipe!.voiceToken != null) ...[
+                  const SizedBox(height: 16),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: VoiceNoteChip(
+                        voiceToken: _recipe!.voiceToken!,
+                        authorName: _recipe!.authorName,
+                      ),
                     ),
                   ),
                 ],

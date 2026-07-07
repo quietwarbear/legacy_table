@@ -716,5 +716,6 @@
   "familyPromptSampleFailed": "Couldn't create the sample cookbook. Please try again.",
   "shareRecipeTitle": "Share this recipe",
   "shareRecipeAsCard": "Share as card",
-  "shareRecipeAsText": "Share as text"
+  "shareRecipeAsText": "Share as text",
+  "recipeDetailVoiceNote": "Voice note"
 }
