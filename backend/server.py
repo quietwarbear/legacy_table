@@ -2684,6 +2684,194 @@ async def send_weekly_prompt_now(user: dict = Depends(get_current_user)):
     )
 
 
+# ---- Cookbook print pipeline (Family Legacy physical payoff) ----
+#
+# Family's recipes -> interior PDF (QR voice pages) + wraparound cover ->
+# Lulu Print API -> a book on grandma's shelf. Artifact PDFs live in
+# GridFS and are served publicly by unguessable token so Lulu can fetch
+# them. Sandbox/production selected via LULU_USE_SANDBOX.
+
+from motor.motor_asyncio import AsyncIOMotorGridFSBucket
+
+import cookbook_print as cbp
+
+_cookbook_artifacts = AsyncIOMotorGridFSBucket(db, bucket_name="cookbook_artifacts")
+
+PUBLIC_WEB_BASE = os.environ.get("PUBLIC_WEB_BASE", "https://legacytable.app")
+PUBLIC_API_BASE = os.environ.get("PUBLIC_API_BASE", "https://api.legacytable.app")
+
+
+def _is_push_admin(user: dict) -> bool:
+    admins = {e.strip().lower() for e in os.environ.get("PUSH_ADMIN_EMAILS", "").split(",") if e.strip()}
+    return user.get("email", "").lower() in admins
+
+
+async def _store_cookbook_artifact(pdf_bytes: bytes, filename: str) -> str:
+    token = uuid.uuid4().hex
+    await _cookbook_artifacts.upload_from_stream(
+        token, pdf_bytes,
+        metadata={"filename": filename,
+                  "created_at": datetime.now(timezone.utc).isoformat()})
+    return token
+
+
+@api_router.get("/cookbook/artifact/{token}")
+async def get_cookbook_artifact(token: str):
+    """Public by token — this is the URL Lulu fetches the PDFs from, and
+    the URL the family proofs their book at."""
+    try:
+        stream = await _cookbook_artifacts.open_download_stream_by_name(token)
+        data = await stream.read()
+    except Exception:
+        raise HTTPException(status_code=404, detail="Artifact not found")
+    return Response(content=data, media_type="application/pdf",
+                    headers={"Content-Disposition": "inline; filename=cookbook.pdf"})
+
+
+async def _family_and_recipes_for_print(user: dict):
+    family_id = user.get("family_id")
+    if not family_id:
+        raise HTTPException(status_code=400, detail="You need to be in a family first")
+    family = await db.families.find_one({"id": family_id}, {"_id": 0})
+    recipes = await db.recipes.find(
+        {"family_id": family_id}, {"_id": 0, "voice_note": 0}
+    ).sort("created_at", 1).to_list(500)
+    if not recipes:
+        raise HTTPException(status_code=400, detail="No recipes to print yet")
+    return family, recipes
+
+
+class CookbookPreviewRequest(BaseModel):
+    hardcover: bool = True
+
+
+@api_router.post("/cookbook/print/preview")
+async def cookbook_print_preview(body: CookbookPreviewRequest,
+                                 user: dict = Depends(get_current_user)):
+    """Generate the interior PDF so the family can proof their book."""
+    family, recipes = await _family_and_recipes_for_print(user)
+    pdf, pages = await asyncio.to_thread(
+        cbp.generate_interior_pdf, family, recipes, PUBLIC_WEB_BASE,
+        body.hardcover)
+    token = await _store_cookbook_artifact(pdf, "interior-preview.pdf")
+    return {
+        "pages": pages,
+        "artifact_url": f"{PUBLIC_API_BASE}/api/cookbook/artifact/{token}",
+    }
+
+
+class CookbookOrderRequest(BaseModel):
+    name: str
+    street1: str
+    street2: Optional[str] = None
+    city: str
+    state_code: str
+    postcode: str
+    country_code: str = "US"
+    phone_number: Optional[str] = None
+    hardcover: bool = True
+    shipping_level: str = "GROUND"
+
+
+@api_router.post("/cookbook/print/order")
+async def cookbook_print_order(body: CookbookOrderRequest,
+                               user: dict = Depends(get_current_user)):
+    """Order the printed book. Entitled by an unclaimed Family Legacy gift
+    (cookbook_status not_started) — or push-admins, for sandbox testing."""
+    gift = await db.gifts.find_one({
+        "redeemed_by": user["id"], "status": "redeemed",
+        "cookbook_status": "not_started"})
+    if not gift and not _is_push_admin(user):
+        raise HTTPException(
+            status_code=403,
+            detail="A printed cookbook comes with the Family Legacy gift")
+
+    family, recipes = await _family_and_recipes_for_print(user)
+    pod_package = (cbp.POD_PACKAGE_HARDCOVER if body.hardcover
+                   else cbp.POD_PACKAGE_SOFTCOVER)
+
+    interior_pdf, pages = await asyncio.to_thread(
+        cbp.generate_interior_pdf, family, recipes, PUBLIC_WEB_BASE,
+        body.hardcover)
+
+    try:
+        dims = await cbp.lulu_cover_dimensions(pod_package, pages)
+    except Exception as e:
+        logger.error("Lulu cover dimensions failed: %s", e)
+        raise HTTPException(status_code=502, detail="Print service unavailable")
+
+    cover_pdf = await asyncio.to_thread(
+        cbp.generate_cover_pdf, family, dims["width"], dims["height"],
+        dims["spine_width"])
+
+    interior_token = await _store_cookbook_artifact(interior_pdf, "interior.pdf")
+    cover_token = await _store_cookbook_artifact(cover_pdf, "cover.pdf")
+    interior_url = f"{PUBLIC_API_BASE}/api/cookbook/artifact/{interior_token}"
+    cover_url = f"{PUBLIC_API_BASE}/api/cookbook/artifact/{cover_token}"
+
+    order_id = str(uuid.uuid4())
+    shipping = {
+        "name": body.name,
+        "street1": body.street1,
+        **({"street2": body.street2} if body.street2 else {}),
+        "city": body.city,
+        "state_code": body.state_code,
+        "postcode": body.postcode,
+        "country_code": body.country_code,
+        **({"phone_number": body.phone_number} if body.phone_number else {}),
+    }
+
+    try:
+        job = await cbp.lulu_create_print_job(
+            pod_package_id=pod_package, page_count=pages,
+            interior_url=interior_url, cover_url=cover_url,
+            shipping=shipping, external_id=order_id,
+            shipping_level=body.shipping_level)
+    except Exception as e:
+        logger.error("Lulu print job creation failed: %s", e)
+        raise HTTPException(status_code=502, detail="Could not place the print order")
+
+    await db.cookbook_orders.insert_one({
+        "id": order_id,
+        "user_id": user["id"],
+        "family_id": user.get("family_id"),
+        "gift_id": gift["id"] if gift else None,
+        "lulu_job_id": str(job.get("id")),
+        "pod_package_id": pod_package,
+        "pages": pages,
+        "interior_url": interior_url,
+        "cover_url": cover_url,
+        "status": (job.get("status") or {}).get("name", "CREATED"),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    })
+    if gift:
+        await db.gifts.update_one(
+            {"id": gift["id"]}, {"$set": {"cookbook_status": "ordered",
+                                          "cookbook_order_id": order_id}})
+    logger.info("Cookbook order %s placed (lulu job %s, %d pages)",
+                order_id, job.get("id"), pages)
+    return {"order_id": order_id, "pages": pages,
+            "status": (job.get("status") or {}).get("name", "CREATED")}
+
+
+@api_router.get("/cookbook/print/order/{order_id}")
+async def cookbook_print_order_status(order_id: str,
+                                      user: dict = Depends(get_current_user)):
+    order = await db.cookbook_orders.find_one({"id": order_id}, {"_id": 0})
+    if not order or (order["user_id"] != user["id"] and not _is_push_admin(user)):
+        raise HTTPException(status_code=404, detail="Order not found")
+    try:
+        live = await cbp.lulu_print_job_status(order["lulu_job_id"])
+        status_name = (live.get("status") or {}).get("name", order["status"])
+        if status_name != order["status"]:
+            await db.cookbook_orders.update_one(
+                {"id": order_id}, {"$set": {"status": status_name}})
+        order["status"] = status_name
+    except Exception:
+        pass  # return last-known status if Lulu is unreachable
+    return order
+
+
 # ---- Family Legacy gift (third offering: $99 one-time, web-only) ----
 #
 # The Storyworth-shaped move: bought by the keeper's daughter as a gift,
