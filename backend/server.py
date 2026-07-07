@@ -2337,6 +2337,9 @@ async def seed_sample_family(user: dict = Depends(get_current_user)):
     family_doc = {
         "id": family_id,
         "name": f"The {user['name'].split()[0]} Family" if user.get("name") else "My Family",
+        # owner_id is required by FamilyResponse — without it, GET /families/{id}
+        # 500s for seeded families and clients render "No family yet".
+        "owner_id": user["id"],
         "invite_code": str(uuid.uuid4())[:8].upper(),
         "created_by": user["id"],
         "keeper_id": user["id"],
