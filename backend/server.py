@@ -14,6 +14,7 @@ from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
 from typing import List, Optional
 from contextlib import asynccontextmanager
+import asyncio
 import uuid
 from datetime import datetime, timezone, timedelta
 import jwt
@@ -52,7 +53,11 @@ async def lifespan(_app: FastAPI):
         await db.sso_codes.create_index("expires_at", expireAfterSeconds=0)
     except PyMongoError as e:
         logger.warning("Could not create sso_codes TTL index: %s", e)
+    # Weekly family prompt — the push retention loop. No-ops every tick
+    # unless FIREBASE_SERVICE_ACCOUNT is configured.
+    prompt_task = asyncio.create_task(weekly_prompt_loop())
     yield
+    prompt_task.cancel()
     client.close()
 
 # Crash reporting — enabled only when SENTRY_DSN is set in the environment
@@ -2395,6 +2400,157 @@ async def seed_sample_family(user: dict = Depends(get_current_user)):
         "recipes_created": len(SAMPLE_RECIPES),
         "message": "Welcome to Legacy Table! We've added some sample recipes to get you started.",
     }
+
+
+# ---- Push notifications (FCM) ----
+#
+# Firebase here is delivery-only: tokens live in OUR Mongo (`push_tokens`),
+# targeting logic lives here, FCM just carries the message to the device.
+# Requires the FIREBASE_SERVICE_ACCOUNT env var (service-account JSON from
+# Firebase console → Project settings → Service accounts); without it every
+# send is a logged no-op.
+
+class PushRegisterRequest(BaseModel):
+    token: str
+    platform: str  # "ios" | "android"
+
+
+@api_router.post("/push/register")
+async def push_register(req: PushRegisterRequest, user: dict = Depends(get_current_user)):
+    await db.push_tokens.update_one(
+        {"token": req.token},
+        {"$set": {
+            "token": req.token,
+            "platform": req.platform,
+            "user_id": user["id"],
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }},
+        upsert=True,
+    )
+    return {"ok": True}
+
+
+# Weekly prompts, brand voice: warm, intentional, never sales-y. Rotated by
+# ISO week number so every device gets the same prompt in a given week.
+WEEKLY_PROMPTS = [
+    "Who taught you the dish everyone asks you to bring? Record them telling it — 60 seconds is enough.",
+    "What's the recipe nobody has written down yet? Say it out loud before it slips away.",
+    "Ask the eldest cook in your family how they learned. Press record first.",
+    "What did your kitchen smell like on Sunday mornings? There's a recipe in that memory.",
+    "Which dish means 'home' in your family? Add its story this week.",
+    "Someone in your family measures by feel. Record them explaining 'until it looks right.'",
+    "What's cooking for the next holiday? Save the recipe — and the voice that goes with it.",
+    "Whose handwriting is on your oldest recipe card? Scan it before it fades.",
+    "Which dish would you miss the most? Make sure it's at the table — record it this week.",
+    "Ask about the recipe that traveled the farthest to reach your family. Save the journey too.",
+    "What do the little ones always ask for? One day they'll want to make it themselves.",
+    "Record someone you love explaining dinner. You'll be glad you did.",
+]
+
+_PUSH_SCOPE = "https://www.googleapis.com/auth/firebase.messaging"
+
+
+def _fcm_credentials():
+    """Sync (wrapped in to_thread): mint an OAuth2 token from the service account."""
+    import google.auth.transport.requests
+    from google.oauth2 import service_account
+
+    info = json.loads(os.environ["FIREBASE_SERVICE_ACCOUNT"])
+    creds = service_account.Credentials.from_service_account_info(
+        info, scopes=[_PUSH_SCOPE])
+    creds.refresh(google.auth.transport.requests.Request())
+    return creds.token, info["project_id"]
+
+
+async def send_push_to_all(title: str, body: str, data: Optional[dict] = None) -> dict:
+    if not os.environ.get("FIREBASE_SERVICE_ACCOUNT"):
+        logger.info("Push skipped: FIREBASE_SERVICE_ACCOUNT not configured")
+        return {"sent": 0, "failed": 0, "skipped": True}
+
+    docs = await db.push_tokens.find({}, {"_id": 0, "token": 1}).to_list(10000)
+    tokens = sorted({d["token"] for d in docs})
+    if not tokens:
+        return {"sent": 0, "failed": 0}
+
+    access_token, project_id = await asyncio.to_thread(_fcm_credentials)
+    url = f"https://fcm.googleapis.com/v1/projects/{project_id}/messages:send"
+    headers = {"Authorization": f"Bearer {access_token}"}
+
+    sent, failed, dead = 0, 0, []
+    async with httpx.AsyncClient(timeout=10) as http:
+        for token in tokens:
+            message = {"message": {
+                "token": token,
+                "notification": {"title": title, "body": body},
+                "data": {k: str(v) for k, v in (data or {}).items()},
+            }}
+            try:
+                resp = await http.post(url, json=message, headers=headers)
+                if resp.status_code == 200:
+                    sent += 1
+                else:
+                    failed += 1
+                    # UNREGISTERED / INVALID_ARGUMENT → token is dead, prune it.
+                    if resp.status_code in (400, 404):
+                        dead.append(token)
+            except httpx.HTTPError:
+                failed += 1
+
+    if dead:
+        await db.push_tokens.delete_many({"token": {"$in": dead}})
+    logger.info("Push: sent=%d failed=%d pruned=%d", sent, failed, len(dead))
+    return {"sent": sent, "failed": failed}
+
+
+def _current_week_prompt(now: datetime) -> str:
+    return WEEKLY_PROMPTS[int(now.strftime("%V")) % len(WEEKLY_PROMPTS)]
+
+
+async def weekly_prompt_loop():
+    """Fire the family prompt once per week: Sunday 16:00–17:00 UTC.
+
+    Idempotent across restarts and multiple checks within the hour via the
+    ISO-week marker in `app_state`.
+    """
+    while True:
+        try:
+            now = datetime.now(timezone.utc)
+            if now.weekday() == 6 and now.hour == 16:  # Sunday
+                week_key = now.strftime("%G-W%V")
+                state = await db.app_state.find_one({"key": "weekly_prompt"})
+                if not state or state.get("last_sent") != week_key:
+                    result = await send_push_to_all(
+                        "This week at the table",
+                        _current_week_prompt(now),
+                        {"route": "/voice-recipe"},
+                    )
+                    if not result.get("skipped"):
+                        await db.app_state.update_one(
+                            {"key": "weekly_prompt"},
+                            {"$set": {"last_sent": week_key,
+                                      "sent_at": now.isoformat(),
+                                      "result": result}},
+                            upsert=True,
+                        )
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            logger.exception("weekly prompt loop error")
+        await asyncio.sleep(1800)
+
+
+@api_router.post("/push/send-weekly-prompt")
+async def send_weekly_prompt_now(user: dict = Depends(get_current_user)):
+    """Manual trigger for testing. Restricted to PUSH_ADMIN_EMAILS."""
+    admins = {e.strip().lower() for e in os.environ.get("PUSH_ADMIN_EMAILS", "").split(",") if e.strip()}
+    if user.get("email", "").lower() not in admins:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    now = datetime.now(timezone.utc)
+    return await send_push_to_all(
+        "This week at the table",
+        _current_week_prompt(now),
+        {"route": "/voice-recipe"},
+    )
 
 
 # ---- Credits API ----
