@@ -1,5 +1,6 @@
 import '../config/api_config.dart';
 import '../models/recipe.dart';
+import 'analytics_service.dart';
 import 'api_client.dart';
 
 class AiResult {
@@ -33,6 +34,7 @@ class AiService {
       throw Exception('Invalid scan response');
     }
 
+    await analytics.capture('ai_scan_used');
     return AiResult(
       recipe: CreateRecipeRequest.fromJson(Map<String, dynamic>.from(recipe)),
       creditsRemaining: data['credits_remaining'],
@@ -53,6 +55,7 @@ class AiService {
       throw Exception('Invalid link import response');
     }
 
+    await analytics.capture('ai_link_used');
     return AiResult(
       recipe: CreateRecipeRequest.fromJson(Map<String, dynamic>.from(recipe)),
       creditsRemaining: data['credits_remaining'],
@@ -76,6 +79,7 @@ class AiService {
       throw Exception('Invalid voice recipe response');
     }
 
+    await analytics.capture('ai_voice_used');
     return AiResult(
       recipe: CreateRecipeRequest.fromJson(Map<String, dynamic>.from(recipe)),
       creditsRemaining: data['credits_remaining'],

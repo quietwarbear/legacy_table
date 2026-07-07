@@ -4,6 +4,7 @@ import 'package:facebook_app_events/facebook_app_events.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
 import 'config/api_config.dart';
 import 'config/app_config.dart';
 import 'config/app_theme.dart';
@@ -12,6 +13,7 @@ import 'l10n/localization_delegates.dart';
 import 'providers/theme_provider.dart';
 import 'providers/locale_provider.dart';
 import 'providers/subscription_provider.dart';
+import 'services/analytics_service.dart';
 import 'services/subscription_service.dart';
 import 'views/splash_screen.dart';
 import 'views/onboarding_screen.dart';
@@ -50,7 +52,24 @@ void main() async {
   // Custom events (e.g. fb_mobile_login on successful auth) still fire
   // through `facebookAppEvents.logEvent(...)` from the login screen.
 
-  runApp(const MyApp());
+  // Product analytics — no-op without a POSTHOG_API_KEY dart-define.
+  await analytics.init();
+
+  // Crash reporting — skipped entirely without a SENTRY_DSN dart-define,
+  // so debug and keyless builds run exactly as before.
+  if (AppConfig.sentryDsn.isNotEmpty) {
+    await SentryFlutter.init(
+      (options) {
+        options.dsn = AppConfig.sentryDsn;
+        options.tracesSampleRate = 0.2;
+        options.environment =
+            AppConfig.isProduction ? 'production' : 'development';
+      },
+      appRunner: () => runApp(const MyApp()),
+    );
+  } else {
+    runApp(const MyApp());
+  }
 }
 
 class MyApp extends StatefulWidget {

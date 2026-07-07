@@ -14,6 +14,18 @@ class AppConfig {
 
   // API prefix
   static const String apiPrefix = '/api';
+
+  // Observability keys — injected at build time, never committed:
+  //   flutter build ipa \
+  //     --dart-define=POSTHOG_API_KEY=phc_xxx \
+  //     --dart-define=SENTRY_DSN=https://xxx@oXXXX.ingest.sentry.io/XXXX
+  // Empty values disable the respective SDK entirely.
+  static const String posthogApiKey =
+      String.fromEnvironment('POSTHOG_API_KEY', defaultValue: '');
+  static const String posthogHost =
+      String.fromEnvironment('POSTHOG_HOST', defaultValue: 'https://us.i.posthog.com');
+  static const String sentryDsn =
+      String.fromEnvironment('SENTRY_DSN', defaultValue: '');
   
   // Get base URL based on environment
   static String get baseUrl => _isProduction ? _prodBaseUrl : _devBaseUrl;

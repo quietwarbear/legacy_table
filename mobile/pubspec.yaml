@@ -64,6 +64,8 @@ dependencies:
   # Native store review prompt, requested once at the first-value moment
   # (first recipe saved). The OS throttles/decides actual display.
   in_app_review: ^2.0.9
+  posthog_flutter: ^5.30.0
+  sentry_flutter: ^8.14.2
 
 dev_dependencies:
   flutter_launcher_icons: ^0.14.4

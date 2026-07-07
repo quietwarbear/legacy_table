@@ -1,6 +1,14 @@
 import 'dart:io';
+import 'package:facebook_app_events/facebook_app_events.dart';
+import 'package:flutter/foundation.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import '../config/app_config.dart';
+import 'analytics_service.dart';
+
+// Local instance rather than the main.dart singleton to avoid a
+// service→main circular import; the plugin is a stateless method-channel
+// wrapper, so instances are interchangeable.
+final _fbEvents = FacebookAppEvents();
 
 class SubscriptionService {
   // RevenueCat API keys — one per platform
@@ -79,6 +87,26 @@ class SubscriptionService {
   static Future<CustomerInfo> purchasePackage(Package package) async {
     // ignore: deprecated_member_use
     final result = await Purchases.purchasePackage(package);
+
+    // Revenue events: PostHog for the funnel, Meta for ad attribution.
+    // Both are best-effort — a logging failure must never look like a
+    // failed purchase.
+    try {
+      final product = package.storeProduct;
+      await analytics.capture('subscription_purchased', {
+        'product_id': product.identifier,
+        'price': product.price,
+        'currency': product.currencyCode,
+      });
+      await _fbEvents.logPurchase(
+        amount: product.price,
+        currency: product.currencyCode,
+        parameters: {'product_id': product.identifier},
+      );
+    } catch (e) {
+      debugPrint('[Subscription] purchase event logging failed: $e');
+    }
+
     return result.customerInfo;
   }
 

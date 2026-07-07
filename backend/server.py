@@ -55,6 +55,18 @@ async def lifespan(_app: FastAPI):
     yield
     client.close()
 
+# Crash reporting — enabled only when SENTRY_DSN is set in the environment
+# (Railway service variables). No DSN, no SDK, no behavior change.
+_sentry_dsn = os.environ.get("SENTRY_DSN", "")
+if _sentry_dsn:
+    import sentry_sdk
+
+    sentry_sdk.init(
+        dsn=_sentry_dsn,
+        traces_sample_rate=0.2,
+        environment=os.environ.get("SENTRY_ENVIRONMENT", "production"),
+    )
+
 # Create the main app
 app = FastAPI(lifespan=lifespan)
 api_router = APIRouter(prefix="/api")

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import '../models/user.dart';
+import 'analytics_service.dart';
 import 'api_service.dart';
 import 'storage_service.dart';
 import 'auth_service.dart';
@@ -112,6 +113,8 @@ class SessionManager extends ChangeNotifier {
 
       _apiService.setAuthToken(loginResponse.token);
       await SubscriptionService.identify(loginResponse.user.id);
+      await analytics.identify(loginResponse.user.id);
+      await analytics.capture('login', {'method': 'email'});
 
       // Update state
       _currentUser = loginResponse.user;
@@ -153,7 +156,11 @@ class SessionManager extends ChangeNotifier {
 
       _currentUser = loginResponse.user;
       _isLoggedIn = true;
-      return _isNewlyCreatedUser(loginResponse.user.createdAt);
+      final isNewGoogleUser = _isNewlyCreatedUser(loginResponse.user.createdAt);
+      await analytics.identify(loginResponse.user.id);
+      await analytics
+          .capture(isNewGoogleUser ? 'signup' : 'login', {'method': 'google'});
+      return isNewGoogleUser;
     } catch (e) {
       if (kDebugMode) {
         print('Google login error: $e');
@@ -191,7 +198,12 @@ class SessionManager extends ChangeNotifier {
 
       _currentUser = loginResponse.user;
       _isLoggedIn = true;
-      return _isNewlyCreatedUser(loginResponse.user.createdAt);
+      final isNewFacebookUser =
+          _isNewlyCreatedUser(loginResponse.user.createdAt);
+      await analytics.identify(loginResponse.user.id);
+      await analytics.capture(
+          isNewFacebookUser ? 'signup' : 'login', {'method': 'facebook'});
+      return isNewFacebookUser;
     } catch (e) {
       if (kDebugMode) {
         print('Facebook login error: $e');
@@ -229,7 +241,11 @@ class SessionManager extends ChangeNotifier {
 
       _currentUser = loginResponse.user;
       _isLoggedIn = true;
-      return _isNewlyCreatedUser(loginResponse.user.createdAt);
+      final isNewAppleUser = _isNewlyCreatedUser(loginResponse.user.createdAt);
+      await analytics.identify(loginResponse.user.id);
+      await analytics
+          .capture(isNewAppleUser ? 'signup' : 'login', {'method': 'apple'});
+      return isNewAppleUser;
     } catch (e) {
       if (kDebugMode) {
         print('Apple login error: $e');
@@ -277,6 +293,8 @@ class SessionManager extends ChangeNotifier {
 
       _apiService.setAuthToken(registerResponse.token);
       await SubscriptionService.identify(registerResponse.user.id);
+      await analytics.identify(registerResponse.user.id);
+      await analytics.capture('signup', {'method': 'email'});
 
       // Update state
       _currentUser = registerResponse.user;
@@ -305,6 +323,7 @@ class SessionManager extends ChangeNotifier {
       // Clear API token
       _authService.logout();
       await SubscriptionService.reset();
+      await analytics.reset();
 
       // Clear all stored data
       await _storageService.clearAll();
