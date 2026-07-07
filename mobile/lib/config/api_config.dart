@@ -49,6 +49,9 @@ class ApiConfig {
   // Onboarding endpoints (relative paths)
   static String get seedSampleFamily => '/onboarding/seed-sample-family';
 
+  // Push notification endpoints (relative paths)
+  static String get pushRegister => '/push/register';
+
   // Subscription endpoints (relative paths)
   static String get subscriptionStatus => '/subscriptions/status';
   static String get subscriptionWebhook => '/subscriptions/webhook';

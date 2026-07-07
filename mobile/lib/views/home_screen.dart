@@ -12,6 +12,7 @@ import 'cookbook_screen.dart';
 import 'profile_screen.dart';
 import 'settings_screen.dart';
 import 'add_recipe_screen.dart';
+import '../services/push_service.dart';
 import '../widgets/family_settings_tab.dart';
 import '../l10n/app_localizations.dart';
 
@@ -39,6 +40,9 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    // Post-login is the right moment for the push permission prompt —
+    // never at cold boot before the user has seen value.
+    pushService.ensureRegistered();
     _screens = [
       RecipeFeedScreen(key: _recipeFeedKey),
       CookbookScreen(key: _cookbookKey),

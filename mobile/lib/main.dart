@@ -14,6 +14,7 @@ import 'providers/theme_provider.dart';
 import 'providers/locale_provider.dart';
 import 'providers/subscription_provider.dart';
 import 'services/analytics_service.dart';
+import 'services/push_service.dart';
 import 'services/subscription_service.dart';
 import 'views/splash_screen.dart';
 import 'views/onboarding_screen.dart';
@@ -54,6 +55,9 @@ void main() async {
 
   // Product analytics — no-op without a POSTHOG_API_KEY dart-define.
   await analytics.init();
+
+  // Let notification taps navigate without push_service importing main.
+  PushService.navigatorKey = MyApp.navigatorKey;
 
   // Crash reporting — skipped entirely without a SENTRY_DSN dart-define,
   // so debug and keyless builds run exactly as before.
