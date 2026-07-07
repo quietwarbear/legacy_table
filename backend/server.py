@@ -55,6 +55,18 @@ async def lifespan(_app: FastAPI):
     yield
     client.close()
 
+# Crash reporting — enabled only when SENTRY_DSN is set in the environment
+# (Railway service variables). No DSN, no SDK, no behavior change.
+_sentry_dsn = os.environ.get("SENTRY_DSN", "")
+if _sentry_dsn:
+    import sentry_sdk
+
+    sentry_sdk.init(
+        dsn=_sentry_dsn,
+        traces_sample_rate=0.2,
+        environment=os.environ.get("SENTRY_ENVIRONMENT", "production"),
+    )
+
 # Create the main app
 app = FastAPI(lifespan=lifespan)
 api_router = APIRouter(prefix="/api")
@@ -2337,6 +2349,9 @@ async def seed_sample_family(user: dict = Depends(get_current_user)):
     family_doc = {
         "id": family_id,
         "name": f"The {user['name'].split()[0]} Family" if user.get("name") else "My Family",
+        # owner_id is required by FamilyResponse — without it, GET /families/{id}
+        # 500s for seeded families and clients render "No family yet".
+        "owner_id": user["id"],
         "invite_code": str(uuid.uuid4())[:8].upper(),
         "created_by": user["id"],
         "keeper_id": user["id"],

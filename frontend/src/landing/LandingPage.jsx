@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../App";
+import { trackStoreClick } from "../lib/track";
 import { Button } from "../components/ui/button";
 import { Card, CardContent } from "../components/ui/card";
 import {
@@ -39,7 +40,7 @@ const scrollToId = (id) => {
 // Used in the hero and the final CTA. One component = one place to fix when
 // the badge URLs or click targets change.
 // ----------------------------------------------------------------------------
-const StoreBadges = ({ size = "default", align = "start", className = "" }) => {
+const StoreBadges = ({ size = "default", align = "start", className = "", placement = "hero" }) => {
   const heights =
     size === "large" ? "h-14 sm:h-16" : size === "small" ? "h-10" : "h-12";
   const alignClass =
@@ -51,6 +52,7 @@ const StoreBadges = ({ size = "default", align = "start", className = "" }) => {
         href={APP_STORE_URL}
         target="_blank"
         rel="noopener noreferrer"
+        onClick={() => trackStoreClick("apple", placement)}
         aria-label="Download Legacy Table on the App Store"
         className="inline-block transition-transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-primary rounded-md"
       >
@@ -64,6 +66,7 @@ const StoreBadges = ({ size = "default", align = "start", className = "" }) => {
         href={PLAY_STORE_URL}
         target="_blank"
         rel="noopener noreferrer"
+        onClick={() => trackStoreClick("google", placement)}
         aria-label="Get Legacy Table on Google Play"
         className="inline-block transition-transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-primary rounded-md"
       >
@@ -411,7 +414,7 @@ const LandingPage = () => {
             your family is ready.
           </p>
 
-          <StoreBadges size="large" align="center" className="mb-6" />
+          <StoreBadges size="large" align="center" className="mb-6" placement="footer_cta" />
 
           <p className="text-sm opacity-75 mb-12">
             Already have an account?{" "}

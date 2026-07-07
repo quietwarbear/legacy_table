@@ -5,6 +5,7 @@ import axios from "axios";
 import { Toaster, toast } from "sonner";
 import { ChefHat, Utensils, Camera, Clock, Users, Flame, Heart, Plus, LogOut, Menu, X, Home, User, Search, Download, BookOpen, Moon, Sun, Edit, MessageCircle, Trash2, Send, Bell, Settings, Upload, Copy, Crown, UserPlus, Sparkles, Share2, Volume2, VolumeX, SkipForward, SkipBack, ChevronLeft, ChevronRight, Calendar, Gift, Tag, Link2, Video } from "lucide-react";
 import * as familiesApi from "./api/families";
+import { trackStoreClick, identifyUser, resetAnalytics } from "./lib/track";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import jsPDF from "jspdf";
@@ -121,6 +122,16 @@ const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem("token"));
   const [loading, setLoading] = useState(true);
+
+  // Analytics identity follows the user: identify on login/restore,
+  // reset on logout so the next login isn't merged into the old person.
+  useEffect(() => {
+    if (user?.id) {
+      identifyUser(user);
+    } else {
+      resetAnalytics();
+    }
+  }, [user?.id]);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -6087,6 +6098,7 @@ const InviteLandingPage = () => {
                 href="https://play.google.com/store/apps/details?id=com.htrecipes.family_recipe_app"
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => trackStoreClick("google", "invite")}
                 className="text-sm font-medium text-primary hover:underline"
                 data-testid="invite-play-store-link"
               >
@@ -6096,6 +6108,7 @@ const InviteLandingPage = () => {
                 href="https://apps.apple.com/us/app/legacy-table/id6759821009"
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => trackStoreClick("apple", "invite")}
                 className="text-sm font-medium text-primary hover:underline"
                 data-testid="invite-app-store-link"
               >

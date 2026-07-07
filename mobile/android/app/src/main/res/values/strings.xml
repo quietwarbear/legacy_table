@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Meta (Facebook) SDK — same app as ios/Runner/Info.plist FacebookAppID.
+         Required for facebook_app_events to work on Android; without these the
+         plugin silently no-ops and Android ad attribution is unmeasured. -->
+    <string name="facebook_app_id">898895229882962</string>
+    <string name="facebook_client_token">6a537ab7eae71c7573aac97689ae1194</string>
+</resources>
