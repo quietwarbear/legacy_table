@@ -1495,4 +1495,13 @@ class AppLocalizationsYo extends AppLocalizations {
   @override
   String get familyPromptSampleFailed =>
       'Couldn\'t create the sample cookbook. Please try again.';
+
+  @override
+  String get shareRecipeTitle => 'Share this recipe';
+
+  @override
+  String get shareRecipeAsCard => 'Share as card';
+
+  @override
+  String get shareRecipeAsText => 'Share as text';
 }

@@ -713,5 +713,8 @@
   "familyPromptCreateButton": "Create Family",
   "familyPromptSampleButton": "Just exploring? Try a sample cookbook",
   "familyPromptSampleSuccess": "Welcome! We've added a few sample recipes to get you started.",
-  "familyPromptSampleFailed": "Couldn't create the sample cookbook. Please try again."
+  "familyPromptSampleFailed": "Couldn't create the sample cookbook. Please try again.",
+  "shareRecipeTitle": "Share this recipe",
+  "shareRecipeAsCard": "Share as card",
+  "shareRecipeAsText": "Share as text"
 }

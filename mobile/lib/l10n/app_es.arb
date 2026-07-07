@@ -429,5 +429,8 @@
   "familyPromptCreateButton": "Crear familia",
   "familyPromptSampleButton": "¿Solo explorando? Prueba un recetario de ejemplo",
   "familyPromptSampleSuccess": "¡Bienvenido! Añadimos algunas recetas de ejemplo para empezar.",
-  "familyPromptSampleFailed": "No se pudo crear el recetario de ejemplo. Inténtalo de nuevo."
+  "familyPromptSampleFailed": "No se pudo crear el recetario de ejemplo. Inténtalo de nuevo.",
+  "shareRecipeTitle": "Compartir esta receta",
+  "shareRecipeAsCard": "Compartir como tarjeta",
+  "shareRecipeAsText": "Compartir como texto"
 }

@@ -2553,6 +2553,32 @@ async def send_weekly_prompt_now(user: dict = Depends(get_current_user)):
     )
 
 
+# ---- Marketing ----
+
+class EmailSignupRequest(BaseModel):
+    email: EmailStr
+    source: Optional[str] = None
+    # Honeypot: real users never fill this hidden field; bots do.
+    website: Optional[str] = None
+
+
+@api_router.post("/marketing/email-signup")
+async def email_signup(req: EmailSignupRequest):
+    """Public email capture from the landing page. Idempotent per email."""
+    if req.website:
+        return {"ok": True}  # honeypot tripped — pretend success, store nothing
+    email = req.email.lower()
+    existing = await db.email_signups.find_one({"email": email})
+    if not existing:
+        await db.email_signups.insert_one({
+            "id": str(uuid.uuid4()),
+            "email": email,
+            "source": req.source or "landing",
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+    return {"ok": True}
+
+
 # ---- Credits API ----
 
 class CreditsResponse(BaseModel):
