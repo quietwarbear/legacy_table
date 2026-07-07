@@ -710,5 +710,8 @@
   "familyPromptTitle": "Join or Create a Family",
   "familyPromptSubtitle": "Start sharing recipes with your family members",
   "familyPromptJoinButton": "Join Family",
-  "familyPromptCreateButton": "Create Family"
+  "familyPromptCreateButton": "Create Family",
+  "familyPromptSampleButton": "Just exploring? Try a sample cookbook",
+  "familyPromptSampleSuccess": "Welcome! We've added a few sample recipes to get you started.",
+  "familyPromptSampleFailed": "Couldn't create the sample cookbook. Please try again."
 }

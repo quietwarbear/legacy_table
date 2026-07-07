@@ -61,8 +61,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
       await _storageService.setPendingSubscriptionAfterRegister(true);
 
       if (mounted) {
+        // Land new users in the app, not on the paywall. The pending flag
+        // defers the subscription pitch until after first value (see splash).
         Navigator.of(context).pushNamedAndRemoveUntil(
-          '/subscription',
+          '/home',
           (route) => false,
         );
       }

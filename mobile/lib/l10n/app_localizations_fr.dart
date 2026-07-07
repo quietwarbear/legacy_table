@@ -1527,4 +1527,16 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get familyPromptCreateButton => 'Créer une famille';
+
+  @override
+  String get familyPromptSampleButton =>
+      'Envie d\'explorer ? Essayez un livre de recettes d\'exemple';
+
+  @override
+  String get familyPromptSampleSuccess =>
+      'Bienvenue ! Nous avons ajouté quelques recettes d\'exemple pour commencer.';
+
+  @override
+  String get familyPromptSampleFailed =>
+      'Impossible de créer le livre d\'exemple. Veuillez réessayer.';
 }

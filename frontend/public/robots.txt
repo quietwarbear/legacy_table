@@ -1,0 +1,18 @@
+User-agent: *
+Allow: /
+Disallow: /home
+Disallow: /add-recipe
+Disallow: /scan-recipe
+Disallow: /voice-recipe
+Disallow: /save-from-link
+Disallow: /recipe/
+Disallow: /profile
+Disallow: /settings
+Disallow: /family
+Disallow: /cookbook
+Disallow: /subscribe
+Disallow: /subscription-success
+Disallow: /sso
+Disallow: /delete-account
+
+Sitemap: https://legacytable.app/sitemap.xml

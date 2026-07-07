@@ -21,6 +21,7 @@ class StorageService {
       'pending_subscription_after_register';
   static const String _keyFamilyId = 'family_id';
   static const String _keyUserRole = 'user_role';
+  static const String _keyHasCreatedFirstRecipe = 'has_created_first_recipe';
 
   // Secure storage methods (for sensitive data like tokens)
 
@@ -95,6 +96,18 @@ class StorageService {
   Future<bool> getPendingSubscriptionAfterRegister() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(_keyPendingSubscriptionAfterRegister) ?? false;
+  }
+
+  /// Mark that this user has saved their first recipe (first-value moment).
+  Future<void> setHasCreatedFirstRecipe(bool created) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_keyHasCreatedFirstRecipe, created);
+  }
+
+  /// Whether this user has saved their first recipe.
+  Future<bool> getHasCreatedFirstRecipe() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_keyHasCreatedFirstRecipe) ?? false;
   }
 
   /// Store family ID

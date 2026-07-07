@@ -22,8 +22,11 @@ class ShareInviteDialog extends StatefulWidget {
 class _ShareInviteDialogState extends State<ShareInviteDialog> {
   bool _useLinkMode = true; // Default to link mode
 
+  // Use the apex domain so iOS universal links / Android app links fire
+  // (entitlements register legacytable.app, not the api. subdomain) and
+  // non-installed recipients land on the web invite page.
   String get _inviteLink =>
-      'https://api.legacytable.app/invite/${widget.family.inviteCode}';
+      'https://legacytable.app/invite/${widget.family.inviteCode}';
 
   String get _shareText {
     final desc = widget.family.description;

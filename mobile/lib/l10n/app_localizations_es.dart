@@ -1525,4 +1525,16 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get familyPromptCreateButton => 'Crear familia';
+
+  @override
+  String get familyPromptSampleButton =>
+      '¿Solo explorando? Prueba un recetario de ejemplo';
+
+  @override
+  String get familyPromptSampleSuccess =>
+      '¡Bienvenido! Añadimos algunas recetas de ejemplo para empezar.';
+
+  @override
+  String get familyPromptSampleFailed =>
+      'No se pudo crear el recetario de ejemplo. Inténtalo de nuevo.';
 }
