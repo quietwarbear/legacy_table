@@ -4,14 +4,14 @@ from fastapi.exception_handlers import request_validation_exception_handler
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
-from starlette.responses import JSONResponse, HTMLResponse
+from starlette.responses import JSONResponse, HTMLResponse, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo.errors import PyMongoError
 import os
 import logging
 from pathlib import Path
-from pydantic import BaseModel, Field, ConfigDict, EmailStr
+from pydantic import BaseModel, Field, ConfigDict, EmailStr, model_validator
 from typing import List, Optional
 from contextlib import asynccontextmanager
 import asyncio
@@ -380,6 +380,15 @@ class NotificationV1Response(BaseModel):
     is_read: bool
     created_at: str
 
+class VoiceNote(BaseModel):
+    """The original recording of the cook explaining the recipe — the
+    keepsake the brand promises to keep. Stored alongside the recipe like
+    photos are (base64 in Mongo); served publicly via /listen/{token}."""
+    audio: str  # Base64 encoded audio
+    format: str = "mp4"  # mp4 | m4a | wav | webm
+    duration_seconds: Optional[int] = None
+
+
 class RecipeCreate(BaseModel):
     title: str
     ingredients: List[str]
@@ -390,6 +399,7 @@ class RecipeCreate(BaseModel):
     servings: int
     category: str
     difficulty: str  # easy, medium, hard
+    voice_note: Optional[VoiceNote] = None
 
 class RecipeUpdate(BaseModel):
     title: Optional[str] = None
@@ -419,6 +429,16 @@ class RecipeResponse(BaseModel):
     author_name: str
     created_at: str
     holiday_tags: List[str] = []
+    # Voice keepsake: the audio itself is never serialized in API responses
+    # (extra="ignore" drops the raw voice_note subdoc); clients get the flag
+    # and the public listen token instead.
+    voice_token: Optional[str] = None
+    has_voice_note: bool = False
+
+    @model_validator(mode="after")
+    def _derive_has_voice_note(self):
+        self.has_voice_note = bool(self.voice_token)
+        return self
 
 # Comment Models
 class CommentCreate(BaseModel):
@@ -1290,6 +1310,15 @@ async def create_recipe(recipe_data: RecipeCreate, user: dict = Depends(get_curr
         "author_name": display_name,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
+
+    # Voice keepsake: persist the original recording and mint the public
+    # listen token (unguessable; it's what printed QR codes will point at).
+    if recipe_data.voice_note is not None:
+        if len(recipe_data.voice_note.audio) > 15_000_000:  # ~11MB decoded
+            raise HTTPException(status_code=413, detail="Voice recording too large")
+        recipe_doc["voice_note"] = recipe_data.voice_note.model_dump()
+        recipe_doc["voice_token"] = uuid.uuid4().hex
+
     await db.recipes.insert_one(recipe_doc)
     
     # Create notifications only if user has a family
@@ -1353,12 +1382,14 @@ async def get_recipes(
     if author_id:
         query["author_id"] = author_id
     
-    recipes = await db.recipes.find(query, {"_id": 0}).sort("created_at", -1).to_list(100)
+    # voice_note excluded: the audio never travels in list payloads —
+    # clients get voice_token/has_voice_note and stream via /listen.
+    recipes = await db.recipes.find(query, {"_id": 0, "voice_note": 0}).sort("created_at", -1).to_list(100)
     return [RecipeResponse(**r) for r in recipes]
 
 @api_router.get("/recipes/{recipe_id}", response_model=RecipeResponse)
 async def get_recipe(recipe_id: str, user: dict = Depends(get_current_user)):
-    recipe = await db.recipes.find_one({"id": recipe_id}, {"_id": 0})
+    recipe = await db.recipes.find_one({"id": recipe_id}, {"_id": 0, "voice_note": 0})
     if not recipe:
         raise HTTPException(status_code=404, detail="Recipe not found")
     
@@ -2399,6 +2430,61 @@ async def seed_sample_family(user: dict = Depends(get_current_user)):
         "family_name": family_doc["name"],
         "recipes_created": len(SAMPLE_RECIPES),
         "message": "Welcome to Legacy Table! We've added some sample recipes to get you started.",
+    }
+
+
+# ---- Voice keepsake public listen ----
+#
+# The QR code printed in a Family Legacy cookbook resolves here. No auth:
+# the unguessable token IS the capability — grandma's book must play in any
+# browser with zero accounts. Owners rotate access implicitly by deleting
+# the recipe.
+
+_AUDIO_MEDIA_TYPES = {
+    "mp4": "audio/mp4",
+    "m4a": "audio/mp4",
+    "wav": "audio/wav",
+    "webm": "audio/webm",
+}
+
+
+@api_router.get("/listen/{token}")
+async def listen_voice_note(token: str):
+    recipe = await db.recipes.find_one(
+        {"voice_token": token}, {"_id": 0, "voice_note": 1})
+    if not recipe or not recipe.get("voice_note"):
+        raise HTTPException(status_code=404, detail="Voice note not found")
+    vn = recipe["voice_note"]
+    try:
+        audio = base64.b64decode(vn["audio"])
+    except Exception:
+        raise HTTPException(status_code=404, detail="Voice note not found")
+    media_type = _AUDIO_MEDIA_TYPES.get(vn.get("format", "mp4"), "audio/mpeg")
+    return Response(
+        content=audio,
+        media_type=media_type,
+        headers={
+            "Cache-Control": "public, max-age=86400",
+            "Content-Disposition": "inline",
+        },
+    )
+
+
+@api_router.get("/listen/{token}/meta")
+async def listen_voice_note_meta(token: str):
+    """Title/author for the public listen page — never the recipe body."""
+    recipe = await db.recipes.find_one(
+        {"voice_token": token},
+        {"_id": 0, "title": 1, "author_name": 1,
+         "voice_note.duration_seconds": 1, "voice_note.format": 1})
+    if not recipe:
+        raise HTTPException(status_code=404, detail="Voice note not found")
+    vn = recipe.get("voice_note") or {}
+    return {
+        "title": recipe.get("title"),
+        "author_name": recipe.get("author_name"),
+        "duration_seconds": vn.get("duration_seconds"),
+        "format": vn.get("format", "mp4"),
     }
 
 

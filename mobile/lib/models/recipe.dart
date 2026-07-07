@@ -13,6 +13,10 @@ class Recipe {
   final String? authorName;
   final DateTime createdAt;
   final DateTime updatedAt;
+  // Voice keepsake: audio never travels in recipe payloads; playback
+  // streams from the public /listen/{voiceToken} endpoint.
+  final bool hasVoiceNote;
+  final String? voiceToken;
 
   Recipe({
     required this.id,
@@ -29,6 +33,8 @@ class Recipe {
     this.authorName,
     required this.createdAt,
     required this.updatedAt,
+    this.hasVoiceNote = false,
+    this.voiceToken,
   });
 
   factory Recipe.fromJson(Map<String, dynamic> json) {
@@ -53,6 +59,8 @@ class Recipe {
       updatedAt: json['updated_at'] != null
           ? DateTime.parse(json['updated_at'])
           : DateTime.now(),
+      hasVoiceNote: json['has_voice_note'] == true,
+      voiceToken: json['voice_token'],
     );
   }
 
@@ -81,6 +89,10 @@ class CreateRecipeRequest {
   final int? servings;
   final String? category;
   final String? difficulty;
+  // Voice keepsake attached at creation (from the Voice Recipe flow).
+  final String? voiceAudioB64;
+  final String? voiceFormat;
+  final int? voiceDurationSeconds;
 
   CreateRecipeRequest({
     required this.title,
@@ -92,6 +104,9 @@ class CreateRecipeRequest {
     this.servings,
     this.category,
     this.difficulty,
+    this.voiceAudioB64,
+    this.voiceFormat,
+    this.voiceDurationSeconds,
   });
 
   factory CreateRecipeRequest.fromJson(Map<String, dynamic> json) {
@@ -123,6 +138,13 @@ class CreateRecipeRequest {
       if (servings != null) 'servings': servings,
       if (category != null) 'category': category,
       if (difficulty != null) 'difficulty': difficulty,
+      if (voiceAudioB64 != null)
+        'voice_note': {
+          'audio': voiceAudioB64,
+          'format': voiceFormat ?? 'mp4',
+          if (voiceDurationSeconds != null)
+            'duration_seconds': voiceDurationSeconds,
+        },
     };
   }
 }

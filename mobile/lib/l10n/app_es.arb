@@ -432,5 +432,6 @@
   "familyPromptSampleFailed": "No se pudo crear el recetario de ejemplo. Inténtalo de nuevo.",
   "shareRecipeTitle": "Compartir esta receta",
   "shareRecipeAsCard": "Compartir como tarjeta",
-  "shareRecipeAsText": "Compartir como texto"
+  "shareRecipeAsText": "Compartir como texto",
+  "recipeDetailVoiceNote": "Nota de voz"
 }

@@ -27,6 +27,10 @@ class AddRecipeScreen extends StatefulWidget {
   final int? initialServings;
   final String? initialCategory;
   final String? initialDifficulty;
+  // Voice keepsake: the original recording from the Voice Recipe flow,
+  // attached on save so the voice is kept, not just transcribed.
+  final String? initialVoiceAudioB64;
+  final String? initialVoiceFormat;
 
   const AddRecipeScreen({
     super.key,
@@ -38,6 +42,8 @@ class AddRecipeScreen extends StatefulWidget {
     this.initialServings,
     this.initialCategory,
     this.initialDifficulty,
+    this.initialVoiceAudioB64,
+    this.initialVoiceFormat,
   });
 
   @override
@@ -611,12 +617,15 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
           cookingTime: _cookingTime,
           servings: _servings,
           photos: photoBase64List.isNotEmpty ? photoBase64List : null,
+          voiceAudioB64: widget.initialVoiceAudioB64,
+          voiceFormat: widget.initialVoiceFormat,
         );
 
         updatedRecipe = await apiService.recipes.createRecipe(request);
         await analytics.capture('recipe_created', {
           'has_story': request.story != null,
           'has_photos': photoBase64List.isNotEmpty,
+          'has_voice': widget.initialVoiceAudioB64 != null,
         });
 
         // First-value milestone: remember it (gates the deferred paywall)

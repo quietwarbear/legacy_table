@@ -1502,4 +1502,7 @@ class AppLocalizationsFa extends AppLocalizations {
 
   @override
   String get shareRecipeAsText => 'Share as text';
+
+  @override
+  String get recipeDetailVoiceNote => 'Voice note';
 }

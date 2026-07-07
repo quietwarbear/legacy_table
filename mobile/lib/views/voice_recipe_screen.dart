@@ -144,7 +144,8 @@ class _VoiceRecipeScreenState extends State<VoiceRecipeScreen> {
         );
       }
 
-      // Navigate to AddRecipeScreen with the transcribed recipe
+      // Navigate to AddRecipeScreen with the transcribed recipe — and the
+      // original recording, so saving keeps the voice, not just the words.
       final recipe = result.recipe;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
@@ -157,6 +158,8 @@ class _VoiceRecipeScreenState extends State<VoiceRecipeScreen> {
             initialServings: recipe.servings,
             initialCategory: recipe.category,
             initialDifficulty: recipe.difficulty,
+            initialVoiceAudioB64: base64Audio,
+            initialVoiceFormat: format,
           ),
         ),
       );

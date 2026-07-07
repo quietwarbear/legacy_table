@@ -2711,6 +2711,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Share as text'**
   String get shareRecipeAsText;
+
+  /// No description provided for @recipeDetailVoiceNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Voice note'**
+  String get recipeDetailVoiceNote;
 }
 
 class _AppLocalizationsDelegate
