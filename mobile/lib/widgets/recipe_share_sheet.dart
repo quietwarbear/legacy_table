@@ -119,7 +119,7 @@ class _RecipeShareSheetState extends State<RecipeShareSheet> {
               child: SingleChildScrollView(
                 child: RepaintBoundary(
                   key: _cardKey,
-                  child: _ShareCard(recipe: widget.recipe),
+                  child: RecipeShareCard(recipe: widget.recipe),
                 ),
               ),
             ),
@@ -179,10 +179,11 @@ class _RecipeShareSheetState extends State<RecipeShareSheet> {
 
 /// The rendered share card. Fixed brand-light palette regardless of app
 /// theme so shared images are consistent everywhere they land.
-class _ShareCard extends StatelessWidget {
+/// Public so the raster path is coverable by widget tests.
+class RecipeShareCard extends StatelessWidget {
   final Recipe recipe;
 
-  const _ShareCard({required this.recipe});
+  const RecipeShareCard({super.key, required this.recipe});
 
   static const _cream = Color(0xFFF8F5F1);
   static const _ink = Color(0xFF2B2B2B);
@@ -273,22 +274,30 @@ class _ShareCard extends StatelessWidget {
                   children: [
                     const Icon(Icons.restaurant, size: 14, color: brandPrimary),
                     const SizedBox(width: 6),
-                    const Text(
-                      'Made with Legacy Table',
-                      style: TextStyle(
-                        fontFamily: 'Manrope',
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: brandPrimary,
+                    const Expanded(
+                      child: Text(
+                        'Made with Legacy Table',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: 'Manrope',
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: brandPrimary,
+                        ),
                       ),
                     ),
-                    const Spacer(),
-                    const Text(
-                      'legacytable.app',
-                      style: TextStyle(
-                        fontFamily: 'Manrope',
-                        fontSize: 12,
-                        color: _inkSoft,
+                    const SizedBox(width: 8),
+                    const Flexible(
+                      child: Text(
+                        'legacytable.app',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontFamily: 'Manrope',
+                          fontSize: 12,
+                          color: _inkSoft,
+                        ),
                       ),
                     ),
                   ],
