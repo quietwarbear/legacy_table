@@ -6093,7 +6093,7 @@ const InviteLandingPage = () => {
                 Get it on Google Play
               </a>
               <a
-                href="https://apps.apple.com/app/legacy-table"
+                href="https://apps.apple.com/us/app/legacy-table/id6759821009"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-sm font-medium text-primary hover:underline"
@@ -6108,6 +6108,35 @@ const InviteLandingPage = () => {
               Invite code: <span className="font-mono">{code}</span>
             </p>
           )}
+        </div>
+      </main>
+    </div>
+  );
+};
+
+// 404 Not Found Page
+const NotFoundPage = () => {
+  return (
+    <div className="min-h-screen bg-background flex flex-col" data-testid="not-found-page">
+      <header className="border-b border-border/50 bg-card/50 sticky top-0 z-30">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+          <FamilyLogo size="sm" showText={true} />
+        </div>
+      </header>
+      <main className="flex-1 flex items-center justify-center px-4 py-12">
+        <div className="max-w-md w-full text-center space-y-6">
+          <h1 className="text-3xl font-bold">This page isn't on the menu</h1>
+          <p className="text-muted-foreground">
+            The page you're looking for doesn't exist or may have moved.
+          </p>
+          <div className="flex gap-3 justify-center">
+            <Link to="/" className="text-sm font-medium text-primary hover:underline" data-testid="not-found-home-link">
+              Go to the homepage
+            </Link>
+            <Link to="/login" className="text-sm font-medium text-primary hover:underline" data-testid="not-found-login-link">
+              Sign in
+            </Link>
+          </div>
         </div>
       </main>
     </div>
@@ -6454,6 +6483,7 @@ function App() {
                 <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
                 <Route path="/family" element={<ProtectedRoute><FamilyPage /></ProtectedRoute>} />
                 <Route path="/cookbook" element={<ProtectedRoute><CookbookPage /></ProtectedRoute>} />
+                <Route path="*" element={<NotFoundPage />} />
               </Routes>
             </SubscriptionProvider>
           </BrowserRouter>
