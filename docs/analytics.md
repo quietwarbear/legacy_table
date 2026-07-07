@@ -1,7 +1,9 @@
 # Analytics & Crash Reporting
 
-Everything is **key-gated and off by default**. No keys are committed to the
-repo; supply them at build/deploy time and the SDKs activate.
+PostHog ships enabled by default (its `phc_…` project token is a public
+client-side token, committed like the RevenueCat keys). Sentry is
+**key-gated and off by default** — no DSNs in the repo; supply them at
+build/deploy time and the SDK activates.
 
 ## Turning it on
 
