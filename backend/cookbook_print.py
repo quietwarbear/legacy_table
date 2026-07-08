@@ -24,12 +24,51 @@ from reportlab.lib.colors import Color, black, white
 from reportlab.lib.units import inch
 from reportlab.lib.utils import ImageReader
 from reportlab.lib.styles import ParagraphStyle
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfgen import canvas as rl_canvas
 from reportlab.platypus import (
     BaseDocTemplate, Flowable, Frame, PageBreak, PageTemplate, Paragraph,
     Spacer,
 )
 
 logger = logging.getLogger("cookbook_print")
+
+# ---- fonts --------------------------------------------------------------
+# Print services (Lulu preflight) require every font fully embedded.
+# ReportLab's base-14 names (Times-*, Helvetica*) are metrics-only and never
+# embed, so we ship OFL-licensed TTFs (backend/fonts/) and register them.
+# Gelasio is metric-compatible with Georgia, the brand serif.
+
+_FONT_DIR = os.path.join(os.path.dirname(__file__), "fonts")
+
+SERIF = "LT-Serif"
+SERIF_BOLD = "LT-Serif-Bold"
+SERIF_ITALIC = "LT-Serif-Italic"
+SANS = "LT-Sans"
+SANS_BOLD = "LT-Sans-Bold"
+
+for _name, _file in [
+    (SERIF, "Gelasio-Regular.ttf"),
+    (SERIF_BOLD, "Gelasio-Bold.ttf"),
+    (SERIF_ITALIC, "Gelasio-Italic.ttf"),
+    (SANS, "Inter-Regular.ttf"),
+    (SANS_BOLD, "Inter-Bold.ttf"),
+]:
+    pdfmetrics.registerFont(TTFont(_name, os.path.join(_FONT_DIR, _file)))
+pdfmetrics.registerFontFamily(
+    SERIF, normal=SERIF, bold=SERIF_BOLD, italic=SERIF_ITALIC,
+    boldItalic=SERIF_BOLD)
+pdfmetrics.registerFontFamily(SANS, normal=SANS, bold=SANS_BOLD,
+                              italic=SANS, boldItalic=SANS_BOLD)
+
+
+def _embedded_canvas(*args, **kwargs):
+    """Canvas factory that never references base-14 Helvetica: ReportLab
+    stamps the canvas's initial font into every page's resources (blank
+    pages included), which fails print preflight."""
+    kwargs.setdefault("initialFontName", SANS)
+    return rl_canvas.Canvas(*args, **kwargs)
 
 # ---- geometry ----------------------------------------------------------
 
@@ -51,20 +90,20 @@ ORANGE = Color(0.949, 0.420, 0.227)          # F26B3A
 SAGE = Color(0.263, 0.431, 0.333)            # 436E55
 
 TITLE_STYLE = ParagraphStyle(
-    "title", fontName="Times-Bold", fontSize=26, leading=31, textColor=INK)
+    "title", fontName=SERIF_BOLD, fontSize=26, leading=31, textColor=INK)
 AUTHOR_STYLE = ParagraphStyle(
-    "author", fontName="Helvetica", fontSize=10.5, leading=14,
+    "author", fontName=SANS, fontSize=10.5, leading=14,
     textColor=INK_SOFT, spaceBefore=4)
 STORY_STYLE = ParagraphStyle(
-    "story", fontName="Times-Italic", fontSize=12.5, leading=19,
+    "story", fontName=SERIF_ITALIC, fontSize=12.5, leading=19,
     textColor=INK, spaceBefore=12)
 HEADING_STYLE = ParagraphStyle(
-    "heading", fontName="Times-Bold", fontSize=15, leading=19,
+    "heading", fontName=SERIF_BOLD, fontSize=15, leading=19,
     textColor=SAGE, spaceBefore=16, spaceAfter=6)
 BODY_STYLE = ParagraphStyle(
-    "body", fontName="Helvetica", fontSize=10.5, leading=16, textColor=INK)
+    "body", fontName=SANS, fontSize=10.5, leading=16, textColor=INK)
 INGREDIENT_STYLE = ParagraphStyle(
-    "ingredient", fontName="Helvetica", fontSize=10.5, leading=16,
+    "ingredient", fontName=SANS, fontSize=10.5, leading=16,
     textColor=INK, leftIndent=10)
 
 
@@ -107,7 +146,7 @@ class VectorQR(Flowable):
                            module, module, fill=1, stroke=0)
         if self.caption:
             c.setFillColor(INK_SOFT)
-            c.setFont("Helvetica", 8)
+            c.setFont(SANS, 8)
             c.drawString(0, 2, self.caption)
         c.restoreState()
 
@@ -152,7 +191,8 @@ def generate_interior_pdf(family: dict, recipes: list, listen_base_url: str,
         buf = io.BytesIO()
         doc = _CountingDoc(buf, pagesize=PAGE_SIZE,
                            leftMargin=MARGIN_IN * inch, rightMargin=MARGIN_IN * inch,
-                           topMargin=MARGIN_IN * inch, bottomMargin=MARGIN_IN * inch)
+                           topMargin=MARGIN_IN * inch, bottomMargin=MARGIN_IN * inch,
+                           initialFontName=SANS)
         frame = Frame(MARGIN_IN * inch, MARGIN_IN * inch,
                       PAGE_SIZE[0] - 2 * MARGIN_IN * inch,
                       PAGE_SIZE[1] - 2 * MARGIN_IN * inch, id="main")
@@ -220,7 +260,7 @@ def generate_interior_pdf(family: dict, recipes: list, listen_base_url: str,
             story.append(PageBreak())
             story.append(Spacer(1, 1))
 
-        doc.build(story)
+        doc.build(story, canvasmaker=_embedded_canvas)
         return buf.getvalue(), doc.page
 
     pdf, pages = build(0)
@@ -239,10 +279,8 @@ def generate_cover_pdf(family: dict, cover_width_pt: float,
                        cover_height_pt: float, spine_width_pt: float) -> bytes:
     """One-piece wraparound: back + spine + front. Dimensions (incl. bleed
     and spine) come from Lulu's cover-dimensions API — never hardcoded."""
-    from reportlab.pdfgen import canvas as rl_canvas
-
     buf = io.BytesIO()
-    c = rl_canvas.Canvas(buf, pagesize=(cover_width_pt, cover_height_pt))
+    c = _embedded_canvas(buf, pagesize=(cover_width_pt, cover_height_pt))
 
     # Full-bleed cream, sage band across the bottom
     c.setFillColor(CREAM)
@@ -257,25 +295,25 @@ def generate_cover_pdf(family: dict, cover_width_pt: float,
 
     # Front
     c.setFillColor(INK)
-    c.setFont("Times-Bold", 30)
+    c.setFont(SERIF_BOLD, 30)
     c.drawCentredString(front_cx, cover_height_pt * 0.58, family_name)
-    c.setFont("Times-Italic", 14)
+    c.setFont(SERIF_ITALIC, 14)
     c.setFillColor(INK_SOFT)
     c.drawCentredString(front_cx, cover_height_pt * 0.52,
                         "Recipes, stories, and the voices that taught us")
     c.setFillColor(ORANGE)
-    c.setFont("Helvetica-Bold", 10)
+    c.setFont(SANS_BOLD, 10)
     c.drawCentredString(front_cx, cover_height_pt * 0.09, "LEGACY TABLE")
 
     # Back
     c.setFillColor(INK_SOFT)
-    c.setFont("Times-Italic", 12)
+    c.setFont(SERIF_ITALIC, 12)
     c.drawCentredString(back_cx, cover_height_pt * 0.55,
                         "Some recipes only one person knows how to make.")
     c.drawCentredString(back_cx, cover_height_pt * 0.51,
                         "Now the whole family does — in their own voice.")
     c.setFillColor(white)
-    c.setFont("Helvetica", 9)
+    c.setFont(SANS, 9)
     c.drawCentredString(back_cx, cover_height_pt * 0.08, "legacytable.app")
 
     # Spine (only if thick enough for text)
@@ -284,7 +322,7 @@ def generate_cover_pdf(family: dict, cover_width_pt: float,
         c.translate(panel_w + spine_width_pt / 2, cover_height_pt / 2)
         c.rotate(90)
         c.setFillColor(INK)
-        c.setFont("Times-Bold", min(14, spine_width_pt * 0.5))
+        c.setFont(SERIF_BOLD, min(14, spine_width_pt * 0.5))
         c.drawCentredString(0, -spine_width_pt * 0.18, family_name)
         c.restoreState()
 
