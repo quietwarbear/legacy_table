@@ -2795,7 +2795,8 @@ async def cookbook_print_order(body: CookbookOrderRequest,
         body.hardcover)
 
     try:
-        dims = await cbp.lulu_cover_dimensions(pod_package, pages)
+        dims = await cbp.lulu_cover_dimensions(pod_package, pages,
+                                               hardcover=body.hardcover)
     except Exception as e:
         logger.error("Lulu cover dimensions failed: %s", e)
         raise HTTPException(status_code=502, detail="Print service unavailable")
