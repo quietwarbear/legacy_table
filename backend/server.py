@@ -2770,7 +2770,9 @@ class CookbookOrderRequest(BaseModel):
     country_code: str = "US"
     phone_number: Optional[str] = None
     hardcover: bool = True
-    shipping_level: str = "GROUND"
+    # Lulu split ground into GROUND_HD/GROUND_BUS; plain GROUND is not
+    # offered for US residential addresses (sandbox-verified 2026-07-08).
+    shipping_level: str = "MAIL"
 
 
 @api_router.post("/cookbook/print/order")
