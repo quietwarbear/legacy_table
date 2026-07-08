@@ -298,14 +298,15 @@ def generate_cover_pdf(family: dict, cover_width_pt: float,
 LULU_BASE = "https://api.lulu.com"
 LULU_SANDBOX_BASE = "https://api.sandbox.lulu.com"
 
-# 8.5x8.5, full color STANDARD quality, 80# coated white, gloss cover.
-# CW = casewrap hardcover, PB = perfect-bound paperback. Confirm both in
-# sandbox before first live order (override via env if Lulu's catalog
-# spells them differently).
+# 8.5x8.5, full color STANDARD quality, 80# coated white, gloss finish.
+# Dot-separated SKU format confirmed from Lulu's OpenAPI spec examples
+# (e.g. 0550X0850.FC.PRE.PB.080CW444.GXX). CW = casewrap hardcover,
+# PB = perfect-bound paperback. Validate in sandbox before first live
+# order; override via env if needed.
 POD_PACKAGE_HARDCOVER = os.environ.get(
-    "LULU_POD_HARDCOVER", "0850X0850FCSTDCW080CW444GXX")
+    "LULU_POD_HARDCOVER", "0850X0850.FC.STD.CW.080CW444.GXX")
 POD_PACKAGE_SOFTCOVER = os.environ.get(
-    "LULU_POD_SOFTCOVER", "0850X0850FCSTDPB080CW444GXX")
+    "LULU_POD_SOFTCOVER", "0850X0850.FC.STD.PB.080CW444.GXX")
 
 
 def _lulu_base() -> str:
@@ -326,9 +327,22 @@ async def lulu_token(client: httpx.AsyncClient) -> str:
     return resp.json()["access_token"]
 
 
-async def lulu_cover_dimensions(pod_package_id: str, page_count: int) -> dict:
+def _derive_spine_pt(cover_width_pt: float, hardcover: bool) -> float:
+    """Lulu's cover-dimensions response gives only total width/height (per
+    the OpenAPI spec) — derive the spine. Total width = 2 panels + spine,
+    where a panel is trim + bleed (paperback) or trim + wrap allowance
+    (casewrap, ~0.75\"). Approximation is fine: it only positions cover
+    text; the physical proof copy is the final validator."""
+    panel_extra_in = 0.75 if hardcover else BLEED_IN
+    panel_pt = (TRIM_IN + panel_extra_in) * 72
+    return max(0.0, cover_width_pt - 2 * panel_pt)
+
+
+async def lulu_cover_dimensions(pod_package_id: str, page_count: int,
+                                hardcover: bool = True) -> dict:
     """Returns {width, height, spine_width} in points for the wraparound
-    cover at this page count."""
+    cover at this page count. width/height come from Lulu (strings in the
+    response, per spec); spine is derived."""
     async with httpx.AsyncClient(timeout=30) as client:
         token = await lulu_token(client)
         resp = await client.post(
@@ -337,12 +351,17 @@ async def lulu_cover_dimensions(pod_package_id: str, page_count: int) -> dict:
             json={"pod_package_id": pod_package_id,
                   "interior_page_count": page_count,
                   "unit": "pt"})
+        if resp.status_code >= 400:
+            logger.error("Lulu cover-dimensions %d: %s",
+                         resp.status_code, resp.text[:500])
         resp.raise_for_status()
         data = resp.json()
+        width = float(data["width"])
+        height = float(data["height"])
         return {
-            "width": float(data["width"]),
-            "height": float(data["height"]),
-            "spine_width": float(data["spine_width"]),
+            "width": width,
+            "height": height,
+            "spine_width": _derive_spine_pt(width, hardcover),
             "unit": "pt",
         }
 
@@ -375,6 +394,9 @@ async def lulu_create_print_job(*, pod_package_id: str, page_count: int,
             f"{_lulu_base()}/print-jobs/",
             headers={"Authorization": f"Bearer {token}"},
             json=payload)
+        if resp.status_code >= 400:
+            logger.error("Lulu print-jobs %d: %s",
+                         resp.status_code, resp.text[:500])
         resp.raise_for_status()
         return resp.json()
 
