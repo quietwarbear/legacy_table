@@ -1,0 +1,64 @@
+/* Legacy Table guides — static, crawlable, brand-book palette. */
+:root {
+  --cream: #F8F5F1; --card: #FFFFFF; --border: #E3DED7;
+  --ink: #2B2B2B; --ink-soft: #6F6F6F;
+  --orange: #F26B3A; --sage: #436E55; --sage-tint: #E6F0EA;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--cream); color: var(--ink);
+  font: 17px/1.7 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+header.site {
+  position: sticky; top: 0; background: rgba(248,245,241,.92);
+  backdrop-filter: blur(6px); border-bottom: 1px solid var(--border); z-index: 10;
+}
+header.site .inner {
+  max-width: 46rem; margin: 0 auto; padding: 14px 20px;
+  display: flex; justify-content: space-between; align-items: baseline;
+}
+.wordmark { font-family: Georgia, "Times New Roman", serif; font-weight: 700; font-size: 1.15rem; color: var(--ink); text-decoration: none; }
+header.site nav a { color: var(--ink-soft); text-decoration: none; font-size: .9rem; font-weight: 600; margin-left: 18px; }
+header.site nav a:hover { color: var(--ink); }
+main { max-width: 46rem; margin: 0 auto; padding: 40px 20px 80px; }
+.eyebrow { font-size: .72rem; letter-spacing: .14em; text-transform: uppercase; color: var(--orange); font-weight: 700; margin: 0 0 10px; }
+h1 { font-family: Georgia, "Times New Roman", serif; font-size: 2.3rem; line-height: 1.2; margin: 0 0 10px; text-wrap: balance; }
+.dek { font-size: 1.15rem; color: var(--ink-soft); margin: 0 0 34px; }
+h2 { font-family: Georgia, "Times New Roman", serif; font-size: 1.5rem; margin: 40px 0 12px; color: var(--sage); }
+h3 { font-family: Georgia, serif; font-size: 1.15rem; margin: 26px 0 8px; }
+p, li { color: var(--ink); }
+li { margin: 8px 0; }
+blockquote {
+  font-family: Georgia, serif; font-style: italic; font-size: 1.15rem;
+  border-left: 3px solid var(--orange); margin: 26px 0; padding: 4px 0 4px 18px; color: var(--ink);
+}
+.tip { background: var(--sage-tint); border-radius: 12px; padding: 16px 20px; margin: 22px 0; font-size: .95rem; }
+.cta {
+  background: var(--card); border: 2px solid rgba(242,107,58,.35); border-radius: 16px;
+  padding: 26px 26px 22px; margin: 48px 0 8px; text-align: center;
+}
+.cta h2 { margin-top: 0; color: var(--ink); font-size: 1.35rem; }
+.cta p { color: var(--ink-soft); font-size: .98rem; }
+.btn {
+  display: inline-block; background: var(--orange); color: #fff; text-decoration: none;
+  font-weight: 700; font-size: .95rem; padding: 12px 26px; border-radius: 999px; border: 0; cursor: pointer;
+}
+.btn:hover { filter: brightness(.96); }
+.email-row { display: flex; gap: 8px; max-width: 24rem; margin: 14px auto 0; }
+.email-row input {
+  flex: 1; border: 1px solid var(--border); border-radius: 999px; padding: 11px 16px;
+  font-size: .9rem; background: var(--cream);
+}
+.fineprint { font-size: .78rem; color: var(--ink-soft); margin-top: 10px; }
+footer.site { border-top: 1px solid var(--border); }
+footer.site .inner { max-width: 46rem; margin: 0 auto; padding: 26px 20px 40px; font-size: .85rem; color: var(--ink-soft); }
+footer.site a { color: var(--sage); }
+.more { margin-top: 6px; }
+.guide-list { list-style: none; padding: 0; }
+.guide-list li {
+  background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+  padding: 18px 22px; margin: 14px 0;
+}
+.guide-list a { font-family: Georgia, serif; font-size: 1.2rem; color: var(--ink); text-decoration: none; font-weight: 700; }
+.guide-list a:hover { color: var(--orange); }
+.guide-list p { margin: 6px 0 0; color: var(--ink-soft); font-size: .95rem; }

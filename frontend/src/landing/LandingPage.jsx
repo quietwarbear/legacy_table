@@ -112,6 +112,10 @@ const TopNav = () => {
           <button onClick={() => scrollToId("why")} className={linkClass}>
             Why
           </button>
+          {/* Static page served from public/guides — must be a real <a>, not a router Link */}
+          <a href="/guides/" className={linkClass}>
+            Guides
+          </a>
           <Link to="/pricing" className={linkClass}>
             Pricing
           </Link>
@@ -165,6 +169,9 @@ const TopNav = () => {
             >
               Why
             </button>
+            <a href="/guides/" className={`${linkClass} py-2`}>
+              Guides
+            </a>
             <Link
               to="/pricing"
               onClick={() => setOpen(false)}
@@ -616,6 +623,10 @@ const LandingPage = () => {
               contact@ubuntu-markets.org
             </p>
             <div className="flex justify-center gap-4 text-xs">
+              <a href="/guides/" className="hover:underline">
+                Guides
+              </a>
+              <span>·</span>
               <a href="/privacy-policy" className="hover:underline">
                 Privacy Policy
               </a>
