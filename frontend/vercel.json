@@ -1,6 +1,7 @@
 {
-  "cleanUrls": true,
   "rewrites": [
+    { "source": "/guides", "destination": "/guides/index.html" },
+    { "source": "/guides/:slug", "destination": "/guides/:slug.html" },
     { "source": "/((?!\\.well-known/).*)", "destination": "/index.html" }
   ],
   "headers": [
