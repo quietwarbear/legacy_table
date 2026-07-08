@@ -59,6 +59,14 @@ class SubscriptionProvider extends ChangeNotifier {
       final data = response.data;
       _creditsBalance = data['credits_balance'] ?? 0;
       _monthlyAllowance = data['monthly_allowance'] ?? 3;
+
+      // The backend tier is authoritative for entitlements RevenueCat can't
+      // see: Stripe web subscriptions and redeemed Family Legacy gifts.
+      // Treat it as a floor — never downgrade below what RevenueCat says.
+      final serverTier = _serverTierFromString(data['subscription_tier']);
+      if (serverTier.index > _tier.index) {
+        _tier = serverTier;
+      }
       notifyListeners();
     } catch (e) {
       debugPrint('SubscriptionProvider.loadCredits error: $e');
@@ -135,6 +143,18 @@ class SubscriptionProvider extends ChangeNotifier {
       _tier = SubscriptionTier.heritage;
     } else {
       _tier = SubscriptionTier.none;
+    }
+  }
+
+  SubscriptionTier _serverTierFromString(dynamic tier) {
+    switch (tier) {
+      case 'legacy':
+      case 'family_legacy': // gift redeemers get Legacy-level benefits
+        return SubscriptionTier.legacy;
+      case 'heritage':
+        return SubscriptionTier.heritage;
+      default:
+        return SubscriptionTier.none;
     }
   }
 
