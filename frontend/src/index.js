@@ -7,9 +7,24 @@ import { initAnalytics } from "@/lib/track";
 
 initAnalytics();
 
-const root = ReactDOM.createRoot(document.getElementById("root"));
-root.render(
+const rootEl = document.getElementById("root");
+const app = (
   <React.StrictMode>
     <App />
-  </React.StrictMode>,
+  </React.StrictMode>
 );
+
+// Public routes ship as prerendered HTML (scripts/prerender.js) so crawlers
+// see real content. Hydrate the snapshot for anonymous visitors; signed-in
+// users get a fresh client render (no flash of the marketing page).
+let hasSession = false;
+try {
+  hasSession = !!localStorage.getItem("token");
+} catch (e) { /* storage unavailable */ }
+
+if (rootEl.hasChildNodes() && !hasSession) {
+  ReactDOM.hydrateRoot(rootEl, app);
+} else {
+  if (rootEl.hasChildNodes()) rootEl.innerHTML = "";
+  ReactDOM.createRoot(rootEl).render(app);
+}
