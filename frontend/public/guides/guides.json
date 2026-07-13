@@ -1,0 +1,43 @@
+{
+  "app": "legacy-table",
+  "name": "Legacy Table",
+  "site": "https://legacytable.app",
+  "guides": [
+    {
+      "title": "How to Digitize Handwritten Recipe Cards (Without Losing the Handwriting)",
+      "description": "A step-by-step guide to digitizing handwritten recipe cards: photograph them right, transcribe them fast, and keep the handwriting as part of the heirloom.",
+      "url": "https://legacytable.app/guides/digitize-handwritten-recipe-cards.html",
+      "published": "2026-07-08"
+    },
+    {
+      "title": "How to Make a Family Cookbook Everyone Actually Uses",
+      "description": "From shoebox to heirloom: how to collect the recipes, gather the stories, get the whole family contributing, and print a family cookbook worth passing down.",
+      "url": "https://legacytable.app/guides/how-to-make-a-family-cookbook.html",
+      "published": "2026-07-08"
+    },
+    {
+      "title": "How to Preserve Family Recipes — Before They're Lost",
+      "description": "A practical 5-step method for preserving family recipes: capture the dish, the story, and the voice of the person who makes it — before it's too late.",
+      "url": "https://legacytable.app/guides/how-to-preserve-family-recipes.html",
+      "published": "2026-07-08"
+    },
+    {
+      "title": "25 Questions to Ask the Family Cook (While You Still Can)",
+      "description": "25 questions that turn a recipe interview into a family memory — about the dish, the hands that made it, and the tables it fed. Bring a recorder.",
+      "url": "https://legacytable.app/guides/questions-to-ask-the-family-cook.html",
+      "published": "2026-07-08"
+    },
+    {
+      "title": "\"Until It Looks Right\": Preserving Recipes That Have No Measurements",
+      "description": "A pinch, a feel, until it looks like Louisiana — how to preserve family recipes that were never measured, from cooks who carry them by hand and by heart.",
+      "url": "https://legacytable.app/guides/recipes-without-measurements.html",
+      "published": "2026-07-08"
+    },
+    {
+      "title": "Record Family Recipes in Their Own Voice — Before It's Too Late",
+      "description": "Why a 60-second voice recording preserves more of a family recipe than any written card — and how to run a 10-minute recording session with the cook you love.",
+      "url": "https://legacytable.app/guides/record-family-recipes-before-its-too-late.html",
+      "published": "2026-07-08"
+    }
+  ]
+}
