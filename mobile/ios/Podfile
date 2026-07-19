@@ -39,5 +39,17 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
+    # permission_handler compiles every permission OUT unless enabled here.
+    # Without these macros, Permission.*.request() returns denied instantly
+    # with no iOS prompt — which silently killed voice recording and camera
+    # capture on iOS (mic/camera never even appeared in Settings).
+    target.build_configurations.each do |config|
+      config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= [
+        '$(inherited)',
+        'PERMISSION_MICROPHONE=1',
+        'PERMISSION_CAMERA=1',
+        'PERMISSION_PHOTOS=1',
+      ]
+    end
   end
 end
