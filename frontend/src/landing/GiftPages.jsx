@@ -197,7 +197,7 @@ export const GiftSuccessPage = () => {
             <p className="text-muted-foreground">
               Your payment went through, but the gift code is taking a moment.
               Refresh this page in a minute — or write us at
-              contact@ubuntu-markets.org with your receipt and we'll send it.
+              support@ubuntu-village.org with your receipt and we'll send it.
             </p>
           </>
         ) : (

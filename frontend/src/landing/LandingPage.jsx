@@ -620,7 +620,7 @@ const LandingPage = () => {
           <div className="text-xs opacity-75 space-y-1">
             <p>
               © 2026 Ubuntu Markets LLC · legacytable.app ·
-              contact@ubuntu-markets.org
+              support@ubuntu-village.org
             </p>
             <div className="flex justify-center gap-4 text-xs">
               <a href="/guides/" className="hover:underline">

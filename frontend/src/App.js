@@ -6276,7 +6276,7 @@ const TermsOfServicePage = () => {
               <li>You are responsible for maintaining the security of your account credentials.</li>
               <li>You are responsible for all activity that occurs under your account.</li>
               <li>You agree to provide accurate, current information when creating an account.</li>
-              <li>Notify us promptly at <a href="mailto:support@legacytable.app" className="text-primary hover:underline">support@legacytable.app</a> if you suspect unauthorized access.</li>
+              <li>Notify us promptly at <a href="mailto:support@ubuntu-village.org" className="text-primary hover:underline">support@ubuntu-village.org</a> if you suspect unauthorized access.</li>
             </ul>
           </section>
 
@@ -6384,7 +6384,7 @@ const TermsOfServicePage = () => {
           <section>
             <h2 className="font-serif text-xl font-bold text-foreground mb-3">15. Contact</h2>
             <p className="text-base leading-relaxed text-muted-foreground mb-2">If you have any questions about these Terms, contact us at:</p>
-            <p className="text-base leading-relaxed text-foreground font-medium">Email: <a href="mailto:support@legacytable.app" className="text-primary hover:underline">support@legacytable.app</a></p>
+            <p className="text-base leading-relaxed text-foreground font-medium">Email: <a href="mailto:support@ubuntu-village.org" className="text-primary hover:underline">support@ubuntu-village.org</a></p>
             <p className="text-sm text-muted-foreground mt-3">Ubuntu Markets LLC · legacytable.app</p>
           </section>
         </div>
@@ -6522,7 +6522,7 @@ const PrivacyPolicyPage = () => {
           <section>
             <h2 className="font-serif text-xl font-bold text-foreground mb-3">10. Contact Us</h2>
             <p className="text-base leading-relaxed text-muted-foreground mb-2">If you have questions or concerns about this Privacy Policy or your data, contact us at:</p>
-            <p className="text-base leading-relaxed text-foreground font-medium">Email: <a href="mailto:support@legacytable.app" className="text-primary hover:underline">support@legacytable.app</a></p>
+            <p className="text-base leading-relaxed text-foreground font-medium">Email: <a href="mailto:support@ubuntu-village.org" className="text-primary hover:underline">support@ubuntu-village.org</a></p>
           </section>
         </div>
 
