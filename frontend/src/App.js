@@ -638,21 +638,26 @@ const Navigation = () => {
   );
 };
 
-// Ubuntu Markets SSO handoff — redeems a one-time code from a sibling product (Kindred)
-// and signs the user in. Reached at /sso?code=… ; the code is single-use and short-lived.
+// Ubuntu Markets SSO handoff. The HTML bootstrap removes the code from browser
+// history before analytics or application code initializes.
 const SSOHandoffPage = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState("");
   useEffect(() => {
-    const code = new URLSearchParams(window.location.search).get("code");
+    const code = window.__legacyTableTransientSSOCode;
+    delete window.__legacyTableTransientSSOCode;
     if (!code) {
       setError("Missing sign-in code. Please try again from Kindred.");
       return;
     }
     (async () => {
       try {
-        const res = await axios.post(`${API}/auth/sso-redeem`, { code });
+        const res = await axios.post(`${API}/auth/sso-redeem`, {
+          code,
+          audience: "legacy_table",
+          origin: window.location.origin,
+        });
         login(res.data.token, res.data.user);
         navigate("/home", { replace: true });
       } catch (e) {
