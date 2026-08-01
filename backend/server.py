@@ -8,6 +8,8 @@ from starlette.responses import JSONResponse, HTMLResponse, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo.errors import PyMongoError
+from pymongo import ReturnDocument
+from pymongo.errors import DuplicateKeyError
 import os
 import logging
 from pathlib import Path
@@ -15,6 +17,10 @@ from pydantic import BaseModel, Field, ConfigDict, EmailStr, model_validator
 from typing import List, Optional
 from contextlib import asynccontextmanager
 import asyncio
+import hashlib
+import hmac
+import re
+import secrets
 import uuid
 from datetime import datetime, timezone, timedelta
 import jwt
@@ -26,6 +32,18 @@ import base64
 from openai import AsyncOpenAI
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPublicNumbers
 from cryptography.hazmat.backends import default_backend
+
+from recipe_imports import (
+    ImportFailure,
+    RecipeImportRequest,
+    RecipeImportResult,
+    accept_recipe_import,
+    delete_family_with_import_tombstones,
+    ensure_recipe_import_indexes,
+    reconcile_recipe_import,
+    tombstone_imported_recipe,
+    validate_hash_key,
+)
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -51,8 +69,11 @@ async def lifespan(_app: FastAPI):
         # One-time SSO handoff codes are valid 5 min; TTL on the BSON `expires_at` date
         # lets Mongo auto-purge spent/expired codes so the collection never grows unbounded.
         await db.sso_codes.create_index("expires_at", expireAfterSeconds=0)
+        await db.sso_codes.create_index("code_digest", unique=True, sparse=True)
+        await db.users.create_index("email_normalized", unique=True, sparse=True)
+        await ensure_recipe_import_indexes(db)
     except PyMongoError as e:
-        logger.warning("Could not create sso_codes TTL index: %s", e)
+        logger.warning("Could not establish security indexes: type=%s", type(e).__name__)
     # Weekly family prompt — the push retention loop. No-ops every tick
     # unless FIREBASE_SERVICE_ACCOUNT is configured.
     prompt_task = asyncio.create_task(weekly_prompt_loop())
@@ -62,6 +83,31 @@ async def lifespan(_app: FastAPI):
 
 # Crash reporting — enabled only when SENTRY_DSN is set in the environment
 # (Railway service variables). No DSN, no SDK, no behavior change.
+def _privacy_safe_sentry_event(event, _hint):
+    request_data = event.get("request") or {}
+    url = str(request_data.get("url") or "")
+    sensitive = (
+        "/api/recipe-imports" in url
+        or "/api/auth/sso-" in url
+        or "/api/auth/exchange" in url
+    )
+    if sensitive:
+        request_data["url"] = url.split("?", 1)[0]
+        request_data["data"] = "[Filtered]"
+        request_data["query_string"] = ""
+        request_data["cookies"] = "[Filtered]"
+        request_data["headers"] = {
+            key: "[Filtered]" if key.lower() in {"authorization", "cookie"} else value
+            for key, value in (request_data.get("headers") or {}).items()
+        }
+        event["request"] = request_data
+        event.pop("breadcrumbs", None)
+        event.pop("extra", None)
+        for span in event.get("spans") or []:
+            span.pop("data", None)
+    return event
+
+
 _sentry_dsn = os.environ.get("SENTRY_DSN", "")
 if _sentry_dsn:
     import sentry_sdk
@@ -70,6 +116,9 @@ if _sentry_dsn:
         dsn=_sentry_dsn,
         traces_sample_rate=0.2,
         environment=os.environ.get("SENTRY_ENVIRONMENT", "production"),
+        send_default_pii=False,
+        include_local_variables=False,
+        before_send=_privacy_safe_sentry_event,
     )
 
 # Create the main app
@@ -614,6 +663,7 @@ async def register(user_data: UserCreate):
         "name": user_data.name,
         "nickname": user_data.nickname,
         "email": user_data.email.lower(),
+        "email_normalized": user_data.email.lower(),
         "password_hash": hash_password(user_data.password),
         "avatar": None,
         "credits_balance": initial_credits,
@@ -646,125 +696,141 @@ class SSOExchangeRequest(BaseModel):
 
 @api_router.post("/auth/exchange", response_model=TokenResponse)
 async def auth_exchange(payload: SSOExchangeRequest):
-    """Ubuntu Markets single-identity exchange.
-
-    A trusted sibling product (e.g. Kindred) presents a verified user's email plus the
-    shared UBUNTU_SSO_SECRET; we find-or-create that user and return a normal Legacy
-    Table session. No password is exchanged. The secret is server-side only and must be
-    set identically in both products' environments. Only trust products you control.
-    """
-    expected = os.environ.get("UBUNTU_SSO_SECRET", "")
-    if not expected or payload.secret != expected:
-        raise HTTPException(status_code=403, detail="Invalid SSO secret")
-
-    email = (payload.email or "").strip().lower()
-    if not email or "@" not in email:
-        raise HTTPException(status_code=400, detail="A valid email is required")
-
-    user = await db.users.find_one({"email": email}, {"_id": 0})
-    if not user:
-        user_id = str(uuid.uuid4())
-        initial_credits = get_credits_for_tier(None)
-        credits_refresh = next_refresh_date()
-        user = {
-            "id": user_id,
-            "name": (payload.name or email.split("@")[0]),
-            "nickname": None,
-            "email": email,
-            "password_hash": None,
-            "avatar": None,
-            "auth_provider": "ubuntu-sso",
-            "credits_balance": initial_credits,
-            "credits_refresh_at": credits_refresh,
-            "created_at": datetime.now(timezone.utc).isoformat(),
-        }
-        await db.users.insert_one(dict(user))
-    else:
-        user = await refresh_credits_if_needed(user)
-
-    token = create_token(user["id"])
-    user_response = UserResponse(
-        id=user["id"],
-        name=user.get("name", ""),
-        nickname=user.get("nickname"),
-        email=user["email"],
-        avatar=user.get("avatar"),
-        family_id=user.get("family_id"),
-        role=user.get("role"),
-        subscription_tier=user.get("subscription_tier"),
-        credits_balance=user.get("credits_balance", 0),
-        credits_refresh_at=user.get("credits_refresh_at"),
-        created_at=user["created_at"],
-    )
-    return TokenResponse(token=token, user=user_response)
+    """Retired because it returned a session without a single-use authorization code."""
+    raise HTTPException(status_code=410, detail="Direct SSO exchange is retired")
 
 
 class SSOCodeRequest(BaseModel):
     email: str
     secret: str
     name: str = ""
+    audience: str
+    origin: str
 
 
 class SSORedeemRequest(BaseModel):
     code: str
+    audience: str
+    origin: str
+
+
+SSO_AUDIENCE = "legacy_table"
+SSO_ALLOWED_SOURCE_ORIGINS = frozenset({"https://www.heykindred.org"})
+SSO_LANDING_ORIGIN = "https://legacytable.app"
+
+
+def _sso_code_digest(code: str) -> str:
+    return hashlib.sha256(code.encode("utf-8")).hexdigest()
+
+
+async def _find_or_create_sso_user(email: str, name: str) -> dict:
+    """Canonically reconcile one legacy account, and fail on ambiguity."""
+    exact_pattern = re.compile(rf"^{re.escape(email)}$", re.IGNORECASE)
+    candidates = await db.users.find(
+        {"$or": [{"email_normalized": email}, {"email": exact_pattern}]},
+        {"_id": 0},
+    ).to_list(length=2)
+    distinct_ids = {candidate.get("id") for candidate in candidates if candidate.get("id")}
+    if len(distinct_ids) > 1:
+        raise HTTPException(status_code=409, detail="SSO identity is ambiguous.")
+    if candidates:
+        user = candidates[0]
+        try:
+            await db.users.update_one(
+                {"id": user["id"]},
+                {"$set": {"email": email, "email_normalized": email}},
+            )
+        except DuplicateKeyError as exc:
+            raise HTTPException(status_code=409, detail="SSO identity is ambiguous.") from exc
+        user["email"] = email
+        user["email_normalized"] = email
+        return user
+
+    user = {
+        "id": str(uuid.uuid4()),
+        "name": name or email.split("@")[0],
+        "nickname": None,
+        "email": email,
+        "email_normalized": email,
+        "password_hash": None,
+        "avatar": None,
+        "auth_provider": "ubuntu-sso",
+        "credits_balance": get_credits_for_tier(None),
+        "credits_refresh_at": next_refresh_date(),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    try:
+        await db.users.insert_one(dict(user))
+    except DuplicateKeyError as exc:
+        raise HTTPException(status_code=409, detail="SSO identity is ambiguous.") from exc
+    return user
 
 
 @api_router.post("/auth/sso-code")
-async def sso_mint_code(payload: SSOCodeRequest):
+async def sso_mint_code(payload: SSOCodeRequest, response: Response):
     """Mint a short-lived, single-use SSO handoff code (server-to-server, secret-gated).
 
     A trusted sibling product (Kindred) calls this to start a cross-product 'jump'. The
     code — not a session token — goes in the jump URL and is redeemed once via /sso-redeem.
     """
+    response.headers["Cache-Control"] = "no-store, max-age=0"
     expected = os.environ.get("UBUNTU_SSO_SECRET", "")
-    if not expected or payload.secret != expected:
+    if not expected or not hmac.compare_digest(payload.secret, expected):
         raise HTTPException(status_code=403, detail="Invalid SSO secret")
+    if payload.audience != SSO_AUDIENCE or payload.origin not in SSO_ALLOWED_SOURCE_ORIGINS:
+        raise HTTPException(status_code=403, detail="SSO handoff is not authorized.")
     email = (payload.email or "").strip().lower()
     if not email or "@" not in email:
         raise HTTPException(status_code=400, detail="A valid email is required")
 
-    user = await db.users.find_one({"email": email})
-    if not user:
-        user_id = str(uuid.uuid4())
-        user = {
-            "id": user_id,
-            "name": payload.name or email.split("@")[0],
-            "nickname": None,
-            "email": email,
-            "password_hash": None,
-            "avatar": None,
-            "auth_provider": "ubuntu-sso",
-            "credits_balance": get_credits_for_tier(None),
-            "credits_refresh_at": next_refresh_date(),
-            "created_at": datetime.now(timezone.utc).isoformat(),
-        }
-        await db.users.insert_one(dict(user))
+    try:
+        await db.users.create_index("email_normalized", unique=True, sparse=True)
+        await db.sso_codes.create_index("code_digest", unique=True, sparse=True)
+    except PyMongoError as exc:
+        raise HTTPException(status_code=503, detail="Cross-product sign-in is unavailable.") from exc
 
-    code = uuid.uuid4().hex
+    user = await _find_or_create_sso_user(email, payload.name)
+
+    code = secrets.token_urlsafe(32)
+    now = datetime.now(timezone.utc)
     await db.sso_codes.insert_one({
-        "code": code,
+        "code_digest": _sso_code_digest(code),
         "user_id": user["id"],
-        "expires_at": datetime.now(timezone.utc) + timedelta(minutes=5),
+        "audience": payload.audience,
+        "origin": payload.origin,
+        "expires_at": now + timedelta(minutes=5),
         "used": False,
-        "created_at": datetime.now(timezone.utc),
+        "created_at": now,
     })
     return {"code": code, "expires_in": 300}
 
 
 @api_router.post("/auth/sso-redeem", response_model=TokenResponse)
-async def sso_redeem_code(payload: SSORedeemRequest):
+async def sso_redeem_code(payload: SSORedeemRequest, request: Request, response: Response):
     """Redeem a single-use SSO code for a Legacy Table session. No secret needed — the
     code itself is the one-time credential."""
-    rec = await db.sso_codes.find_one({"code": payload.code})
+    response.headers["Cache-Control"] = "no-store, max-age=0"
     now = datetime.now(timezone.utc)
-    if not rec or rec.get("used"):
+    if (
+        payload.audience != SSO_AUDIENCE
+        or payload.origin != SSO_LANDING_ORIGIN
+        or request.headers.get("origin", "") != SSO_LANDING_ORIGIN
+        or not re.fullmatch(r"[A-Za-z0-9_-]{32,128}", payload.code or "")
+    ):
         raise HTTPException(status_code=400, detail="This sign-in link is invalid or already used.")
-    expires_at = rec.get("expires_at")
-    if isinstance(expires_at, datetime):
-        exp = expires_at if expires_at.tzinfo else expires_at.replace(tzinfo=timezone.utc)
-        if exp < now:
-            raise HTTPException(status_code=400, detail="This sign-in link has expired.")
-    await db.sso_codes.update_one({"code": payload.code}, {"$set": {"used": True, "used_at": now}})
+    rec = await db.sso_codes.find_one_and_update(
+        {
+            "code_digest": _sso_code_digest(payload.code),
+            "audience": SSO_AUDIENCE,
+            "used": False,
+            "expires_at": {"$gt": now},
+        },
+        {"$set": {"used": True, "used_at": now}, "$unset": {"code_digest": ""}},
+        projection={"_id": 0},
+        return_document=ReturnDocument.BEFORE,
+    )
+    if not rec:
+        raise HTTPException(status_code=400, detail="This sign-in link is invalid or already used.")
 
     user = await db.users.find_one({"id": rec["user_id"]})
     if not user:
@@ -803,12 +869,19 @@ async def lt_open_kindred(user: dict = Depends(get_current_user)):
         async with httpx.AsyncClient(timeout=20) as client:
             resp = await client.post(
                 f"{kindred_api}/auth/sso-code",
-                json={"email": email, "secret": secret, "name": user.get("name", "")},
+                json={
+                    "email": email,
+                    "secret": secret,
+                    "name": user.get("name", ""),
+                    "audience": "kindred",
+                    "origin": SSO_LANDING_ORIGIN,
+                },
+                follow_redirects=False,
             )
-    except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"Couldn't reach Kindred ({exc}).")
-    if resp.status_code != 200:
-        raise HTTPException(status_code=502, detail=f"Kindred declined the handoff (HTTP {resp.status_code}).")
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=502, detail="Cross-product sign-in is temporarily unavailable.") from exc
+    if resp.is_redirect or resp.status_code != 200:
+        raise HTTPException(status_code=502, detail="Cross-product sign-in was declined.")
     code = resp.json().get("code")
     if not code:
         raise HTTPException(status_code=502, detail="Kindred returned no code.")
@@ -910,6 +983,7 @@ async def google_auth(body: GoogleAuthRequest):
             "name": name,
             "nickname": None,
             "email": email,
+            "email_normalized": email,
             "password_hash": None,  # Google users have no password
             "avatar": picture,
             "auth_provider": "google",
@@ -1048,6 +1122,7 @@ async def facebook_auth(body: FacebookAuthRequest):
             "name": name,
             "nickname": None,
             "email": email,
+            "email_normalized": email,
             "password_hash": None,
             "avatar": None,
             "auth_provider": "facebook",
@@ -1231,6 +1306,7 @@ async def apple_auth(body: AppleAuthRequest):
             "name": full_name or email.split("@")[0],
             "nickname": None,
             "email": email,
+            "email_normalized": email,
             "password_hash": None,  # Apple users have no password
             "avatar": None,  # Apple does not provide picture
             "auth_provider": "apple",
@@ -1302,6 +1378,91 @@ async def update_profile(update_data: UserUpdate, user: dict = Depends(get_curre
     )
 
 # ===================== RECIPE ROUTES =====================
+
+
+def _import_failure_response(operation_id: str, exc: ImportFailure) -> JSONResponse:
+    result = RecipeImportResult(
+        operation_id=operation_id,
+        status=exc.safe_status,
+        error_code=exc.code,
+    )
+    return JSONResponse(
+        status_code=exc.http_status,
+        content=result.model_dump(exclude_none=True),
+        headers={"Cache-Control": "no-store, max-age=0"},
+    )
+
+
+@api_router.post("/recipe-imports", response_model=RecipeImportResult)
+async def import_recipe_from_kindred(
+    payload: RecipeImportRequest,
+    user: dict = Depends(get_current_user),
+):
+    """Accept one immutable, author-owned recipe revision transactionally."""
+    hash_key = os.environ.get("RECIPE_IMPORT_HASH_KEY", "")
+    try:
+        validate_hash_key(hash_key)
+        await ensure_recipe_import_indexes(db)
+        result = await accept_recipe_import(db, client, user, payload, hash_key)
+    except ImportFailure as exc:
+        logger.warning(
+            "Recipe import lifecycle operation=%s status=%s code=%s",
+            payload.operation_id,
+            exc.safe_status,
+            exc.code,
+        )
+        return _import_failure_response(payload.operation_id, exc)
+    except PyMongoError as exc:
+        logger.warning(
+            "Recipe import lifecycle operation=%s status=unavailable code=database_unavailable",
+            payload.operation_id,
+        )
+        return _import_failure_response(
+            payload.operation_id,
+            ImportFailure("database_unavailable", 503, "unavailable"),
+        )
+    logger.info(
+        "Recipe import lifecycle operation=%s status=%s",
+        payload.operation_id,
+        result.status,
+    )
+    return JSONResponse(
+        status_code=201 if result.status == "accepted" else 200,
+        content=result.model_dump(exclude_none=True),
+        headers={"Cache-Control": "no-store, max-age=0"},
+    )
+
+
+@api_router.get("/recipe-imports/{operation_id}", response_model=RecipeImportResult)
+async def get_recipe_import_status(
+    operation_id: str,
+    user: dict = Depends(get_current_user),
+):
+    """Reconcile an import only for the exact authenticated author."""
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:-]{15,127}", operation_id or ""):
+        return _import_failure_response(
+            "invalid-operation",
+            ImportFailure("import_operation_not_found", 404, "rejected"),
+        )
+    try:
+        result = await reconcile_recipe_import(
+            db,
+            user,
+            operation_id,
+            os.environ.get("RECIPE_IMPORT_HASH_KEY", ""),
+        )
+    except ImportFailure as exc:
+        return _import_failure_response(operation_id, exc)
+    except PyMongoError:
+        return _import_failure_response(
+            operation_id,
+            ImportFailure("database_unavailable", 503, "unavailable"),
+        )
+    return JSONResponse(
+        status_code=200,
+        content=result.model_dump(exclude_none=True),
+        headers={"Cache-Control": "no-store, max-age=0"},
+    )
 
 @api_router.post("/recipes", response_model=RecipeResponse)
 async def create_recipe(recipe_data: RecipeCreate, user: dict = Depends(get_current_user)):
@@ -1498,7 +1659,15 @@ async def delete_recipe(recipe_id: str, user: dict = Depends(get_current_user)):
         if recipe["author_id"] != user["id"] and user.get("role") != "keeper":
             raise HTTPException(status_code=403, detail="Only keepers can delete others' recipes")
     
-    await db.recipes.delete_one({"id": recipe_id})
+    if recipe.get("import_receipt_reference"):
+        try:
+            deleted = await tombstone_imported_recipe(db, client, recipe_id)
+        except PyMongoError as exc:
+            raise HTTPException(status_code=503, detail="Recipe deletion is temporarily unavailable") from exc
+        if not deleted:
+            raise HTTPException(status_code=409, detail="Recipe deletion could not be reconciled")
+    else:
+        await db.recipes.delete_one({"id": recipe_id})
     return {"message": "Recipe deleted successfully"}
 
 @api_router.get("/categories", response_model=List[str])
@@ -1748,14 +1917,10 @@ async def delete_family(family_id: str, user: dict = Depends(get_current_user)):
     if not family:
         raise HTTPException(status_code=404, detail="Family not found")
     
-    # Remove all family members' family associations
-    await db.users.update_many(
-        {"family_id": family_id},
-        {"$unset": {"family_id": "", "role": ""}}
-    )
-    
-    # Delete the family
-    await db.families.delete_one({"id": family_id})
+    try:
+        await delete_family_with_import_tombstones(db, client, family_id)
+    except (ImportFailure, PyMongoError) as exc:
+        raise HTTPException(status_code=503, detail="Family deletion is temporarily unavailable") from exc
     
     return {"message": "Family deleted successfully. All members have been removed from the family."}
 
@@ -3091,6 +3256,8 @@ async def export_recipes(user: dict = Depends(get_current_user)):
         photo_count = len(r.get("photos", []))
         r["photo_count"] = photo_count
         r["photos"] = []  # Clear base64 data from export
+        # Reconciliation metadata is operational state, never customer export data.
+        r.pop("import_receipt_reference", None)
 
     export_data = {
         "exported_at": datetime.now(timezone.utc).isoformat(),

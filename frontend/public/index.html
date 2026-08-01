@@ -1,17 +1,37 @@
 <!doctype html>
 <html lang="en">
     <head>
-        <!-- CookieYes consent banner — must load before gtag for Google Consent Mode v2 -->
-        <script id="cookieyes" type="text/javascript" src="https://cdn-cookieyes.com/client_data/75c844bf1e33988feb42a3a3/script.js"></script>
-
-        <!-- Google tag (gtag.js) -->
-        <script async src="https://www.googletagmanager.com/gtag/js?id=AW-18227014657"></script>
+        <meta name="referrer" content="no-referrer" />
         <script>
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'AW-18227014657');
-                gtag('config', 'G-Z0GP0D3ET0');
+            window.__legacyTableSensitiveSSORoute = /^\/sso\/?$/i.test(window.location.pathname);
+            if (window.__legacyTableSensitiveSSORoute) {
+                var legacyTableSsoCode = new URLSearchParams(window.location.search).get("code");
+                if (legacyTableSsoCode) {
+                    Object.defineProperty(window, "__legacyTableTransientSSOCode", {
+                        configurable: true,
+                        enumerable: false,
+                        value: legacyTableSsoCode,
+                        writable: false
+                    });
+                }
+                window.history.replaceState(null, "", "/sso");
+            } else if (!/^(?:localhost|127\.0\.0\.1)$/i.test(window.location.hostname)) {
+                // CookieYes and Google tags remain normal on non-sensitive pages only.
+                var cookieYes = document.createElement("script");
+                cookieYes.id = "cookieyes";
+                cookieYes.src = "https://cdn-cookieyes.com/client_data/75c844bf1e33988feb42a3a3/script.js";
+                document.head.appendChild(cookieYes);
+
+                var googleTag = document.createElement("script");
+                googleTag.async = true;
+                googleTag.src = "https://www.googletagmanager.com/gtag/js?id=AW-18227014657";
+                document.head.appendChild(googleTag);
+                window.dataLayer = window.dataLayer || [];
+                window.gtag = function(){window.dataLayer.push(arguments);};
+                window.gtag("js", new Date());
+                window.gtag("config", "AW-18227014657");
+                window.gtag("config", "G-Z0GP0D3ET0");
+            }
         </script>
 
         <meta charset="utf-8" />

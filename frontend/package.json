@@ -64,7 +64,8 @@
     "start": "craco start",
     "build": "craco build",
     "test": "craco test",
-    "postbuild": "node scripts/prerender.js"
+    "postbuild": "node scripts/prerender.js",
+    "verify:sso-isolation": "node scripts/verify-sso-isolation.js"
   },
   "browserslist": {
     "production": [

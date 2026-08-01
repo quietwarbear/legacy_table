@@ -5,7 +5,11 @@ import "@/i18n";
 import App from "@/App";
 import { initAnalytics } from "@/lib/track";
 
-initAnalytics();
+const analyticsAllowed = !window.__legacyTableSensitiveSSORoute
+  && !/^(?:localhost|127\.0\.0\.1)$/i.test(window.location.hostname);
+if (analyticsAllowed) {
+  initAnalytics();
+}
 
 const rootEl = document.getElementById("root");
 const app = (
