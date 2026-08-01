@@ -5,7 +5,6 @@ from pydantic import ValidationError
 
 from recipe_imports import ImportFailure, RecipeImportRequest, validate_hash_key
 
-
 BACKEND = Path(__file__).resolve().parents[1]
 ROOT = BACKEND.parent
 
@@ -113,5 +112,5 @@ def test_sensitive_logging_is_categorical_and_payload_free():
         assert forbidden_log not in recipe_imports
 
 
-def test_split_repositories_are_not_modified_by_stage12a():
-    assert ROOT.name == "legacy-table-stage12a"
+def test_split_repositories_are_not_modified_by_coordinated_import_stages():
+    assert ROOT.name in {"legacy-table-stage12a", "legacy-table-stage12b"}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, createContext, useContext, useCallback } from "react";
+import React, { useState, useEffect, createContext, useContext, useCallback, useRef } from "react";
 import "@/App.css";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation, Link, useParams } from "react-router-dom";
 import axios from "axios";
@@ -31,6 +31,7 @@ import { SubscriptionProvider, useSubscription, PricingPage, SubscriptionSuccess
 import LandingPage from "./landing/LandingPage";
 import PublicPricingPage from "./landing/PricingPage";
 import { GiftPage, GiftSuccessPage, RedeemPage } from "./landing/GiftPages";
+import { KindredRecipeImportLanding } from "./components/KindredRecipeImportLanding";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "";
 const API = `${BACKEND_URL}/api`;
@@ -644,9 +645,15 @@ const SSOHandoffPage = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState("");
+  const [transfer, setTransfer] = useState(null);
+  const started = useRef(false);
   useEffect(() => {
+    if (started.current) return;
+    started.current = true;
     const code = window.__legacyTableTransientSSOCode;
+    const transferCredential = window.__legacyTableTransientTransferCredential;
     delete window.__legacyTableTransientSSOCode;
+    delete window.__legacyTableTransientTransferCredential;
     if (!code) {
       setError("Missing sign-in code. Please try again from Kindred.");
       return;
@@ -659,7 +666,11 @@ const SSOHandoffPage = () => {
           origin: window.location.origin,
         });
         login(res.data.token, res.data.user);
-        navigate("/home", { replace: true });
+        if (transferCredential) {
+          setTransfer({ grant: transferCredential, token: res.data.token, user: res.data.user });
+        } else {
+          navigate("/home", { replace: true });
+        }
       } catch (e) {
         setError("This sign-in link has expired or was already used. Please try again from Kindred.");
       }
@@ -667,7 +678,22 @@ const SSOHandoffPage = () => {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif", padding: 24, textAlign: "center" }}>
-      <div>{error ? <p style={{ color: "#b91c1c", fontSize: 16 }}>{error}</p> : <p style={{ fontSize: 16, color: "#5a4a3a" }}>Signing you in to Legacy Table…</p>}</div>
+      <div style={{ width: "100%", display: "flex", justifyContent: "center" }}>
+        {error ? <p style={{ color: "#b91c1c", fontSize: 16 }}>{error}</p> : transfer?.completed ? (
+          <div><p data-testid="kindred-import-complete">Recipe accepted by Legacy Table.</p><button onClick={() => navigate("/home", { replace: true })}>Continue</button></div>
+        ) : transfer?.terminal ? (
+          <div><p data-testid="kindred-import-terminal">{transfer.message}</p><button onClick={() => navigate("/home", { replace: true })}>Continue</button></div>
+        ) : transfer ? (
+          <KindredRecipeImportLanding
+            grant={transfer.grant}
+            sessionToken={transfer.token}
+            user={transfer.user}
+            onDone={() => setTransfer({ completed: true })}
+            onTerminal={(status) => setTransfer({ terminal: status, message: status === "deleted" ? "The earlier Legacy Table copy was deleted and will not be recreated." : "This transfer could not be reconciled safely." })}
+            onAbandon={() => { setTransfer(null); navigate("/home", { replace: true }); }}
+          />
+        ) : <p style={{ fontSize: 16, color: "#5a4a3a" }}>Signing you in to Legacy Table…</p>}
+      </div>
     </div>
   );
 };
