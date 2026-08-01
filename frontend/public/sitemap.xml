@@ -16,6 +16,11 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://legacytable.app/guides/collect-family-recipes-at-the-reunion</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://legacytable.app/guides/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
