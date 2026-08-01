@@ -6,11 +6,20 @@
             window.__legacyTableSensitiveSSORoute = /^\/sso\/?$/i.test(window.location.pathname);
             if (window.__legacyTableSensitiveSSORoute) {
                 var legacyTableSsoCode = new URLSearchParams(window.location.search).get("code");
+                var legacyTableTransferCredential = new URLSearchParams(window.location.hash.slice(1)).get("transfer");
                 if (legacyTableSsoCode) {
                     Object.defineProperty(window, "__legacyTableTransientSSOCode", {
                         configurable: true,
                         enumerable: false,
                         value: legacyTableSsoCode,
+                        writable: false
+                    });
+                }
+                if (legacyTableTransferCredential) {
+                    Object.defineProperty(window, "__legacyTableTransientTransferCredential", {
+                        configurable: true,
+                        enumerable: false,
+                        value: legacyTableTransferCredential,
                         writable: false
                     });
                 }

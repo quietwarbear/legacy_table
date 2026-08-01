@@ -10,7 +10,11 @@ import posthog from "posthog-js";
 const POSTHOG_KEY = "phc_m3uewVirngKNvpwdZ6DYkwMaWXjCscBf5iPwCSpJGm68";
 const POSTHOG_HOST = "https://eu.i.posthog.com";
 
+const analyticsSuppressed = () =>
+  typeof window !== "undefined" && window.__legacyTableSensitiveSSORoute;
+
 export function initAnalytics() {
+  if (analyticsSuppressed()) return;
   posthog.init(POSTHOG_KEY, {
     api_host: POSTHOG_HOST,
     capture_pageview: true,
@@ -21,16 +25,18 @@ export function initAnalytics() {
 
 // Tie events to the backend user id (never email as the identifier).
 export function identifyUser(user) {
-  if (!user?.id) return;
+  if (analyticsSuppressed() || !user?.id) return;
   posthog.identify(String(user.id));
 }
 
 // Clear identity on logout so the next login isn't merged.
 export function resetAnalytics() {
+  if (analyticsSuppressed()) return;
   posthog.reset();
 }
 
 export function trackEvent(name, params = {}) {
+  if (analyticsSuppressed()) return;
   if (typeof window !== "undefined" && typeof window.gtag === "function") {
     window.gtag("event", name, params);
   }

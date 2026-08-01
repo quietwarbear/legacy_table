@@ -65,7 +65,8 @@
     "build": "craco build",
     "test": "craco test",
     "postbuild": "node scripts/prerender.js",
-    "verify:sso-isolation": "node scripts/verify-sso-isolation.js"
+    "verify:sso-isolation": "node scripts/verify-sso-isolation.js",
+    "verify:kindred-import-isolation": "node scripts/verify-kindred-import-isolation.js"
   },
   "browserslist": {
     "production": [
