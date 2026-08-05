@@ -6233,7 +6233,9 @@ const InviteLandingPage = () => {
 
             <div className="flex gap-3 justify-center pt-4">
               <a
-                href="https://play.google.com/store/apps/details?id=com.htrecipes.family_recipe_app"
+                href={`https://play.google.com/store/apps/details?id=com.htrecipes.family_recipe_app${
+                  code ? `&referrer=${encodeURIComponent(`invite=${code}`)}` : ""
+                }`}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => {
