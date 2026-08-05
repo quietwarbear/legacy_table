@@ -14,6 +14,7 @@ import 'providers/theme_provider.dart';
 import 'providers/locale_provider.dart';
 import 'providers/subscription_provider.dart';
 import 'services/analytics_service.dart';
+import 'services/invite_capture.dart';
 import 'services/push_service.dart';
 import 'services/subscription_service.dart';
 import 'views/splash_screen.dart';
@@ -148,6 +149,16 @@ class _MyAppState extends State<MyApp> {
       final initialUri = await _appLinks.getInitialLink();
       if (initialUri != null) {
         _handleDeepLink(initialUri);
+      } else {
+        // No deep link — the install may have come through a store, which
+        // strips link context. Try deferred capture (Play Install Referrer
+        // on Android, clipboard on iOS; runs at most once per install) and
+        // feed any recovered code through the normal deep-link path so it
+        // lands on JoinFamilyScreen exactly like a tapped invite link.
+        final capturedCode = await InviteCapture.captureOnce();
+        if (capturedCode != null) {
+          _handleDeepLink(Uri.parse('legacytable://invite/$capturedCode'));
+        }
       }
 
       // Listen for deep links while app is running

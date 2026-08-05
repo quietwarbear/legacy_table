@@ -52,6 +52,10 @@ dependencies:
   record: ^6.2.0
   url_launcher: ^6.3.2
   app_links: ^6.1.1
+  # Deferred invite capture: recovers the invite code when the install came
+  # via the Play Store (web invite page sets referrer=invite%3DCODE on its
+  # Play link). Android-only API; iOS uses clipboard (services/invite_capture.dart).
+  play_install_referrer: ^0.5.0
   purchases_flutter: ^9.15.0
   google_sign_in: ^6.2.1
   sign_in_with_apple: ^6.1.0

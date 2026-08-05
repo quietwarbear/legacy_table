@@ -153,6 +153,36 @@ const AuthProvider = ({ children }) => {
     fetchUser();
   }, [token]);
 
+  // Deferred invite join: if the user arrived via an invite link and had to
+  // sign up first, InviteLandingPage stashes the code in localStorage. Once
+  // we have an authenticated user without a family, complete the join
+  // automatically so the invite survives the signup boundary.
+  useEffect(() => {
+    const pendingCode = localStorage.getItem("pendingInviteCode");
+    if (!pendingCode || !token || !user?.id) return;
+    if (user.family_id) {
+      // Already in a family — the code is moot. Drop it so it never fires later.
+      localStorage.removeItem("pendingInviteCode");
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const family = await familiesApi.joinFamily(token, { invite_code: pendingCode });
+        if (cancelled) return;
+        localStorage.removeItem("pendingInviteCode");
+        setUser((prev) => (prev ? { ...prev, family_id: family.id } : prev));
+        toast.success(`Welcome to ${family.name} — you're at the table!`);
+      } catch (error) {
+        if (cancelled) return;
+        // Invalid/rotated code: clear it and let the user join manually from /family.
+        localStorage.removeItem("pendingInviteCode");
+        toast.error("That invite code didn't work. You can enter a code on the Family page.");
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [token, user?.id, user?.family_id]);
+
   const login = (newToken, userData) => {
     localStorage.setItem("token", newToken);
     setToken(newToken);
@@ -702,7 +732,10 @@ const SSOHandoffPage = () => {
 const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID;
 
 const LoginPage = () => {
-  const [isLogin, setIsLogin] = useState(true);
+  // /login?signup=1 opens in create-account mode (used by the invite landing page).
+  const [isLogin, setIsLogin] = useState(
+    () => !new URLSearchParams(window.location.search).has("signup")
+  );
   const [formData, setFormData] = useState({ name: "", email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const { login, user } = useAuth();
@@ -6094,10 +6127,25 @@ const DeleteAccountPage = () => {
 // On Android with verified App Links, Android opens the app directly and this page is never seen.
 const InviteLandingPage = () => {
   const { code } = useParams();
+  const { user, token } = useAuth();
+  const navigate = useNavigate();
+  const [preview, setPreview] = useState(null); // { family_name, code }
+  const [previewFailed, setPreviewFailed] = useState(false);
+  const [joining, setJoining] = useState(false);
+
+  // Resolve the code to a family name so the recipient sees WHOSE table
+  // invited them — "The Johnson Family" converts; a bare code does not.
+  useEffect(() => {
+    if (!code) return;
+    familiesApi
+      .getInvitePreview(code)
+      .then(setPreview)
+      .catch(() => setPreviewFailed(true));
+  }, [code]);
 
   // Auto-attempt to deep-link into the app via the custom scheme.
   // If the app is installed, this opens it. If not, the browser stays here.
-  React.useEffect(() => {
+  useEffect(() => {
     if (code) {
       window.location.href = `legacytable://invite/${code}`;
     }
@@ -6106,6 +6154,34 @@ const InviteLandingPage = () => {
   const tryOpenApp = () => {
     if (code) window.location.href = `legacytable://invite/${code}`;
   };
+
+  const copyCode = () => {
+    if (!code) return;
+    navigator.clipboard?.writeText(code);
+    toast.success("Invite code copied — paste it in the app after install");
+  };
+
+  // Signed-out visitors: stash the code so AuthProvider completes the join
+  // automatically after signup/login (the deferred-join effect).
+  const goToAuth = (signup) => {
+    if (code) localStorage.setItem("pendingInviteCode", code);
+    navigate(signup ? "/login?signup=1" : "/login");
+  };
+
+  // Signed-in visitors with no family: join right here, no app required.
+  const joinNow = async () => {
+    setJoining(true);
+    try {
+      const family = await familiesApi.joinFamily(token, { invite_code: code });
+      toast.success(`Welcome to ${family.name} — you're at the table!`);
+      navigate("/family");
+    } catch (error) {
+      toast.error(error.response?.data?.detail || "Couldn't join with this code.");
+      setJoining(false);
+    }
+  };
+
+  const familyName = preview?.family_name;
 
   return (
     <div className="min-h-screen bg-background flex flex-col" data-testid="invite-landing-page">
@@ -6116,21 +6192,56 @@ const InviteLandingPage = () => {
       </header>
       <main className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="max-w-md w-full text-center space-y-6">
-          <h1 className="text-3xl font-bold">You've been invited to a Legacy Table</h1>
+          <h1 className="text-3xl font-bold" data-testid="invite-headline">
+            {familyName
+              ? `${familyName} saved you a seat`
+              : "You've been invited to a Legacy Table"}
+          </h1>
           <p className="text-muted-foreground">
-            Open the Legacy Table app to view this invite. If you don't have the app yet,
-            install it first and the invite will be waiting for you.
+            {previewFailed
+              ? "This invite link looks incomplete or expired — but you can still ask your family for their code and join below."
+              : familyName
+                ? `Join ${familyName}'s private cookbook — the recipes, the stories, and the voices behind them.`
+                : "Your family's recipes, stories, and voices — kept together in one private cookbook."}
           </p>
+
           <div className="space-y-3">
-            <Button onClick={tryOpenApp} className="w-full" data-testid="invite-open-app-btn">
-              Open in Legacy Table
+            {user ? (
+              user.family_id ? (
+                <Button onClick={() => navigate("/family")} className="w-full" data-testid="invite-go-family-btn">
+                  Go to your family
+                </Button>
+              ) : (
+                <Button onClick={joinNow} disabled={joining || !code} className="w-full" data-testid="invite-join-now-btn">
+                  {joining ? "Joining…" : familyName ? `Join ${familyName}` : "Join this family"}
+                </Button>
+              )
+            ) : (
+              <>
+                <Button onClick={() => goToAuth(true)} className="w-full" data-testid="invite-signup-btn">
+                  Create a free account &amp; join
+                </Button>
+                <Button variant="outline" onClick={() => goToAuth(false)} className="w-full" data-testid="invite-login-btn">
+                  I already have an account
+                </Button>
+              </>
+            )}
+
+            <Button variant="ghost" onClick={tryOpenApp} className="w-full" data-testid="invite-open-app-btn">
+              Open in the Legacy Table app
             </Button>
+
             <div className="flex gap-3 justify-center pt-4">
               <a
-                href="https://play.google.com/store/apps/details?id=com.htrecipes.family_recipe_app"
+                href={`https://play.google.com/store/apps/details?id=com.htrecipes.family_recipe_app${
+                  code ? `&referrer=${encodeURIComponent(`invite=${code}`)}` : ""
+                }`}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={() => trackStoreClick("google", "invite")}
+                onClick={() => {
+                  copyCode();
+                  trackStoreClick("google", "invite");
+                }}
                 className="text-sm font-medium text-primary hover:underline"
                 data-testid="invite-play-store-link"
               >
@@ -6140,7 +6251,10 @@ const InviteLandingPage = () => {
                 href="https://apps.apple.com/us/app/legacy-table/id6759821009"
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={() => trackStoreClick("apple", "invite")}
+                onClick={() => {
+                  copyCode();
+                  trackStoreClick("apple", "invite");
+                }}
                 className="text-sm font-medium text-primary hover:underline"
                 data-testid="invite-app-store-link"
               >
@@ -6148,10 +6262,17 @@ const InviteLandingPage = () => {
               </a>
             </div>
           </div>
+
           {code && (
-            <p className="text-xs text-muted-foreground pt-6">
+            <button
+              type="button"
+              onClick={copyCode}
+              className="inline-flex items-center gap-2 text-xs text-muted-foreground pt-6 hover:text-foreground"
+              data-testid="invite-copy-code"
+            >
               Invite code: <span className="font-mono">{code}</span>
-            </p>
+              <Copy className="w-3 h-3" aria-hidden="true" />
+            </button>
           )}
         </div>
       </main>

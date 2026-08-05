@@ -31,6 +31,12 @@ export async function joinFamily(token, { invite_code }) {
   return data;
 }
 
+/** GET /api/invite/{code}/preview — Public, no auth. Returns { family_name, code } or 404. */
+export async function getInvitePreview(code) {
+  const { data } = await axios.get(`${API}/invite/${encodeURIComponent(code?.trim().toUpperCase())}/preview`);
+  return data;
+}
+
 /** GET /api/families/{id} — Get family details (name, description, invite_code, ...). */
 export async function getFamily(token, familyId) {
   const { data } = await axios.get(`${API}/families/${familyId}`, headers(token));
