@@ -4117,6 +4117,22 @@ async def invite_landing(code: str):
     return HTMLResponse(content=html)
 
 
+@api_router.get("/invite/{code}/preview")
+async def invite_preview(code: str):
+    """Public JSON preview for an invite code — no auth required.
+
+    Powers the web InviteLandingPage (legacytable.app/invite/{code}) so a
+    recipient sees WHOSE table invited them before install/signup. Exposes
+    exactly what the public HTML invite page above already shows (family
+    name + code), nothing more.
+    """
+    code = code.strip().upper()
+    family = await db.families.find_one({"invite_code": code}, {"_id": 0, "name": 1, "invite_code": 1})
+    if not family:
+        raise HTTPException(status_code=404, detail="Invite not found")
+    return {"family_name": family["name"], "code": family["invite_code"]}
+
+
 # Note: deep link well-known files (apple-app-site-association, assetlinks.json) used to be
 # served from this API (api.legacytable.app). They were moved to the brand domain (legacytable.app),
 # served by the Vercel-hosted frontend at frontend/public/.well-known/. The api.* subdomain now
