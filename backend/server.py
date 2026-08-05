@@ -23,6 +23,8 @@ import re
 import secrets
 import uuid
 from datetime import datetime, timezone, timedelta
+
+from email_service import send_email_background, welcome_email_html, gift_code_email_html
 import jwt
 import jwt as pyjwt
 import bcrypt
@@ -671,6 +673,13 @@ async def register(user_data: UserCreate):
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.users.insert_one(user_doc)
+
+    # Fire-and-forget welcome email (no-op until RESEND_API_KEY is set).
+    send_email_background(
+        user_doc["email"],
+        "Welcome to Legacy Table",
+        welcome_email_html(user_data.name),
+    )
 
     token = create_token(user_id)
     user_response = UserResponse(
@@ -2395,6 +2404,14 @@ async def stripe_webhook(request: Request):
                     "created_at": datetime.now(timezone.utc).isoformat(),
                 })
                 logger.info("Minted family_legacy gift for %s", purchaser_email)
+                # Deliver the code by email — before this, the buyer's only
+                # copy lived on the /gift/success screen. Fire-and-forget:
+                # the webhook must succeed regardless of email state.
+                send_email_background(
+                    purchaser_email,
+                    "Your Family Legacy gift code",
+                    gift_code_email_html(code, metadata.get("recipient_name")),
+                )
 
     elif event_type == "customer.subscription.deleted":
         customer_id = subscription_obj.get("customer")
@@ -3185,6 +3202,19 @@ async def email_signup(req: EmailSignupRequest):
             "created_at": datetime.now(timezone.utc).isoformat(),
         })
     return {"ok": True}
+
+
+@api_router.get("/marketing/email-signups/export")
+async def export_email_signups(user: dict = Depends(get_current_user)):
+    """Admin-only export of the landing-page email list (was write-only).
+
+    Reuses the PUSH_ADMIN_EMAILS allowlist. Returns JSON rows ready to
+    paste into an ESP (Resend Audiences, a spreadsheet, etc.).
+    """
+    if not _is_push_admin(user):
+        raise HTTPException(status_code=403, detail="Not authorized")
+    rows = await db.email_signups.find({}, {"_id": 0}).sort("created_at", 1).to_list(50000)
+    return {"count": len(rows), "signups": rows}
 
 
 # ---- Credits API ----
