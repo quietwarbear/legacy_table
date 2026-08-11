@@ -2215,6 +2215,38 @@ RC_ACTIVE_EVENTS = {"INITIAL_PURCHASE", "RENEWAL", "PRODUCT_CHANGE", "UNCANCELLA
 RC_INACTIVE_EVENTS = {"CANCELLATION", "EXPIRATION", "SUBSCRIBER_ALIAS", "BILLING_ISSUE"}
 
 
+async def forward_stripe_sub_to_revenuecat(app_user_id: str, stripe_subscription_id: str):
+    """Report a web Stripe subscription to RevenueCat so web + app-store revenue
+    share one analytics dashboard. Analytics only — entitlements are still
+    granted by this webhook, never by RevenueCat. app_user_id must be users.id
+    (the same id the mobile app passes to Purchases.logIn) so RevenueCat merges
+    the web subscription into the existing customer.
+
+    No-op unless REVENUECAT_STRIPE_PUBLIC_KEY is set; best-effort — a
+    RevenueCat outage must never fail the Stripe webhook.
+    """
+    rc_key = os.environ.get("REVENUECAT_STRIPE_PUBLIC_KEY", "")
+    if not rc_key or not app_user_id or not stripe_subscription_id:
+        return
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.post(
+                "https://api.revenuecat.com/v1/receipts",
+                headers={
+                    "Authorization": f"Bearer {rc_key}",
+                    "X-Platform": "stripe",
+                    "Content-Type": "application/json",
+                },
+                json={"app_user_id": app_user_id, "fetch_token": stripe_subscription_id},
+            )
+            if resp.status_code >= 400:
+                logger.warning(
+                    "RevenueCat Stripe forward failed: HTTP %s", resp.status_code
+                )
+    except Exception as e:
+        logger.warning("RevenueCat Stripe forward error: %s", e)
+
+
 class SubscriptionStatusResponse(BaseModel):
     subscription_tier: Optional[str] = None  # "heritage" | "legacy" | None
     is_active: bool
@@ -2365,6 +2397,7 @@ async def stripe_webhook(request: Request):
         if customer_email and tier:
             new_credits = get_credits_for_tier(tier)
             new_refresh = next_refresh_date()
+            user_doc = await db.users.find_one({"email": customer_email}, {"_id": 0, "id": 1})
             await db.users.update_one(
                 {"email": customer_email},
                 {"$set": {
@@ -2375,6 +2408,12 @@ async def stripe_webhook(request: Request):
                 }}
             )
             logger.info("Set subscription_tier=%s credits=%d for email=%s", tier, new_credits, customer_email)
+            # Feed RevenueCat's analytics once per subscription; RevenueCat
+            # tracks renewals/cancellations itself via its Stripe connection.
+            if event_type == "customer.subscription.created" and user_doc:
+                await forward_stripe_sub_to_revenuecat(
+                    user_doc.get("id", ""), subscription_obj.get("id", "")
+                )
 
     elif event_type == "checkout.session.completed":
         # Family Legacy gift purchase (mode=payment). Mint the gift code
