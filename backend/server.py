@@ -2295,10 +2295,16 @@ async def revenuecat_webhook(request: Request):
     Set REVENUECAT_WEBHOOK_SECRET in your .env to validate incoming requests.
     """
     rc_secret = os.environ.get("REVENUECAT_WEBHOOK_SECRET", "")
-    if rc_secret:
-        auth_header = request.headers.get("Authorization", "")
-        if auth_header != rc_secret:
-            raise HTTPException(status_code=401, detail="Invalid webhook secret")
+    # Fail closed: a payments webhook must never process unverified payloads.
+    # (Matches kindred and ile_ubuntu; the RevenueCat dashboard sends the raw
+    # secret as the Authorization header value — no "Bearer " prefix.)
+    if not rc_secret:
+        raise HTTPException(
+            status_code=503, detail="RevenueCat webhook secret not configured"
+        )
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header != rc_secret:
+        raise HTTPException(status_code=401, detail="Invalid webhook secret")
 
     try:
         payload = await request.json()
