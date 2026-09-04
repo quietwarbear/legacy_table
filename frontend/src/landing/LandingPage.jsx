@@ -486,6 +486,36 @@ const LandingPage = () => {
       {/* Voice → recipe demo */}
       <VoiceDemo />
 
+      {/* Customer voice — attributed to the original Legacy Table LinkedIn post. */}
+      <section
+        className="py-20 md:py-28 px-4 md:px-6 lg:px-8 bg-secondary text-secondary-foreground"
+        aria-labelledby="customer-voice-title"
+      >
+        <figure className="max-w-4xl mx-auto text-center">
+          <p className="text-sm uppercase tracking-widest font-semibold mb-6 opacity-80">
+            FROM THE LEGACY TABLE COMMUNITY
+          </p>
+          <blockquote
+            id="customer-voice-title"
+            className="font-serif text-3xl md:text-5xl font-semibold leading-tight"
+          >
+            “Never think your recipes are ordinary. Every meal carries a story,
+            culture, and legacy worth sharing.”
+          </blockquote>
+          <figcaption className="mt-7 text-sm md:text-base opacity-90">
+            Jagila · Legacy Table customer
+          </figcaption>
+          <a
+            href="https://www.linkedin.com/feed/update/urn:li:activity:7490290951018532864/?actorCompanyId=130903896"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex mt-5 text-sm font-semibold underline underline-offset-4 hover:no-underline"
+          >
+            Watch Jagila’s story on LinkedIn →
+          </a>
+        </figure>
+      </section>
+
       {/* Founder & Heritage Story Section */}
       <section
         id="why"
