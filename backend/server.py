@@ -2193,13 +2193,42 @@ async def delete_account_request(body: DeleteAccountRequest):
 import hmac
 import hashlib
 
+# Stripe price IDs live in env so the Stripe account can move without a code
+# change. Defaults are the original "Ubuntu Market" account prices, so an
+# unconfigured deploy keeps its current behaviour.
+def _price_env(var: str, default: str) -> str:
+    # Values pasted from the Stripe dashboard carry trailing commas/whitespace.
+    return (os.environ.get(var) or default).strip(" ,\n\t\r")
+
+
+STRIPE_PRICE_IDS = {
+    "heritage_monthly": _price_env("STRIPE_PRICE_HERITAGE_MONTHLY", "price_1TCNF2Ak1UyEdCJUJKEmydMm"),
+    "heritage_annual":  _price_env("STRIPE_PRICE_HERITAGE_ANNUAL",  "price_1TCMgEAk1UyEdCJUozc8nt8L"),
+    "legacy_monthly":   _price_env("STRIPE_PRICE_LEGACY_MONTHLY",   "price_1TCND7Ak1UyEdCJUQCBO5leT"),
+    "legacy_annual":    _price_env("STRIPE_PRICE_LEGACY_ANNUAL",    "price_1TCMiqAk1UyEdCJUomu9wkct"),
+}
+
+# (tier, amount in cents, recurring interval) per price key. The amount and
+# interval are verified against Stripe before checkout so a price ID from the
+# wrong account can never silently charge the wrong price.
+STRIPE_PRICE_SPECS = {
+    "heritage_monthly": ("heritage", 999,   "month"),
+    "heritage_annual":  ("heritage", 9999,  "year"),
+    "legacy_monthly":   ("legacy",   1999,  "month"),
+    "legacy_annual":    ("legacy",   19999, "year"),
+}
+
 # Stripe price ID → subscription tier mapping
 STRIPE_PRICE_TIERS = {
-    "price_1TCNF2Ak1UyEdCJUJKEmydMm": "heritage",  # Heritage Keeper Monthly
-    "price_1TCMgEAk1UyEdCJUozc8nt8L": "heritage",  # Heritage Keeper Annual
-    "price_1TCND7Ak1UyEdCJUQCBO5leT": "legacy",    # Legacy Collection Monthly
-    "price_1TCMiqAk1UyEdCJUomu9wkct": "legacy",    # Legacy Collection Annual
+    STRIPE_PRICE_IDS[key]: spec[0] for key, spec in STRIPE_PRICE_SPECS.items()
 }
+
+# Stripe price ID → price key, for spec lookups at checkout time.
+STRIPE_PRICE_KEYS = {STRIPE_PRICE_IDS[key]: key for key in STRIPE_PRICE_SPECS}
+
+# Cache of price IDs already verified against Stripe, so we hit the API once
+# per price per process.
+_verified_price_ids: set = set()
 
 # RevenueCat product ID → subscription tier mapping
 RC_PRODUCT_TIERS = {
@@ -2480,9 +2509,65 @@ async def stripe_webhook(request: Request):
 # ---- Stripe Checkout (web subscriptions) ----
 
 class CheckoutRequest(BaseModel):
-    price_id: str
+    # Preferred: name the plan and let the server resolve the Stripe price ID,
+    # so the Stripe account can move without a frontend redeploy. price_id is
+    # still accepted for clients that already send it directly.
+    tier: Optional[str] = None
+    billing_period: Optional[str] = None
+    price_id: Optional[str] = None
     success_url: str = "https://legacytable.app/subscription/success"
     cancel_url: str = "https://legacytable.app/pricing"
+
+
+def _verify_stripe_price(stripe_lib, price_id: str, key: str) -> None:
+    """Guard against a price ID belonging to the wrong Stripe account: the
+    price must exist on the account the current API key points at, and its
+    amount and interval must match what we advertise. Verified once per price
+    per process."""
+    if price_id in _verified_price_ids:
+        return
+    _, expected_cents, expected_interval = STRIPE_PRICE_SPECS[key]
+    try:
+        price = stripe_lib.Price.retrieve(price_id)
+    except Exception as e:
+        logger.error("Stripe price %s (%s) not retrievable: %s", price_id, key, e)
+        raise HTTPException(status_code=500, detail="Payment configuration error — contact support")
+    interval = (price.get("recurring") or {}).get("interval")
+    if price.get("unit_amount") != expected_cents or interval != expected_interval:
+        logger.error(
+            "Stripe price %s (%s) mismatch: got %s/%s, expected %s/%s",
+            price_id, key, price.get("unit_amount"), interval,
+            expected_cents, expected_interval,
+        )
+        raise HTTPException(status_code=500, detail="Payment configuration error — contact support")
+    _verified_price_ids.add(price_id)
+
+
+def _is_missing_customer_error(exc: Exception) -> bool:
+    """True when Stripe rejected the customer ID itself — the symptom of a
+    customer created against a different Stripe account, or since deleted.
+    Matched without importing Stripe's error classes, which move between major
+    versions of the library."""
+    if getattr(exc, "param", None) == "customer":
+        return True
+    return "no such customer" in str(exc).lower()
+
+
+async def _create_stripe_customer(stripe_lib, user: dict) -> str:
+    """Create a Stripe customer for this user and persist the ID."""
+    try:
+        customer = stripe_lib.Customer.create(
+            email=user.get("email", ""),
+            metadata={"legacy_table_user_id": user.get("id", "")},
+        )
+    except Exception as e:
+        logger.error("Failed to create Stripe customer: %s", e)
+        raise HTTPException(status_code=500, detail="Could not create customer")
+    await db.users.update_one(
+        {"id": user["id"]},
+        {"$set": {"stripe_customer_id": customer.id}},
+    )
+    return customer.id
 
 
 @api_router.post("/subscriptions/create-checkout-session")
@@ -2495,37 +2580,53 @@ async def create_checkout_session(body: CheckoutRequest, user: dict = Depends(ge
     import stripe as stripe_lib
     stripe_lib.api_key = stripe_secret
 
-    # Validate the price ID is one of our known subscription prices
-    if body.price_id not in STRIPE_PRICE_TIERS:
-        raise HTTPException(status_code=400, detail="Invalid price ID")
+    # Resolve the plan to a Stripe price ID. Named tier wins; a directly
+    # supplied price_id must still be one of ours.
+    if body.tier:
+        period = "annual" if (body.billing_period or "monthly").lower() == "annual" else "monthly"
+        price_key = f"{body.tier.strip().lower()}_{period}"
+        if price_key not in STRIPE_PRICE_SPECS:
+            raise HTTPException(status_code=400, detail="Invalid plan")
+        price_id = STRIPE_PRICE_IDS[price_key]
+    else:
+        price_id = (body.price_id or "").strip(" ,\n\t\r")
+        if price_id not in STRIPE_PRICE_TIERS:
+            raise HTTPException(status_code=400, detail="Invalid price ID")
+        price_key = STRIPE_PRICE_KEYS[price_id]
+
+    _verify_stripe_price(stripe_lib, price_id, price_key)
 
     # Reuse existing Stripe customer or create one
-    customer_id = user.get("stripe_customer_id")
-    if not customer_id:
-        try:
-            customer = stripe_lib.Customer.create(
-                email=user.get("email", ""),
-                metadata={"legacy_table_user_id": user.get("id", "")},
-            )
-            customer_id = customer.id
-            await db.users.update_one(
-                {"id": user["id"]},
-                {"$set": {"stripe_customer_id": customer_id}},
-            )
-        except Exception as e:
-            logger.error("Failed to create Stripe customer: %s", e)
-            raise HTTPException(status_code=500, detail="Could not create customer")
+    customer_id = user.get("stripe_customer_id") or await _create_stripe_customer(stripe_lib, user)
 
-    try:
-        session = stripe_lib.checkout.Session.create(
-            customer=customer_id,
+    def _new_session(cust_id: str):
+        return stripe_lib.checkout.Session.create(
+            customer=cust_id,
             mode="subscription",
-            line_items=[{"price": body.price_id, "quantity": 1}],
+            line_items=[{"price": price_id, "quantity": 1}],
             success_url=body.success_url + "?session_id={CHECKOUT_SESSION_ID}",
             cancel_url=body.cancel_url,
             allow_promotion_codes=True,
         )
+
+    try:
+        try:
+            session = _new_session(customer_id)
+        except Exception as e:
+            if not _is_missing_customer_error(e):
+                raise
+            # The stored customer lives on a different Stripe account — the
+            # expected symptom after an account migration. Mint a replacement
+            # and retry once, so the user never sees the failure.
+            logger.warning(
+                "Stripe customer %s unusable for user %s (%s) — recreating",
+                customer_id, user.get("id"), e,
+            )
+            customer_id = await _create_stripe_customer(stripe_lib, user)
+            session = _new_session(customer_id)
         return {"checkout_url": session.url}
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error("Failed to create checkout session: %s", e)
         raise HTTPException(status_code=500, detail="Could not create checkout session")
@@ -2552,6 +2653,20 @@ async def create_portal_session(user: dict = Depends(get_current_user)):
         )
         return {"portal_url": session.url}
     except Exception as e:
+        if _is_missing_customer_error(e):
+            # Customer lives on a different Stripe account, so there is no
+            # subscription here to manage. Drop the stale ID so the next
+            # checkout starts clean, and answer honestly rather than leaking
+            # the Stripe error.
+            logger.warning(
+                "Stale stripe_customer_id %s for user %s — clearing",
+                customer_id, user.get("id"),
+            )
+            await db.users.update_one(
+                {"id": user["id"]},
+                {"$unset": {"stripe_customer_id": ""}},
+            )
+            raise HTTPException(status_code=400, detail="No active subscription found")
         logger.error("Failed to create portal session: %s", e)
         raise HTTPException(status_code=500, detail="Could not create portal session")
 

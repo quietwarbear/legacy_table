@@ -10,14 +10,17 @@ const API = `${BACKEND_URL}/api`;
 
 // ===================== STRIPE PRICE IDS =====================
 
+// Display amounts only. The Stripe price IDs live server-side so the Stripe
+// account can move without a frontend redeploy — checkout posts the tier and
+// billing period, and the backend resolves the price.
 const PRICES = {
   heritage: {
-    monthly: { id: "price_1TCNF2Ak1UyEdCJUJKEmydMm", amount: 9.99 },
-    annual:  { id: "price_1TCMgEAk1UyEdCJUozc8nt8L", amount: 99.99 },
+    monthly: { amount: 9.99 },
+    annual:  { amount: 99.99 },
   },
   legacy: {
-    monthly: { id: "price_1TCND7Ak1UyEdCJUQCBO5leT", amount: 19.99 },
-    annual:  { id: "price_1TCMiqAk1UyEdCJUomu9wkct", amount: 199.99 },
+    monthly: { amount: 19.99 },
+    annual:  { amount: 199.99 },
   },
 };
 
@@ -233,16 +236,13 @@ export const PricingPage = () => {
       return;
     }
 
-    const priceId = annual
-      ? PRICES[selectedTier].annual.id
-      : PRICES[selectedTier].monthly.id;
-
     setLoadingTier(selectedTier);
     try {
       const res = await axios.post(
         `${API}/subscriptions/create-checkout-session`,
         {
-          price_id: priceId,
+          tier: selectedTier,
+          billing_period: annual ? "annual" : "monthly",
           success_url: `${window.location.origin}/subscription/success`,
           cancel_url: `${window.location.origin}/subscribe`,
         },
