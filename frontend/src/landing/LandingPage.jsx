@@ -385,6 +385,15 @@ const LandingPage = () => {
               Capture the recipes, the stories, and the voices that teach them.
               Build your family's cookbook together — privately.
             </p>
+            <p className="text-sm font-medium text-foreground/80 mb-8 max-w-xl">
+              Your recipes stay yours. We never sell or share them.{" "}
+              <Link
+                to="/pricing#who-owns-my-recipes"
+                className="underline hover:no-underline"
+              >
+                Who owns my recipes?
+              </Link>
+            </p>
 
             {/* Primary CTA: store badges. Secondary: jump to features. */}
             <StoreBadges size="large" align="start" className="mb-4" />
@@ -656,6 +665,10 @@ const LandingPage = () => {
               <a href="/guides/" className="hover:underline">
                 Guides
               </a>
+              <span>·</span>
+              <Link to="/pricing#who-owns-my-recipes" className="hover:underline">
+                Who owns my recipes?
+              </Link>
               <span>·</span>
               <a href="/privacy-policy" className="hover:underline">
                 Privacy Policy

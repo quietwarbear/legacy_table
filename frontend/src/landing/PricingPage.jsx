@@ -304,6 +304,27 @@ const PricingPage = () => {
         </div>
       </section>
 
+      {/* Ownership promise — sits above the plans on purpose */}
+      <section
+        id="who-owns-my-recipes"
+        className="px-4 md:px-6 lg:px-8 max-w-7xl mx-auto pb-16 scroll-mt-24"
+      >
+        <div className="max-w-3xl mx-auto rounded-2xl border border-border bg-card p-8 md:p-10 text-center">
+          <p className="text-sm uppercase tracking-widest text-primary font-semibold mb-3">
+            WHO OWNS MY RECIPES?
+          </p>
+          <h2 className="font-serif text-3xl md:text-4xl font-bold text-foreground mb-4">
+            You do.
+          </h2>
+          <p className="text-lg text-muted-foreground leading-relaxed">
+            Free or paid, every recipe you save belongs to you and the family
+            you invite. We never sell recipes, license them, or use them for
+            anything you didn't choose. Paying unlocks family features, never
+            access to your own food. Download or delete everything, any time.
+          </p>
+        </div>
+      </section>
+
       {/* Tier cards */}
       <section className="px-4 md:px-6 lg:px-8 max-w-7xl mx-auto pb-20">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
@@ -402,6 +423,18 @@ const PricingPage = () => {
             Common questions
           </h2>
           <dl className="space-y-8">
+            <div>
+              <dt className="font-semibold text-foreground mb-2">
+                Do you sell our recipes?
+              </dt>
+              <dd className="text-muted-foreground">
+                No. Your recipes, photos, voice notes and stories are yours.
+                We don't sell them, license them to anyone, or use them to
+                build products of our own. Only the family members you
+                invite can see them, and you can download or delete
+                everything from Settings at any time.
+              </dd>
+            </div>
             <div>
               <dt className="font-semibold text-foreground mb-2">
                 Where does the subscription get charged?

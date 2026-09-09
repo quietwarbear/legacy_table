@@ -86,6 +86,11 @@ def welcome_email_html(name: str) -> str:
       You just gave your family's recipes a place to live — with the stories
       and the voices of the people who make them.
     </p>
+    <p style="font-size:16px;line-height:1.6;">
+      One thing before you start: <strong>your recipes are yours.</strong> We never
+      sell them, share them, or use them without you. Only the family you invite
+      can see what you save, and you can download or delete everything, any time.
+    </p>
     <p style="font-size:16px;line-height:1.6;">A good first five minutes:</p>
     <p style="font-size:16px;line-height:1.8;margin:0 0 24px;">
       1. Start your family (or join with an invite code).<br>
