@@ -25,6 +25,12 @@ import uuid
 from datetime import datetime, timezone, timedelta
 
 from email_service import send_email_background, welcome_email_html, gift_code_email_html
+from owner_alerts import (
+    ensure_owner_alert_indexes,
+    alert_from_revenuecat,
+    alert_stripe_subscription,
+    alert_stripe_gift,
+)
 import jwt
 import jwt as pyjwt
 import bcrypt
@@ -74,6 +80,7 @@ async def lifespan(_app: FastAPI):
         await db.sso_codes.create_index("code_digest", unique=True, sparse=True)
         await db.users.create_index("email_normalized", unique=True, sparse=True)
         await ensure_recipe_import_indexes(db)
+        await ensure_owner_alert_indexes(db)
     except PyMongoError as e:
         logger.warning("Could not establish security indexes: type=%s", type(e).__name__)
     # Weekly family prompt — the push retention loop. No-ops every tick
@@ -2347,11 +2354,17 @@ async def revenuecat_webhook(request: Request):
 
     logger.info("RevenueCat webhook: type=%s user=%s product=%s", event_type, app_user_id, product_id)
 
+    if event_type == "TEST":
+        # RevenueCat dashboard "Send test event" — prove the alert path end to end.
+        alert_from_revenuecat(db, event, None, None)
+        return {"status": "ok", "test": True}
+
     if not app_user_id:
         return {"status": "ignored", "reason": "no app_user_id"}
 
+    tier = RC_PRODUCT_TIERS.get(product_id)
+
     if event_type in RC_ACTIVE_EVENTS:
-        tier = RC_PRODUCT_TIERS.get(product_id)
         if tier:
             new_credits = get_credits_for_tier(tier)
             await db.users.update_one(
@@ -2377,6 +2390,10 @@ async def revenuecat_webhook(request: Request):
             }
         )
         logger.info("Cleared subscription_tier, reset to %d free credits for user=%s", free_credits, app_user_id)
+
+    # Owner sales alert (email). Fire-and-forget; never affects the response.
+    user_doc = await db.users.find_one({"id": app_user_id}, {"_id": 0, "email": 1})
+    alert_from_revenuecat(db, event, (user_doc or {}).get("email"), tier)
 
     return {"status": "ok"}
 
@@ -2449,6 +2466,9 @@ async def stripe_webhook(request: Request):
                 await forward_stripe_sub_to_revenuecat(
                     user_doc.get("id", ""), subscription_obj.get("id", "")
                 )
+        if event_type == "customer.subscription.created":
+            # Owner sales alert — even if the email didn't match a user yet.
+            alert_stripe_subscription(db, subscription_obj, event_type, customer_email, tier)
 
     elif event_type == "checkout.session.completed":
         # Family Legacy gift purchase (mode=payment). Mint the gift code
@@ -2486,6 +2506,7 @@ async def stripe_webhook(request: Request):
                     "Your Family Legacy gift code",
                     gift_code_email_html(code, metadata.get("recipient_name")),
                 )
+                alert_stripe_gift(db, session_obj, purchaser_email, metadata.get("recipient_name"))
 
     elif event_type == "customer.subscription.deleted":
         customer_id = subscription_obj.get("customer")
@@ -2502,6 +2523,8 @@ async def stripe_webhook(request: Request):
                 }
             )
             logger.info("Cleared subscription_tier, reset to %d free credits for stripe_customer=%s", free_credits, customer_id)
+            gone = await db.users.find_one({"stripe_customer_id": customer_id}, {"_id": 0, "email": 1, "subscription_tier": 1})
+            alert_stripe_subscription(db, subscription_obj, event_type, (gone or {}).get("email"), None)
 
     return {"status": "ok"}
 
