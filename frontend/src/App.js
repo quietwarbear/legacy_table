@@ -31,6 +31,7 @@ import { SubscriptionProvider, useSubscription, PricingPage, SubscriptionSuccess
 import LandingPage from "./landing/LandingPage";
 import PublicPricingPage from "./landing/PricingPage";
 import { GiftPage, GiftSuccessPage, RedeemPage } from "./landing/GiftPages";
+import ContestRulesPage from "./landing/ContestRulesPage";
 import { KindredRecipeImportLanding } from "./components/KindredRecipeImportLanding";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "";
@@ -6710,6 +6711,8 @@ function App() {
                 <Route path="/gift" element={<GiftPage />} />
                 <Route path="/gift/success" element={<GiftSuccessPage />} />
                 <Route path="/redeem" element={<RedeemPage />} />
+                <Route path="/keeptherecord" element={<ContestRulesPage />} />
+                <Route path="/keeptherecord/rules" element={<ContestRulesPage />} />
                 <Route path="/home" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
                 <Route path="/add-recipe" element={<ProtectedRoute><AddRecipePage /></ProtectedRoute>} />
                 <Route path="/scan-recipe" element={<ProtectedRoute><ScanRecipePage /></ProtectedRoute>} />
