@@ -177,10 +177,14 @@ class LargeBodyMiddleware(BaseHTTPMiddleware):
         # Let the request proceed - FastAPI will handle body reading
         return await call_next(request)
 
-# Exception handlers: log all errors to console
+# Exception handlers: log server faults (5xx) at error level so they reach
+# Sentry; log client errors (4xx) at warning level so they stay in the console
+# as breadcrumbs but don't create Sentry issues. A 404 for a deleted recipe or
+# a 401 on a stale token is expected behavior, not a fault to page on.
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
-    logger.error("HTTPException path=%s status=%s detail=%s", request.url.path, exc.status_code, exc.detail)
+    log = logger.error if exc.status_code >= 500 else logger.warning
+    log("HTTPException path=%s status=%s detail=%s", request.url.path, exc.status_code, exc.detail)
     return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
 
 
