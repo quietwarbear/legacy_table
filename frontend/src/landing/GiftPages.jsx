@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../App";
-import { trackEvent } from "../lib/track";
+import { trackEvent, gaClientId } from "../lib/track";
 import { Button } from "../components/ui/button";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "";
@@ -45,6 +45,7 @@ export const GiftPage = () => {
           recipient_name: recipientName || null,
           success_url: `${window.location.origin}/gift/success`,
           cancel_url: `${window.location.origin}/gift`,
+          ga_client_id: gaClientId(),
         }),
       });
       if (!res.ok) throw new Error("checkout failed");

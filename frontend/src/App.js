@@ -5,7 +5,7 @@ import axios from "axios";
 import { Toaster, toast } from "sonner";
 import { ChefHat, Utensils, Camera, Clock, Users, Flame, Heart, Plus, LogOut, Menu, X, Home, User, Search, Download, BookOpen, Moon, Sun, Edit, MessageCircle, Trash2, Send, Bell, Settings, Upload, Copy, Crown, UserPlus, Sparkles, Share2, Volume2, VolumeX, SkipForward, SkipBack, ChevronLeft, ChevronRight, Calendar, Gift, Tag, Link2, Video } from "lucide-react";
 import * as familiesApi from "./api/families";
-import { trackStoreClick, identifyUser, resetAnalytics } from "./lib/track";
+import { trackStoreClick, identifyUser, resetAnalytics, gaClientId } from "./lib/track";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import jsPDF from "jspdf";
@@ -870,7 +870,9 @@ const LoginPage = () => {
     setLoading(true);
     try {
       const endpoint = isLogin ? "/auth/login" : "/auth/register";
-      const payload = isLogin ? { email: formData.email, password: formData.password } : formData;
+      const payload = isLogin
+        ? { email: formData.email, password: formData.password }
+        : { ...formData, ga_client_id: gaClientId() };
       const response = await axios.post(`${API}${endpoint}`, payload);
       login(response.data.token, response.data.user);
       toast.success(isLogin ? "Welcome back!" : "Account created successfully!");

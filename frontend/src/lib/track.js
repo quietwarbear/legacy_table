@@ -43,6 +43,24 @@ export function trackEvent(name, params = {}) {
   posthog.capture(name, params);
 }
 
+// The GA4 browser client id, for the backend to attach to server-side
+// conversions (signup, checkout, purchase). Those fire from webhooks, long
+// after the tab may be gone; handing the backend this id is what makes a
+// purchase land in the same GA4 session — and so the same campaign — as the
+// click that produced it. Without it the sale still counts, but it opens its
+// own session and the ad that earned it gets no credit.
+//
+// Read straight from the `_ga` cookie rather than gtag('get'), which is async
+// and races the first form submit. The backend trims the GA1.1. prefix.
+// Returns "" when the tag never loaded (ad blocker, local dev) or on a
+// suppressed SSO route — the backend falls back to a synthetic id.
+export function gaClientId() {
+  if (analyticsSuppressed()) return "";
+  if (typeof document === "undefined") return "";
+  const match = document.cookie.match(/(?:^|;\s*)_ga=([^;]+)/);
+  return match ? decodeURIComponent(match[1]) : "";
+}
+
 // The single most important web metric: clicks through to the app stores.
 // placement: "hero" | "footer_cta" | "pricing" | "invite"
 export function trackStoreClick(store, placement) {

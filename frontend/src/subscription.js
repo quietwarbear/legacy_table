@@ -4,6 +4,7 @@ import { useAuth } from "./App";
 import axios from "axios";
 import { toast } from "sonner";
 import { Crown, Check, Star, ArrowLeft, Loader2, ExternalLink } from "lucide-react";
+import { gaClientId } from "./lib/track";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "";
 const API = `${BACKEND_URL}/api`;
@@ -245,6 +246,7 @@ export const PricingPage = () => {
           billing_period: annual ? "annual" : "monthly",
           success_url: `${window.location.origin}/subscription/success`,
           cancel_url: `${window.location.origin}/subscribe`,
+          ga_client_id: gaClientId(),
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
