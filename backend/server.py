@@ -31,6 +31,7 @@ from owner_alerts import (
     alert_stripe_subscription,
     alert_stripe_gift,
 )
+import ga4
 import jwt
 import jwt as pyjwt
 import bcrypt
@@ -382,6 +383,9 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str
     nickname: Optional[str] = None
+    # Value of the browser's `_ga` cookie, when the frontend forwards it.
+    # Lets the server-side sign_up join the same GA4 session as the ad click.
+    ga_client_id: Optional[str] = None
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -681,6 +685,7 @@ async def register(user_data: UserCreate):
         "avatar": None,
         "credits_balance": initial_credits,
         "credits_refresh_at": credits_refresh,
+        "ga_client_id": user_data.ga_client_id or None,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.users.insert_one(user_doc)
@@ -691,6 +696,10 @@ async def register(user_data: UserCreate):
         "Welcome to Legacy Table",
         welcome_email_html(user_data.name),
     )
+
+    # GA4 sign_up, server-side: the web tag misses signups that complete in
+    # the mobile app or after the tab is backgrounded.
+    ga4.track_sign_up(user_id, method="email", ga_client_id=user_data.ga_client_id or "")
 
     token = create_token(user_id)
     user_response = UserResponse(
@@ -2444,6 +2453,7 @@ async def stripe_webhook(request: Request):
 
         # Match user by Stripe customer email
         customer_email = None
+        user_doc = None  # may stay None if the email never matched a user
         try:
             customer = stripe_lib.Customer.retrieve(subscription_obj["customer"])
             customer_email = customer.get("email", "").lower()
@@ -2473,6 +2483,20 @@ async def stripe_webhook(request: Request):
         if event_type == "customer.subscription.created":
             # Owner sales alert — even if the email didn't match a user yet.
             alert_stripe_subscription(db, subscription_obj, event_type, customer_email, tier)
+            # GA4 purchase. Sent from here, not the success page, so a buyer
+            # who closes the tab still counts as a conversion.
+            _meta = subscription_obj.get("metadata") or {}
+            _price_key = _meta.get("price_key") or STRIPE_PRICE_KEYS.get(price_id or "")
+            if _price_key in STRIPE_PRICE_SPECS:
+                _t, _cents, _interval = STRIPE_PRICE_SPECS[_price_key]
+                ga4.track_purchase(
+                    transaction_id=subscription_obj.get("id", ""),
+                    value_cents=_cents,
+                    item_id=_price_key,
+                    item_name="%s (%s)" % (_t.title(), "annual" if _interval == "year" else "monthly"),
+                    user_id=_meta.get("user_id") or (user_doc or {}).get("id", ""),
+                    ga_client_id=_meta.get("ga_client_id", ""),
+                )
 
     elif event_type == "checkout.session.completed":
         # Family Legacy gift purchase (mode=payment). Mint the gift code
@@ -2511,6 +2535,14 @@ async def stripe_webhook(request: Request):
                     gift_code_email_html(code, metadata.get("recipient_name")),
                 )
                 alert_stripe_gift(db, session_obj, purchaser_email, metadata.get("recipient_name"))
+                ga4.track_purchase(
+                    transaction_id=session_obj["id"],
+                    value_cents=FAMILY_LEGACY_PRICE_CENTS,
+                    item_id="family_legacy_gift",
+                    item_name="Family Legacy gift (one year)",
+                    item_category="gift",
+                    ga_client_id=metadata.get("ga_client_id", ""),
+                )
 
     elif event_type == "customer.subscription.deleted":
         customer_id = subscription_obj.get("customer")
@@ -2544,6 +2576,9 @@ class CheckoutRequest(BaseModel):
     price_id: Optional[str] = None
     success_url: str = "https://legacytable.app/subscription/success"
     cancel_url: str = "https://legacytable.app/pricing"
+    # Browser `_ga` cookie, forwarded so the purchase webhook can attribute
+    # the sale to the session and campaign that started it.
+    ga_client_id: Optional[str] = None
 
 
 def _verify_stripe_price(stripe_lib, price_id: str, key: str) -> None:
@@ -2634,6 +2669,11 @@ async def create_checkout_session(body: CheckoutRequest, user: dict = Depends(ge
             success_url=body.success_url + "?session_id={CHECKOUT_SESSION_ID}",
             cancel_url=body.cancel_url,
             allow_promotion_codes=True,
+            subscription_data={"metadata": {
+                "user_id": user.get("id", ""),
+                "ga_client_id": (body.ga_client_id or user.get("ga_client_id") or ""),
+                "price_key": price_key,
+            }},
         )
 
     try:
@@ -2651,6 +2691,14 @@ async def create_checkout_session(body: CheckoutRequest, user: dict = Depends(ge
             )
             customer_id = await _create_stripe_customer(stripe_lib, user)
             session = _new_session(customer_id)
+        _tier, _cents, _interval = STRIPE_PRICE_SPECS[price_key]
+        ga4.track_begin_checkout(
+            user.get("id", ""),
+            tier=_tier,
+            billing_period="annual" if _interval == "year" else "monthly",
+            value_cents=_cents,
+            ga_client_id=(body.ga_client_id or user.get("ga_client_id") or ""),
+        )
         return {"checkout_url": session.url}
     except HTTPException:
         raise
@@ -3264,6 +3312,9 @@ def _generate_gift_code() -> str:
 class GiftCheckoutRequest(BaseModel):
     purchaser_email: EmailStr
     recipient_name: Optional[str] = None
+    # Browser `_ga` cookie, forwarded so the gift purchase attributes to the
+    # campaign that drove it.
+    ga_client_id: Optional[str] = None
     success_url: str = "https://legacytable.app/gift/success"
     cancel_url: str = "https://legacytable.app/gift"
 
@@ -3301,6 +3352,7 @@ async def create_gift_checkout(body: GiftCheckoutRequest):
             metadata={
                 "kind": "family_legacy_gift",
                 "recipient_name": body.recipient_name or "",
+                "ga_client_id": body.ga_client_id or "",
             },
             success_url=body.success_url + "?session_id={CHECKOUT_SESSION_ID}",
             cancel_url=body.cancel_url,
