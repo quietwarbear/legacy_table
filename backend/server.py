@@ -792,6 +792,9 @@ async def _find_or_create_sso_user(email: str, name: str) -> dict:
         await db.users.insert_one(dict(user))
     except DuplicateKeyError as exc:
         raise HTTPException(status_code=409, detail="SSO identity is ambiguous.") from exc
+    # Arrived from Kindred, not from a campaign — its own bucket so cross-app
+    # handoffs never get counted as acquisition.
+    ga4.track_sign_up(user["id"], method="ubuntu_sso")
     return user
 
 
@@ -1021,6 +1024,7 @@ async def google_auth(body: GoogleAuthRequest):
             "created_at": datetime.now(timezone.utc).isoformat()
         }
         await db.users.insert_one(user_doc)
+        ga4.track_sign_up(user_id, method="google")
         token = create_token(user_id)
         user_response = UserResponse(
             id=user_id,
@@ -1161,6 +1165,7 @@ async def facebook_auth(body: FacebookAuthRequest):
             "created_at": datetime.now(timezone.utc).isoformat(),
         }
         await db.users.insert_one(user_doc)
+        ga4.track_sign_up(user_id, method="facebook")
         token = create_token(user_id)
         user_response = UserResponse(
             id=user_id,
@@ -1345,6 +1350,7 @@ async def apple_auth(body: AppleAuthRequest):
             "created_at": datetime.now(timezone.utc).isoformat()
         }
         await db.users.insert_one(user_doc)
+        ga4.track_sign_up(user_id, method="apple")
         token = create_token(user_id)
         user_response = UserResponse(
             id=user_id,
