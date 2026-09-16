@@ -2463,6 +2463,22 @@ async def revenuecat_webhook(request: Request):
                 }}
             )
             logger.info("Set subscription_tier=%s credits=%d for user=%s", tier, new_credits, app_user_id)
+            # GA4 purchase — the store paths (App Store / Play / web billing)
+            # are the live revenue; until now only the Stripe web checkout
+            # reported conversions. Only real charges carry a price; GA4
+            # dedupes by transaction_id if RevenueCat retries the webhook.
+            price = event.get("price") or 0
+            if event_type in ("INITIAL_PURCHASE", "RENEWAL") and price > 0:
+                ga4.track_purchase(
+                    transaction_id=event.get("transaction_id") or event.get("id", ""),
+                    value_cents=int(round(price * 100)),
+                    item_id=product_id,
+                    item_name="%s (%s)" % (
+                        "Heritage Keeper" if tier == "heritage" else "Legacy Collection",
+                        event.get("store", "unknown"),
+                    ),
+                    user_id=app_user_id,
+                )
 
     elif event_type in RC_INACTIVE_EVENTS:
         free_credits = get_credits_for_tier(None)
