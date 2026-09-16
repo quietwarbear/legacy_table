@@ -196,8 +196,13 @@ class RecipeShareCard extends StatelessWidget {
     if (photos != null && photos.isNotEmpty) {
       try {
         final raw = photos.first;
-        final b64 = raw.contains(',') ? raw.split(',').last : raw;
-        photo = MemoryImage(base64Decode(b64));
+        if (raw.startsWith('http')) {
+          // Bucket-backed photos arrive as /api/photos/{token} URLs.
+          photo = NetworkImage(raw);
+        } else {
+          final b64 = raw.contains(',') ? raw.split(',').last : raw;
+          photo = MemoryImage(base64Decode(b64));
+        }
       } catch (_) {
         photo = null;
       }
