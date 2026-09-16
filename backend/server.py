@@ -80,6 +80,11 @@ async def lifespan(_app: FastAPI):
         await db.sso_codes.create_index("expires_at", expireAfterSeconds=0)
         await db.sso_codes.create_index("code_digest", unique=True, sparse=True)
         await db.users.create_index("email_normalized", unique=True, sparse=True)
+        # Recipe lists filter by family and sort by created_at; without this index
+        # Mongo sorts in memory and fails with QueryExceededMemoryLimitNoDiskUseAllowed
+        # once the collection outgrows the 32MB sort limit. Backward traversal also
+        # covers the ascending sort used for cookbook printing.
+        await db.recipes.create_index([("family_id", 1), ("created_at", -1)])
         await ensure_recipe_import_indexes(db)
         await ensure_owner_alert_indexes(db)
     except PyMongoError as e:
