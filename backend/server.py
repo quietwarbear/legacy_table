@@ -41,6 +41,16 @@ from voice_storage import (
     voice_storage_configured,
     voice_storage_key,
 )
+from photo_storage import (
+    PhotoStorageError,
+    PhotoStorageNotConfigured,
+    decode_photo_entry,
+    delete_photo,
+    get_photo,
+    photo_storage_configured,
+    photo_storage_key,
+    put_photo,
+)
 import jwt
 import jwt as pyjwt
 import bcrypt
@@ -94,6 +104,9 @@ async def lifespan(_app: FastAPI):
         # once the collection outgrows the 32MB sort limit. Backward traversal also
         # covers the ascending sort used for cookbook printing.
         await db.recipes.create_index([("family_id", 1), ("created_at", -1)])
+        # Every <img> render hits /api/photos/{token}; without this multikey
+        # index each photo request would collection-scan recipes.
+        await db.recipes.create_index("photo_meta.token", sparse=True)
         await ensure_recipe_import_indexes(db)
         await ensure_owner_alert_indexes(db)
     except PyMongoError as e:
@@ -479,7 +492,9 @@ class RecipeCreate(BaseModel):
     ingredients: List[str]
     instructions: str
     story: Optional[str] = None  # Optional story behind the recipe
-    photos: List[str] = []  # Base64 encoded images
+    # Base64/data-URI uploads. Stored in the photo bucket, never in the doc
+    # (unless PHOTO/VOICE_BUCKET_* are unset — dev fallback embeds as before).
+    photos: List[str] = []
     cooking_time: int  # minutes
     servings: int
     category: str
@@ -491,6 +506,8 @@ class RecipeUpdate(BaseModel):
     ingredients: Optional[List[str]] = None
     instructions: Optional[str] = None
     story: Optional[str] = None
+    # Mixed list on edit: /api/photos/{token} URLs for photos being kept,
+    # base64/data URIs for new uploads. Order is the display order.
     photos: Optional[List[str]] = None
     cooking_time: Optional[int] = None
     servings: Optional[int] = None
@@ -1517,6 +1534,109 @@ async def get_recipe_import_status(
         headers={"Cache-Control": "no-store, max-age=0"},
     )
 
+# ---- Recipe photo storage helpers ----
+#
+# Bucket-backed recipes carry `photo_meta` (one entry per photo, display
+# order) and an empty `photos` list; pre-migration recipes still embed
+# base64 strings in `photos`. API responses always expose `photos: [str]`
+# — public /api/photos/{token} URLs when photo_meta exists, the embedded
+# base64 otherwise — so web <img src> and mobile Image.network/Image.memory
+# both keep working.
+
+_MAX_PHOTO_B64_CHARS = 15_000_000  # ~11MB decoded, mirrors the voice cap
+
+# Kept-photo references sent back on edit. Only tokens already on the
+# recipe are honored, so a token lifted from another family's URL can't be
+# grafted in — anything unrecognized must decode as base64 or it's a 400.
+_PHOTO_URL_TOKEN_RE = re.compile(r"/api/photos/([0-9a-f]{32})$")
+
+
+def _photo_token_from_url(entry: str) -> Optional[str]:
+    match = _PHOTO_URL_TOKEN_RE.search(entry)
+    return match.group(1) if match else None
+
+
+def _with_photo_urls(recipe: dict) -> dict:
+    meta = recipe.get("photo_meta")
+    if meta is not None:
+        recipe["photos"] = [
+            f"{PUBLIC_API_BASE}/api/photos/{m['token']}" for m in meta]
+    elif recipe.get("photos") is None:
+        recipe["photos"] = []
+    return recipe
+
+
+def _recipe_photo_count(recipe: dict) -> int:
+    meta = recipe.get("photo_meta")
+    if meta is not None:
+        return len(meta)
+    return len(recipe.get("photos") or [])
+
+
+async def _delete_photo_objects(storage_keys: list) -> None:
+    # Best-effort bucket cleanup — an orphaned object costs pennies and its
+    # unguessable token is unreachable once dropped from the document.
+    for key in storage_keys:
+        try:
+            await delete_photo(key)
+        except (PhotoStorageError, PhotoStorageNotConfigured):
+            logger.warning("Photo cleanup failed for key=%s", key)
+
+
+async def _store_recipe_photos(
+    recipe_id: str, existing_meta: list, photos: List[str]
+) -> tuple[list, list]:
+    """Upload new photos and reconcile kept ones against existing_meta.
+
+    Returns (new photo_meta in display order, storage keys the caller must
+    delete once the document update lands). Raises HTTPException on invalid
+    payloads or bucket failure — never leaving half the batch billed: any
+    objects uploaded before the failure are cleaned up here.
+    """
+    by_token = {m["token"]: m for m in existing_meta}
+    new_meta, uploaded_keys = [], []
+
+    async def _fail(exc: HTTPException):
+        await _delete_photo_objects(uploaded_keys)
+        raise exc
+
+    for entry in photos:
+        token = _photo_token_from_url(entry)
+        if token:
+            if token not in by_token:
+                await _fail(HTTPException(
+                    status_code=400, detail="Unknown photo reference"))
+            new_meta.append(by_token[token])
+            continue
+        if len(entry) > _MAX_PHOTO_B64_CHARS:
+            await _fail(HTTPException(status_code=413, detail="Photo too large"))
+        try:
+            data, content_type = decode_photo_entry(entry)
+        except ValueError:
+            await _fail(HTTPException(
+                status_code=400, detail="Invalid photo encoding"))
+        storage_key = photo_storage_key(recipe_id, uuid.uuid4().hex)
+        try:
+            await put_photo(storage_key, data, content_type)
+        except (PhotoStorageError, PhotoStorageNotConfigured):
+            logger.exception("Photo upload failed for recipe=%s", recipe_id)
+            await _fail(HTTPException(
+                status_code=503,
+                detail="Photo storage is temporarily unavailable — please try again"))
+        uploaded_keys.append(storage_key)
+        new_meta.append({
+            "token": uuid.uuid4().hex,
+            "storage_key": storage_key,
+            "content_type": content_type,
+            "size_bytes": len(data),
+        })
+
+    kept_tokens = {m["token"] for m in new_meta}
+    removed_keys = [
+        m["storage_key"] for t, m in by_token.items() if t not in kept_tokens]
+    return new_meta, removed_keys
+
+
 @api_router.post("/recipes", response_model=RecipeResponse)
 async def create_recipe(recipe_data: RecipeCreate, user: dict = Depends(get_current_user)):
     # Backward compatible: Allow recipe creation even without family
@@ -1590,6 +1710,16 @@ async def create_recipe(recipe_data: RecipeCreate, user: dict = Depends(get_curr
         else:
             recipe_doc["voice_note"] = recipe_data.voice_note.model_dump()
 
+    # Photos go to the bucket so recipe documents stay small; the doc keeps
+    # only photo_meta. Without the bucket configured (dev), fall back to
+    # embedding the base64 in the document as before. Runs after the voice
+    # checks so their rejections can't orphan uploaded photo objects.
+    if recipe_data.photos and photo_storage_configured():
+        photo_meta, _ = await _store_recipe_photos(
+            recipe_id, [], recipe_data.photos)
+        recipe_doc["photo_meta"] = photo_meta
+        recipe_doc["photos"] = []
+
     await db.recipes.insert_one(recipe_doc)
     
     # Create notifications only if user has a family
@@ -1629,7 +1759,8 @@ async def create_recipe(recipe_data: RecipeCreate, user: dict = Depends(get_curr
             exclude_user_id=user["id"]
         )
     
-    return RecipeResponse(**{k: v for k, v in recipe_doc.items() if k != "_id"})
+    return RecipeResponse(
+        **_with_photo_urls({k: v for k, v in recipe_doc.items() if k != "_id"}))
 
 @api_router.get("/recipes", response_model=List[RecipeResponse])
 async def get_recipes(
@@ -1656,7 +1787,7 @@ async def get_recipes(
     # voice_note excluded: the audio never travels in list payloads —
     # clients get voice_token/has_voice_note and stream via /listen.
     recipes = await db.recipes.find(query, {"_id": 0, "voice_note": 0}).sort("created_at", -1).to_list(100)
-    return [RecipeResponse(**r) for r in recipes]
+    return [RecipeResponse(**_with_photo_urls(r)) for r in recipes]
 
 @api_router.get("/recipes/{recipe_id}", response_model=RecipeResponse)
 async def get_recipe(recipe_id: str, user: dict = Depends(get_current_user)):
@@ -1676,8 +1807,8 @@ async def get_recipe(recipe_id: str, user: dict = Depends(get_current_user)):
     elif recipe_family_id != user_family_id:
         # Family-scoped recipe: user must be in the same family
         raise HTTPException(status_code=403, detail="Not authorized to view this recipe")
-    
-    return RecipeResponse(**recipe)
+
+    return RecipeResponse(**_with_photo_urls(recipe))
 
 @api_router.put("/recipes/{recipe_id}", response_model=RecipeResponse)
 async def update_recipe(recipe_id: str, recipe_data: RecipeUpdate, user: dict = Depends(get_current_user)):
@@ -1697,20 +1828,27 @@ async def update_recipe(recipe_id: str, recipe_data: RecipeUpdate, user: dict = 
         raise HTTPException(status_code=403, detail="Not authorized to update this recipe")
     
     # Check if photos are being added (for v1 notification)
-    photos_added = False
-    old_photos = recipe.get("photos", [])
-    if recipe_data.photos is not None:
-        new_photos = recipe_data.photos
-        # Check if new photos list is longer than old photos list
-        if len(new_photos) > len(old_photos):
-            photos_added = True
-    
+    photos_added = (
+        recipe_data.photos is not None
+        and len(recipe_data.photos) > _recipe_photo_count(recipe)
+    )
+
     update_data = {k: v for k, v in recipe_data.model_dump().items() if v is not None}
+    removed_keys = []
+    if recipe_data.photos is not None and photo_storage_configured():
+        # Entries are either /api/photos/{token} URLs (kept, possibly
+        # reordered) or base64 uploads. Resent legacy base64 gets uploaded
+        # too, so editing a pre-migration recipe converts it organically.
+        update_data["photo_meta"], removed_keys = await _store_recipe_photos(
+            recipe_id, recipe.get("photo_meta") or [], recipe_data.photos)
+        update_data["photos"] = []
     if update_data:
         await db.recipes.update_one({"id": recipe_id}, {"$set": update_data})
-    
+    # Delete dropped photos only after the document update landed.
+    await _delete_photo_objects(removed_keys)
+
     updated = await db.recipes.find_one({"id": recipe_id}, {"_id": 0})
-    
+
     # Create v1 notification for photo_added event (silent)
     if photos_added and recipe_family_id:
         display_name = user.get("nickname") or user["name"]
@@ -1721,12 +1859,12 @@ async def update_recipe(recipe_id: str, recipe_data: RecipeUpdate, user: dict = 
                 "recipe_id": recipe_id,
                 "recipe_title": recipe.get("title", ""),
                 "author_name": display_name,
-                "photo_count": len(updated.get("photos", []))
+                "photo_count": _recipe_photo_count(updated)
             },
             exclude_user_id=user["id"]  # Don't notify the recipe author
         )
-    
-    return RecipeResponse(**updated)
+
+    return RecipeResponse(**_with_photo_urls(updated))
 
 @api_router.delete("/recipes/{recipe_id}")
 async def delete_recipe(recipe_id: str, user: dict = Depends(get_current_user)):
@@ -1771,6 +1909,8 @@ async def delete_recipe(recipe_id: str, user: dict = Depends(get_current_user)):
             await delete_voice_audio(storage_key)
         except (VoiceStorageError, VoiceStorageNotConfigured):
             logger.warning("Voice cleanup failed for key=%s", storage_key)
+    await _delete_photo_objects(
+        [m["storage_key"] for m in recipe.get("photo_meta") or []])
     return {"message": "Recipe deleted successfully"}
 
 @api_router.get("/categories", response_model=List[str])
@@ -3000,6 +3140,40 @@ _AUDIO_MEDIA_TYPES = {
 }
 
 
+# ---- Recipe photo serving ----
+#
+# <img> tags and Image.network can't send a Bearer token, so photos are
+# served by capability like /listen: the unguessable 32-hex token IS the
+# access control, and deleting the photo (or recipe) revokes it. Tokens are
+# minted per upload and never reused, so responses are immutable-cacheable.
+
+@api_router.get("/photos/{token}")
+async def get_recipe_photo(token: str):
+    recipe = await db.recipes.find_one(
+        {"photo_meta.token": token}, {"_id": 0, "photo_meta": 1})
+    if not recipe:
+        raise HTTPException(status_code=404, detail="Photo not found")
+    meta = next(
+        (m for m in recipe.get("photo_meta", []) if m.get("token") == token),
+        None)
+    if not meta:
+        raise HTTPException(status_code=404, detail="Photo not found")
+    try:
+        data = await get_photo(meta["storage_key"])
+    except (PhotoStorageError, PhotoStorageNotConfigured):
+        logger.exception("Photo fetch failed for key=%s", meta["storage_key"])
+        raise HTTPException(
+            status_code=503, detail="Photo is temporarily unavailable")
+    return Response(
+        content=data,
+        media_type=meta.get("content_type", "image/jpeg"),
+        headers={
+            "Cache-Control": "public, max-age=31536000, immutable",
+            "Content-Disposition": "inline",
+        },
+    )
+
+
 @api_router.get("/listen/{token}")
 async def listen_voice_note(token: str):
     recipe = await db.recipes.find_one(
@@ -3259,6 +3433,25 @@ async def _family_and_recipes_for_print(user: dict):
     ).sort("created_at", 1).to_list(500)
     if not recipes:
         raise HTTPException(status_code=400, detail="No recipes to print yet")
+    # cookbook_print renders the first photo from base64; hydrate it from
+    # the bucket for bucket-backed recipes. A fetch failure just prints
+    # that recipe photoless — a missing photo must never block the book.
+    semaphore = asyncio.Semaphore(8)
+
+    async def _hydrate(recipe):
+        meta = recipe.get("photo_meta") or []
+        if not meta:
+            return
+        try:
+            async with semaphore:
+                data = await get_photo(meta[0]["storage_key"])
+            recipe["photos"] = [base64.b64encode(data).decode()]
+        except (PhotoStorageError, PhotoStorageNotConfigured):
+            logger.warning(
+                "Cookbook photo fetch failed for key=%s", meta[0]["storage_key"])
+            recipe["photos"] = []
+
+    await asyncio.gather(*(_hydrate(r) for r in recipes))
     return family, recipes
 
 
@@ -3626,9 +3819,10 @@ async def export_recipes(user: dict = Depends(get_current_user)):
 
     # Strip heavy base64 photo data, keep count
     for r in recipes:
-        photo_count = len(r.get("photos", []))
-        r["photo_count"] = photo_count
+        r["photo_count"] = _recipe_photo_count(r)
         r["photos"] = []  # Clear base64 data from export
+        # Storage keys and photo tokens are operational state, not export data.
+        r.pop("photo_meta", None)
         # Reconciliation metadata is operational state, never customer export data.
         r.pop("import_receipt_reference", None)
 
@@ -4309,7 +4503,7 @@ async def get_holiday_recipes(holiday_name: str, credentials: HTTPAuthorizationC
     cursor = db.recipes.find({"family_id": family_id, "holiday_tags": holiday_name})
     async for recipe in cursor:
         recipe["id"] = recipe.pop("_id")
-        recipes.append(RecipeResponse(**recipe).model_dump())
+        recipes.append(RecipeResponse(**_with_photo_urls(recipe)).model_dump())
 
     return {"holiday": holiday_name, "recipes": recipes}
 
@@ -4364,7 +4558,7 @@ async def get_season_recipes(season_name: str, credentials: HTTPAuthorizationCre
     })
     async for recipe in cursor:
         recipe["id"] = recipe.pop("_id")
-        recipes.append(RecipeResponse(**recipe).model_dump())
+        recipes.append(RecipeResponse(**_with_photo_urls(recipe)).model_dump())
 
     return {
         "season": season_name,
