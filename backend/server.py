@@ -299,6 +299,10 @@ TIER_CREDITS = {
     "family_legacy": 50,   # Family Legacy (gift, web-only, 1 year + printed cookbook)
 }
 
+# Voice keepsakes included with a free account; any paid tier is unlimited.
+# Recipes themselves are never capped — recordings are the metered resource.
+FREE_TIER_VOICE_KEEPSAKES = 3
+
 # Credit costs per AI feature (used when features are built)
 CREDIT_COSTS = {
     "recipe_scan": 1,       # AI recipe scanner (OCR + LLM)
@@ -1533,6 +1537,18 @@ async def create_recipe(recipe_data: RecipeCreate, user: dict = Depends(get_curr
     if recipe_data.voice_note is not None:
         if len(recipe_data.voice_note.audio) > 15_000_000:  # ~11MB decoded
             raise HTTPException(status_code=413, detail="Voice recording too large")
+        if not user.get("subscription_tier"):
+            existing_keepsakes = await db.recipes.count_documents(
+                {"author_id": user["id"], "voice_note": {"$exists": True}})
+            if existing_keepsakes >= FREE_TIER_VOICE_KEEPSAKES:
+                raise HTTPException(
+                    status_code=403,
+                    detail=(
+                        f"Free accounts include {FREE_TIER_VOICE_KEEPSAKES} voice keepsakes. "
+                        "Upgrade to Heritage Keeper for unlimited voice recordings — "
+                        "or save this recipe without the recording."
+                    ),
+                )
         recipe_doc["voice_note"] = recipe_data.voice_note.model_dump()
         recipe_doc["voice_token"] = uuid.uuid4().hex
 

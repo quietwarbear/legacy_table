@@ -335,6 +335,7 @@ const PricingPage = () => {
             features={[
               "3 AI credits per month",
               "Unlimited family recipe storage",
+              "3 voice keepsake recordings",
               "1 family · share with up to 4 members",
               "Photo uploads for every recipe",
               "Export your cookbook anytime",
@@ -349,6 +350,7 @@ const PricingPage = () => {
             features={[
               "15 AI credits per month",
               "Everything in Free",
+              "Unlimited voice keepsakes",
               "Family sharing (up to 10 members)",
               "Recipe categories & tags",
               "Export & print recipe books",
