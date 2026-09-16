@@ -32,6 +32,15 @@ from owner_alerts import (
     alert_stripe_gift,
 )
 import ga4
+from voice_storage import (
+    VoiceStorageError,
+    VoiceStorageNotConfigured,
+    delete_voice_audio,
+    get_voice_audio,
+    put_voice_audio,
+    voice_storage_configured,
+    voice_storage_key,
+)
 import jwt
 import jwt as pyjwt
 import bcrypt
@@ -1534,12 +1543,19 @@ async def create_recipe(recipe_data: RecipeCreate, user: dict = Depends(get_curr
 
     # Voice keepsake: persist the original recording and mint the public
     # listen token (unguessable; it's what printed QR codes will point at).
+    # Audio goes to the Railway bucket so recipe documents stay small; the
+    # doc keeps only voice_meta. Without VOICE_BUCKET_* configured (dev),
+    # fall back to embedding the audio in the document as before.
     if recipe_data.voice_note is not None:
         if len(recipe_data.voice_note.audio) > 15_000_000:  # ~11MB decoded
             raise HTTPException(status_code=413, detail="Voice recording too large")
         if not user.get("subscription_tier"):
+            # Keepsakes live as embedded voice_note (pre-migration) or
+            # bucket-backed voice_meta — the cap must count both.
             existing_keepsakes = await db.recipes.count_documents(
-                {"author_id": user["id"], "voice_note": {"$exists": True}})
+                {"author_id": user["id"],
+                 "$or": [{"voice_note": {"$exists": True}},
+                         {"voice_meta": {"$exists": True}}]})
             if existing_keepsakes >= FREE_TIER_VOICE_KEEPSAKES:
                 raise HTTPException(
                     status_code=403,
@@ -1549,8 +1565,30 @@ async def create_recipe(recipe_data: RecipeCreate, user: dict = Depends(get_curr
                         "or save this recipe without the recording."
                     ),
                 )
-        recipe_doc["voice_note"] = recipe_data.voice_note.model_dump()
+        try:
+            voice_audio = base64.b64decode(recipe_data.voice_note.audio)
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid voice recording encoding")
         recipe_doc["voice_token"] = uuid.uuid4().hex
+        if voice_storage_configured():
+            storage_key = voice_storage_key(recipe_id)
+            media_type = _AUDIO_MEDIA_TYPES.get(
+                recipe_data.voice_note.format, "audio/mpeg")
+            try:
+                await put_voice_audio(storage_key, voice_audio, media_type)
+            except VoiceStorageError:
+                logger.exception("Voice upload failed for recipe=%s", recipe_id)
+                raise HTTPException(
+                    status_code=503,
+                    detail="Voice storage is temporarily unavailable — please try again")
+            recipe_doc["voice_meta"] = {
+                "format": recipe_data.voice_note.format,
+                "duration_seconds": recipe_data.voice_note.duration_seconds,
+                "size_bytes": len(voice_audio),
+                "storage_key": storage_key,
+            }
+        else:
+            recipe_doc["voice_note"] = recipe_data.voice_note.model_dump()
 
     await db.recipes.insert_one(recipe_doc)
     
@@ -1724,6 +1762,15 @@ async def delete_recipe(recipe_id: str, user: dict = Depends(get_current_user)):
             raise HTTPException(status_code=409, detail="Recipe deletion could not be reconciled")
     else:
         await db.recipes.delete_one({"id": recipe_id})
+
+    # Best-effort bucket cleanup — an orphaned object costs pennies and the
+    # unguessable key is unreachable once the doc (and its token) are gone.
+    storage_key = (recipe.get("voice_meta") or {}).get("storage_key")
+    if storage_key:
+        try:
+            await delete_voice_audio(storage_key)
+        except (VoiceStorageError, VoiceStorageNotConfigured):
+            logger.warning("Voice cleanup failed for key=%s", storage_key)
     return {"message": "Recipe deleted successfully"}
 
 @api_router.get("/categories", response_model=List[str])
@@ -2940,15 +2987,29 @@ _AUDIO_MEDIA_TYPES = {
 @api_router.get("/listen/{token}")
 async def listen_voice_note(token: str):
     recipe = await db.recipes.find_one(
-        {"voice_token": token}, {"_id": 0, "voice_note": 1})
-    if not recipe or not recipe.get("voice_note"):
+        {"voice_token": token}, {"_id": 0, "voice_note": 1, "voice_meta": 1})
+    if not recipe:
         raise HTTPException(status_code=404, detail="Voice note not found")
-    vn = recipe["voice_note"]
-    try:
-        audio = base64.b64decode(vn["audio"])
-    except Exception:
+    meta = recipe.get("voice_meta") or {}
+    vn = recipe.get("voice_note")
+    if meta.get("storage_key"):
+        try:
+            audio = await get_voice_audio(meta["storage_key"])
+        except (VoiceStorageError, VoiceStorageNotConfigured):
+            logger.exception("Voice fetch failed for key=%s", meta["storage_key"])
+            raise HTTPException(
+                status_code=503, detail="Voice note is temporarily unavailable")
+        fmt = meta.get("format", "mp4")
+    elif vn:
+        # Legacy embedded audio — recipes created before the bucket migration.
+        try:
+            audio = base64.b64decode(vn["audio"])
+        except Exception:
+            raise HTTPException(status_code=404, detail="Voice note not found")
+        fmt = vn.get("format", "mp4")
+    else:
         raise HTTPException(status_code=404, detail="Voice note not found")
-    media_type = _AUDIO_MEDIA_TYPES.get(vn.get("format", "mp4"), "audio/mpeg")
+    media_type = _AUDIO_MEDIA_TYPES.get(fmt, "audio/mpeg")
     return Response(
         content=audio,
         media_type=media_type,
@@ -2964,11 +3025,11 @@ async def listen_voice_note_meta(token: str):
     """Title/author for the public listen page — never the recipe body."""
     recipe = await db.recipes.find_one(
         {"voice_token": token},
-        {"_id": 0, "title": 1, "author_name": 1,
+        {"_id": 0, "title": 1, "author_name": 1, "voice_meta": 1,
          "voice_note.duration_seconds": 1, "voice_note.format": 1})
     if not recipe:
         raise HTTPException(status_code=404, detail="Voice note not found")
-    vn = recipe.get("voice_note") or {}
+    vn = recipe.get("voice_meta") or recipe.get("voice_note") or {}
     return {
         "title": recipe.get("title"),
         "author_name": recipe.get("author_name"),
