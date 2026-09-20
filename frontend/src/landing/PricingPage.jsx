@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../App";
-import { trackStoreClick } from "../lib/track";
+import { trackStoreClick, trackEvent } from "../lib/track";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Check, Menu } from "lucide-react";
@@ -164,6 +164,9 @@ const TierCard = ({
   features,
   featured = false,
   freeTier = false,
+  ctaLabel,
+  onCta,
+  ctaNote,
 }) => {
   const displayPrice = isAnnual ? priceAnnual : priceMonthly;
   const monthlyEquivalent =
@@ -230,13 +233,32 @@ const TierCard = ({
           ))}
         </ul>
 
+        {/* Primary CTA — the money button. Paid tiers start Stripe checkout
+            on the web; the store badges stay as a secondary path for people
+            who would rather subscribe through their phone. */}
         <div className="mt-auto">
-          <StoreBadges size="small" align="center" />
-          <p className="text-xs text-muted-foreground text-center mt-3">
-            {freeTier
-              ? "Download the app to start"
-              : "Subscribe inside the app"}
+          <Button
+            size="lg"
+            onClick={onCta}
+            variant={featured || freeTier ? "default" : "outline"}
+            className={`w-full rounded-full font-semibold ${
+              featured
+                ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                : ""
+            }`}
+          >
+            {ctaLabel}
+          </Button>
+          <p className="text-xs text-muted-foreground text-center mt-2.5">
+            {ctaNote}
           </p>
+
+          <div className="mt-5 pt-4 border-t border-border">
+            <p className="text-[11px] uppercase tracking-widest text-muted-foreground text-center mb-2.5">
+              Or subscribe in the app
+            </p>
+            <StoreBadges size="small" align="center" />
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -246,7 +268,33 @@ const TierCard = ({
 const PricingPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [isAnnual, setIsAnnual] = useState(true);
+  // Monthly first: $9.99 is a far smaller first ask than $99.99, and the
+  // annual saving still reads as a saving from there.
+  const [isAnnual, setIsAnnual] = useState(false);
+
+  // Carry the chosen plan through signup so /subscribe opens on the plan
+  // and billing period the visitor actually picked. Wrapped because private
+  // mode and blocked site data make localStorage throw.
+  const rememberChoice = (tier) => {
+    try {
+      localStorage.setItem(
+        "pendingCheckout",
+        JSON.stringify({ tier, period: isAnnual ? "annual" : "monthly" })
+      );
+    } catch (e) {
+      /* no-op: the plan just won't be preselected */
+    }
+  };
+
+  const startCheckout = (tier) => {
+    trackEvent("pricing_cta_clicked", {
+      tier,
+      billing_period: isAnnual ? "annual" : "monthly",
+      logged_in: Boolean(user),
+    });
+    if (tier !== "free") rememberChoice(tier);
+    navigate(user ? "/subscribe" : "/login?signup=1");
+  };
 
   // Logged-in users go to the in-app subscription manager instead of seeing
   // marketing tier copy.
@@ -273,8 +321,8 @@ const PricingPage = () => {
           and bigger families.
         </p>
         <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
-          Subscriptions are billed through the App Store or Google Play.
-          Cancel anytime from your phone's account settings.
+          Subscribe right here with a card, or in the app through the App
+          Store or Google Play. Cancel anytime.
         </p>
 
         {/* Annual / Monthly toggle */}
@@ -331,10 +379,13 @@ const PricingPage = () => {
           <TierCard
             name="Free"
             tagline="Try every recipe feature, then decide"
+            ctaLabel="Create your free account"
+            ctaNote="No card needed"
+            onCta={() => startCheckout("free")}
             freeTier
             features={[
+              "Up to 25 recipes",
               "3 AI credits per month",
-              "Unlimited family recipe storage",
               "3 voice keepsake recordings",
               "1 family · share with up to 4 members",
               "Photo uploads for every recipe",
@@ -347,7 +398,11 @@ const PricingPage = () => {
             priceMonthly={PRICES.heritage.monthly}
             priceAnnual={PRICES.heritage.annual}
             isAnnual={isAnnual}
+            ctaLabel="Start Heritage Keeper"
+            ctaNote="Secure checkout · cancel anytime"
+            onCta={() => startCheckout("heritage")}
             features={[
+              "Unlimited recipes",
               "15 AI credits per month",
               "Everything in Free",
               "Unlimited voice keepsakes",
@@ -362,6 +417,9 @@ const PricingPage = () => {
             priceMonthly={PRICES.legacy.monthly}
             priceAnnual={PRICES.legacy.annual}
             isAnnual={isAnnual}
+            ctaLabel="Start Legacy Collection"
+            ctaNote="Secure checkout · cancel anytime"
+            onCta={() => startCheckout("legacy")}
             featured
             features={[
               "50 AI credits per month",
@@ -395,10 +453,10 @@ const PricingPage = () => {
         )}
       </section>
 
-      {/* Family Legacy gift — flag-gated until the print pipeline ships.
-          Enable with REACT_APP_SHOW_FAMILY_LEGACY=true in Vercel env. */}
-      {process.env.REACT_APP_SHOW_FAMILY_LEGACY === "true" && (
-        <section className="px-4 md:px-6 lg:px-8 py-16 md:py-20">
+      {/* Family Legacy gift — live. The flag that hid this was waiting on
+          the print pipeline; a test run has now produced a real printed
+          book, so the gift sells year-round. */}
+      <section className="px-4 md:px-6 lg:px-8 py-16 md:py-20">
           <div className="max-w-3xl mx-auto text-center rounded-2xl border-2 border-primary/30 bg-card shadow-md p-10">
             <p className="text-sm uppercase tracking-widest text-primary font-semibold mb-3">
               OR GIVE IT AS A GIFT
@@ -414,9 +472,11 @@ const PricingPage = () => {
             <Button size="lg" className="rounded-full" asChild>
               <Link to="/gift">Give Family Legacy</Link>
             </Button>
+            <p className="text-xs text-muted-foreground mt-4">
+              One payment. No subscription, no app required to buy it.
+            </p>
           </div>
-        </section>
-      )}
+      </section>
 
       {/* FAQ */}
       <section className="px-4 md:px-6 lg:px-8 py-16 md:py-20 bg-muted">
@@ -439,12 +499,28 @@ const PricingPage = () => {
             </div>
             <div>
               <dt className="font-semibold text-foreground mb-2">
+                What happens when a free account reaches 25 recipes?
+              </dt>
+              <dd className="text-muted-foreground">
+                Nothing happens to the 25. They stay in your cookbook —
+                readable, editable, shareable with your family, and
+                exportable — for as long as you have the account. You'll
+                just need Heritage Keeper to add the 26th. And if you
+                opened your account before September 2026, there's no limit
+                on yours at all: you signed up when storage was unlimited,
+                so it stays unlimited.
+              </dd>
+            </div>
+            <div>
+              <dt className="font-semibold text-foreground mb-2">
                 Where does the subscription get charged?
               </dt>
               <dd className="text-muted-foreground">
-                Through your App Store or Google Play account, depending on
-                where you downloaded the app. We don't see or store your
-                payment information.
+                Wherever you subscribe. If you subscribe on this website,
+                your card is charged through Stripe. If you subscribe inside
+                the iPhone or Android app, it goes through your App Store or
+                Google Play account. Either way we never see or store your
+                card details.
               </dd>
             </div>
             <div>
@@ -452,11 +528,13 @@ const PricingPage = () => {
                 How do I cancel?
               </dt>
               <dd className="text-muted-foreground">
-                On iOS, open Settings → tap your name → Subscriptions →
-                Legacy Table → Cancel. On Android, open Google Play → tap
-                your profile → Payments &amp; subscriptions → Subscriptions →
-                Legacy Table → Cancel. The cancellation takes effect at the
-                end of your current billing period.
+                If you subscribed on the website, open Settings → Manage
+                subscription and cancel there. On iOS, open Settings → tap
+                your name → Subscriptions → Legacy Table → Cancel. On
+                Android, open Google Play → tap your profile → Payments
+                &amp; subscriptions → Subscriptions → Legacy Table → Cancel.
+                The cancellation takes effect at the end of your current
+                billing period.
               </dd>
             </div>
             <div>

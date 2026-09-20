@@ -5,7 +5,7 @@ import axios from "axios";
 import { Toaster, toast } from "sonner";
 import { ChefHat, Utensils, Camera, Clock, Users, Flame, Heart, Plus, LogOut, Menu, X, Home, User, Search, Download, BookOpen, Moon, Sun, Edit, MessageCircle, Trash2, Send, Bell, Settings, Upload, Copy, Crown, UserPlus, Sparkles, Share2, Volume2, VolumeX, SkipForward, SkipBack, ChevronLeft, ChevronRight, Calendar, Gift, Tag, Link2, Video } from "lucide-react";
 import * as familiesApi from "./api/families";
-import { trackStoreClick, identifyUser, resetAnalytics, gaClientId } from "./lib/track";
+import { trackStoreClick, identifyUser, resetAnalytics, gaClientId, trackProductEvent } from "./lib/track";
 import { useTranslation } from "react-i18next";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import jsPDF from "jspdf";
@@ -732,6 +732,15 @@ const SSOHandoffPage = () => {
 // Login Page
 const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID;
 
+// Social sign-in returns the same payload whether the account was just
+// created or already existed, so a brand-new account is identified by its
+// created_at being seconds old. Only used for analytics — never for access.
+const isFreshAccount = (user) => {
+  if (!user?.created_at) return false;
+  const age = Date.now() - new Date(user.created_at).getTime();
+  return Number.isFinite(age) && age >= 0 && age < 60000;
+};
+
 const LoginPage = () => {
   // /login?signup=1 opens in create-account mode (used by the invite landing page).
   const [isLogin, setIsLogin] = useState(
@@ -838,6 +847,8 @@ const LoginPage = () => {
         full_name: fullName,
       });
       login(res.data.token, res.data.user);
+      if (isFreshAccount(res.data.user))
+        trackProductEvent("signup", { method: "apple", surface: "web" });
       toast.success("Welcome!");
       // Navigation handled by useEffect based on subscription status
     } catch (error) {
@@ -857,6 +868,8 @@ const LoginPage = () => {
         credential: response.credential,
       });
       login(res.data.token, res.data.user);
+      if (isFreshAccount(res.data.user))
+        trackProductEvent("signup", { method: "google", surface: "web" });
       toast.success("Welcome!");
       // Navigation handled by useEffect based on subscription status
     } catch (error) {
@@ -875,6 +888,7 @@ const LoginPage = () => {
         : { ...formData, ga_client_id: gaClientId() };
       const response = await axios.post(`${API}${endpoint}`, payload);
       login(response.data.token, response.data.user);
+      if (!isLogin) trackProductEvent("signup", { method: "email", surface: "web" });
       toast.success(isLogin ? "Welcome back!" : "Account created successfully!");
       // Navigation handled by useEffect based on subscription status
     } catch (error) {

@@ -35,6 +35,16 @@ export function resetAnalytics() {
   posthog.reset();
 }
 
+// PostHog only. For conversions the BACKEND already reports to GA4
+// (sign_up on register, begin_checkout on checkout creation, purchase in the
+// Stripe and RevenueCat webhooks), firing them from the browser too would
+// double-count the same conversion in GA4. PostHog has no server-side sender,
+// so these are the only way those steps appear in the product funnel at all.
+export function trackProductEvent(name, params = {}) {
+  if (analyticsSuppressed()) return;
+  posthog.capture(name, params);
+}
+
 export function trackEvent(name, params = {}) {
   if (analyticsSuppressed()) return;
   if (typeof window !== "undefined" && typeof window.gtag === "function") {
