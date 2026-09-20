@@ -4,7 +4,7 @@ import { useAuth } from "./App";
 import axios from "axios";
 import { toast } from "sonner";
 import { Crown, Check, Star, ArrowLeft, Loader2, ExternalLink } from "lucide-react";
-import { gaClientId } from "./lib/track";
+import { gaClientId, trackProductEvent } from "./lib/track";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "";
 const API = `${BACKEND_URL}/api`;
@@ -216,6 +216,27 @@ export const PricingPage = () => {
   const navigate = useNavigate();
   const [annual, setAnnual] = useState(true);
   const [loadingTier, setLoadingTier] = useState(null);
+  const [preselectedTier, setPreselectedTier] = useState(null);
+
+  // A visitor who picked a plan on the marketing /pricing page lands here
+  // after creating an account. Open on the plan and billing period they
+  // actually chose instead of making them choose twice.
+  useEffect(() => {
+    let choice = null;
+    try {
+      const raw = localStorage.getItem("pendingCheckout");
+      if (raw) {
+        choice = JSON.parse(raw);
+        localStorage.removeItem("pendingCheckout");
+      }
+    } catch (e) {
+      /* private mode or malformed value — fall through to defaults */
+    }
+    if (choice && (choice.tier === "heritage" || choice.tier === "legacy")) {
+      setPreselectedTier(choice.tier);
+      setAnnual(choice.period === "annual");
+    }
+  }, []);
 
   // Reset loading state when user returns from Stripe (bfcache / pageshow)
   useEffect(() => {
@@ -238,6 +259,11 @@ export const PricingPage = () => {
     }
 
     setLoadingTier(selectedTier);
+    trackProductEvent("begin_checkout", {
+      tier: selectedTier,
+      billing_period: annual ? "annual" : "monthly",
+      surface: "web",
+    });
     try {
       const res = await axios.post(
         `${API}/subscriptions/create-checkout-session`,
@@ -343,6 +369,8 @@ export const PricingPage = () => {
           <div className={`border rounded-2xl p-6 transition-all ${
             tier === "heritage"
               ? "border-amber-500 bg-amber-50/50 dark:bg-amber-900/20"
+              : preselectedTier === "heritage"
+              ? "border-amber-400 ring-2 ring-amber-400/40"
               : "border-border hover:border-amber-300"
           }`}>
             <div className="mb-4">
@@ -461,6 +489,20 @@ export const SubscriptionSuccessPage = () => {
     }, 2000);
     return () => clearTimeout(timer);
   }, [refetch]);
+
+  // Record the conversion once per checkout. Guarded on the Stripe session id
+  // so a refresh or a back-button return doesn't count the sale twice.
+  useEffect(() => {
+    const sessionId = searchParams.get("session_id") || "no_session";
+    const key = `purchase_tracked:${sessionId}`;
+    try {
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, "1");
+    } catch (e) {
+      /* storage blocked — still fire, a rare double beats a silent miss */
+    }
+    trackProductEvent("purchase", { surface: "web", session_id: sessionId });
+  }, [searchParams]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background p-6 text-center">

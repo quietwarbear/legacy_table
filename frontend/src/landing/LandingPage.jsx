@@ -382,8 +382,9 @@ const LandingPage = () => {
               Where recipes become heirlooms.
             </h1>
             <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-xl leading-relaxed">
-              Capture the recipes, the stories, and the voices that teach them.
-              Build your family's cookbook together — privately.
+              Capture the recipes, the stories, and the voices that teach
+              them — while the people who know them can still tell you how.
+              Build your family's cookbook together, privately.
             </p>
             <p className="text-sm font-medium text-foreground/80 mb-8 max-w-xl">
               Your recipes stay yours. We never sell or share them.{" "}
@@ -395,9 +396,21 @@ const LandingPage = () => {
               </Link>
             </p>
 
-            {/* Primary CTA: store badges. Secondary: jump to features. */}
-            <StoreBadges size="large" align="start" className="mb-4" />
-            <div className="flex flex-col sm:flex-row gap-4 items-start">
+            {/* Primary CTA: create the account right here — checkout now
+                lives on the web too, so sending everyone to a store first
+                costs us the visitors who are ready now. Badges stay below
+                for people who would rather start on their phone. */}
+            <div className="flex flex-col sm:flex-row gap-4 items-start mb-6">
+              <Button
+                size="lg"
+                className="rounded-full font-semibold"
+                onClick={() => {
+                  trackEvent("hero_cta_clicked", { cta: "create_account" });
+                  navigate("/login?signup=1");
+                }}
+              >
+                Start your family's cookbook — free
+              </Button>
               <Button
                 size="lg"
                 variant="outline"
@@ -406,6 +419,12 @@ const LandingPage = () => {
               >
                 What it does
               </Button>
+            </div>
+            <p className="text-xs uppercase tracking-widest text-muted-foreground mb-2.5">
+              Or get the app
+            </p>
+            <StoreBadges size="large" align="start" className="mb-4" />
+            <div className="flex flex-col sm:flex-row gap-4 items-start">
               <Link
                 to="/login"
                 className="text-sm font-semibold text-foreground/70 hover:text-foreground transition-colors self-center sm:self-auto sm:py-3"
@@ -613,7 +632,7 @@ const LandingPage = () => {
           </p>
           <p className="text-lg md:text-xl text-foreground leading-relaxed font-medium mb-10">
             The hardest part of this work is that it can't be done later.
-            Record them while they can still tell you how.
+            Start tonight, with one recipe and one voice.
           </p>
           <Button
             size="lg"
