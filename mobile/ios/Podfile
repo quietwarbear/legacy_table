@@ -44,6 +44,8 @@ post_install do |installer|
     # with no iOS prompt — which silently killed voice recording and camera
     # capture on iOS (mic/camera never even appeared in Settings).
     target.build_configurations.each do |config|
+      # Xcode 27 rejects pod targets below the app's iOS 15 deployment floor.
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
       config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= [
         '$(inherited)',
         'PERMISSION_MICROPHONE=1',
