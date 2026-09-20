@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 // Public, no auth. Linked from the entry form and both app sites.
 // Rules text is the source of truth; the playbook defers to it.
 
-const EFFECTIVE = "September 14, 2026";
+const EFFECTIVE = "September 20, 2026";
 const VERSION = "1.0";
 
 const Section = ({ n, title, children }) => (
@@ -140,12 +140,18 @@ const ContestRulesPage = () => (
               forms.gle/TuiJSZSh1eoB3uQx7
             </a>{" "}
             between <strong>Monday, September 14, 2026</strong> and{" "}
-            <strong>Sunday, October 4, 2026 at 11:59 PM Pacific Time</strong>. You will be
+            <strong>Sunday, December 6, 2026 at 11:59 PM Pacific Time</strong>. You will be
             asked for your name, the social handles you will post from, which app you are
             entering with, proof that your subscription is active, and your agreement to
             these rules. We verify paid status within 48 hours and confirm by message.
             Entries that cannot be verified are not accepted. One entry per person; you may
             enter with one app or both, but you compete once.
+          </p>
+          <p>
+            Entering takes two steps: this form, and the final post you send at the end of the
+            campaign (Section 8). <strong>Both close on December 6, 2026.</strong> There is no
+            earlier cutoff — you can join any time before that date, though joining sooner
+            gives you more of the run to post.
           </p>
         </Section>
 
@@ -163,27 +169,27 @@ const ContestRulesPage = () => (
               <tbody>
                 <tr className="border-b border-border/60">
                   <td className="py-2 pr-4 align-top">1 · Open the Door</td>
-                  <td className="py-2 pr-4 align-top whitespace-nowrap">Sep 14 – Oct 4</td>
-                  <td className="py-2">Enrollment open. Post one introduction.</td>
+                  <td className="py-2 pr-4 align-top whitespace-nowrap">Sep 14 – Dec 6</td>
+                  <td className="py-2">Open throughout. Post one introduction when you join.</td>
                 </tr>
                 <tr className="border-b border-border/60">
                   <td className="py-2 pr-4 align-top">2 · The Work</td>
-                  <td className="py-2 pr-4 align-top whitespace-nowrap">Oct 5 – Nov 15</td>
+                  <td className="py-2 pr-4 align-top whitespace-nowrap">From joining – Nov 29</td>
                   <td className="py-2">Post at least twice each week following the weekly prompts.</td>
                 </tr>
                 <tr className="border-b border-border/60">
                   <td className="py-2 pr-4 align-top">3 · The Table</td>
-                  <td className="py-2 pr-4 align-top whitespace-nowrap">Nov 16 – Nov 29</td>
-                  <td className="py-2">Submit your final entry by Nov 29, 11:59 PM PT.</td>
+                  <td className="py-2 pr-4 align-top whitespace-nowrap">Nov 30 – Dec 6</td>
+                  <td className="py-2">Submit your final entry by Dec 6, 11:59 PM PT.</td>
                 </tr>
                 <tr className="border-b border-border/60">
                   <td className="py-2 pr-4 align-top">Community vote</td>
-                  <td className="py-2 pr-4 align-top whitespace-nowrap">Nov 30 – Dec 4</td>
-                  <td className="py-2">Public voting closes Dec 4, 5:00 PM PT.</td>
+                  <td className="py-2 pr-4 align-top whitespace-nowrap">Dec 8 – Dec 14</td>
+                  <td className="py-2">Public voting closes Dec 14, 5:00 PM PT.</td>
                 </tr>
                 <tr>
                   <td className="py-2 pr-4 align-top">Winners announced</td>
-                  <td className="py-2 pr-4 align-top whitespace-nowrap">Sat, Dec 5</td>
+                  <td className="py-2 pr-4 align-top whitespace-nowrap">Fri, Dec 18</td>
                   <td className="py-2">Announced from the Kindred and Legacy Table accounts.</td>
                 </tr>
               </tbody>
@@ -233,13 +239,13 @@ const ContestRulesPage = () => (
             If you miss the posting minimum in two consecutive weeks of Stage 2, you are no
             longer eligible for a prize. We will tell you in writing. You may keep posting
             and remain part of the campaign. Your paid subscription must stay active through
-            December 5, 2026; if it lapses, you are no longer eligible for a prize.
+            December 18, 2026; if it lapses, you are no longer eligible for a prize.
           </p>
         </Section>
 
-        <Section n={8} title="Final submission">
+        <Section n={8} title="Your final post">
           <p>
-            Between November 16 and November 29, 2026 (11:59 PM PT), submit the link to your
+            Between November 30 and December 6, 2026 (11:59 PM PT), submit the link to your
             final entry through the final submission form we send to eligible entrants.
           </p>
           <p>
@@ -268,7 +274,7 @@ const ContestRulesPage = () => (
             <li><strong>Consistency</strong> — the quality and regularity of the entrant's posts across the whole run.</li>
           </ul>
           <p>
-            The community vote runs November 30 through December 4, 2026 (5:00 PM PT) on
+            The community vote runs December 8 through December 14, 2026 (5:00 PM PT) on
             posts from the Kindred and Legacy Table accounts. Votes from bots, purchased
             engagement, or duplicate accounts are discarded. Judges' decisions are final and
             binding. Ties are broken by the judges' score on Heritage story.
@@ -413,7 +419,7 @@ const ContestRulesPage = () => (
           </p>
           <p>
             <strong>Winners list.</strong> The names and handles of winners will be published
-            on the Kindred and Legacy Table accounts on December 5, 2026 and will be available
+            on the Kindred and Legacy Table accounts on December 18, 2026 and will be available
             on request for 60 days after that at the contact below.
           </p>
         </Section>
@@ -432,7 +438,7 @@ const ContestRulesPage = () => (
       <div className="mt-12 rounded-2xl border border-border bg-card p-6 text-center">
         <p className="font-serif text-xl font-bold text-foreground mb-2">Ready to keep the record?</p>
         <p className="text-sm text-muted-foreground mb-4">
-          Enrollment is open September 14 through October 4, 2026.
+          Entries close December 6, 2026.
         </p>
         <a
           href="https://forms.gle/TuiJSZSh1eoB3uQx7"
