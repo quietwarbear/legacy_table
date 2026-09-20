@@ -384,8 +384,8 @@ const PricingPage = () => {
             onCta={() => startCheckout("free")}
             freeTier
             features={[
+              "Up to 25 recipes",
               "3 AI credits per month",
-              "Unlimited family recipe storage",
               "3 voice keepsake recordings",
               "1 family · share with up to 4 members",
               "Photo uploads for every recipe",
@@ -402,6 +402,7 @@ const PricingPage = () => {
             ctaNote="Secure checkout · cancel anytime"
             onCta={() => startCheckout("heritage")}
             features={[
+              "Unlimited recipes",
               "15 AI credits per month",
               "Everything in Free",
               "Unlimited voice keepsakes",
@@ -452,10 +453,10 @@ const PricingPage = () => {
         )}
       </section>
 
-      {/* Family Legacy gift — flag-gated until the print pipeline ships.
-          Enable with REACT_APP_SHOW_FAMILY_LEGACY=true in Vercel env. */}
-      {process.env.REACT_APP_SHOW_FAMILY_LEGACY === "true" && (
-        <section className="px-4 md:px-6 lg:px-8 py-16 md:py-20">
+      {/* Family Legacy gift — live. The flag that hid this was waiting on
+          the print pipeline; a test run has now produced a real printed
+          book, so the gift sells year-round. */}
+      <section className="px-4 md:px-6 lg:px-8 py-16 md:py-20">
           <div className="max-w-3xl mx-auto text-center rounded-2xl border-2 border-primary/30 bg-card shadow-md p-10">
             <p className="text-sm uppercase tracking-widest text-primary font-semibold mb-3">
               OR GIVE IT AS A GIFT
@@ -471,9 +472,11 @@ const PricingPage = () => {
             <Button size="lg" className="rounded-full" asChild>
               <Link to="/gift">Give Family Legacy</Link>
             </Button>
+            <p className="text-xs text-muted-foreground mt-4">
+              One payment. No subscription, no app required to buy it.
+            </p>
           </div>
-        </section>
-      )}
+      </section>
 
       {/* FAQ */}
       <section className="px-4 md:px-6 lg:px-8 py-16 md:py-20 bg-muted">
@@ -492,6 +495,20 @@ const PricingPage = () => {
                 build products of our own. Only the family members you
                 invite can see them, and you can download or delete
                 everything from Settings at any time.
+              </dd>
+            </div>
+            <div>
+              <dt className="font-semibold text-foreground mb-2">
+                What happens when a free account reaches 25 recipes?
+              </dt>
+              <dd className="text-muted-foreground">
+                Nothing happens to the 25. They stay in your cookbook —
+                readable, editable, shareable with your family, and
+                exportable — for as long as you have the account. You'll
+                just need Heritage Keeper to add the 26th. And if you
+                opened your account before September 2026, there's no limit
+                on yours at all: you signed up when storage was unlimited,
+                so it stays unlimited.
               </dd>
             </div>
             <div>

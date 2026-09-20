@@ -322,8 +322,29 @@ TIER_CREDITS = {
 }
 
 # Voice keepsakes included with a free account; any paid tier is unlimited.
-# Recipes themselves are never capped — recordings are the metered resource.
 FREE_TIER_VOICE_KEEPSAKES = 3
+
+# Recipes included with a free account; any paid tier is unlimited.
+#
+# The cap exists because free previously gave away the whole product —
+# unlimited storage meant the keeper of the recipes never needed to pay.
+# It applies only to accounts created on or after the cutoff. Anyone who
+# signed up under the unlimited promise keeps it: "your recipes are yours"
+# is the trust this product is built on, and retroactively walling a
+# family's own archive would spend that trust to collect a few upgrades.
+# Existing recipes are NEVER hidden, locked or deleted for anyone — the cap
+# only declines the creation of a new one.
+FREE_TIER_RECIPE_LIMIT = 25
+FREE_TIER_RECIPE_LIMIT_START = "2026-09-20"
+
+
+def free_recipe_cap_applies(user: dict) -> bool:
+    """True when this user's account is subject to the free recipe cap."""
+    if user.get("subscription_tier"):
+        return False
+    created = user.get("created_at") or ""
+    # A missing or unparseable created_at means an old account — grandfather it.
+    return str(created)[:10] >= FREE_TIER_RECIPE_LIMIT_START if created else False
 
 # Credit costs per AI feature (used when features are built)
 CREDIT_COSTS = {
@@ -1639,6 +1660,22 @@ async def _store_recipe_photos(
 
 @api_router.post("/recipes", response_model=RecipeResponse)
 async def create_recipe(recipe_data: RecipeCreate, user: dict = Depends(get_current_user)):
+    # Free accounts opened on or after the cutoff carry a recipe cap. This
+    # declines the NEW recipe only — everything already saved stays readable,
+    # editable and exportable.
+    if free_recipe_cap_applies(user):
+        saved = await db.recipes.count_documents({"author_id": user["id"]})
+        if saved >= FREE_TIER_RECIPE_LIMIT:
+            raise HTTPException(
+                status_code=403,
+                detail=(
+                    f"Free accounts hold {FREE_TIER_RECIPE_LIMIT} recipes. "
+                    "Upgrade to Heritage Keeper to keep adding — every recipe "
+                    "you've already saved stays yours, and you can export them "
+                    "any time."
+                ),
+            )
+
     # Backward compatible: Allow recipe creation even without family
     user_family_id = user.get("family_id")
     
@@ -2516,6 +2553,9 @@ class SubscriptionStatusResponse(BaseModel):
     credits_balance: int = 0
     credits_refresh_at: Optional[str] = None
     monthly_allowance: int = 3
+    recipes_saved: int = 0
+    # None = no cap (paid tiers, and free accounts grandfathered in)
+    recipe_limit: Optional[int] = None
 
 
 # Owner/admin emails that always receive top-tier ("legacy") access
@@ -2540,6 +2580,8 @@ async def get_subscription_status(user: dict = Depends(get_current_user)):
             credits_balance=max(user.get("credits_balance", 0), get_credits_for_tier(top_tier)),
             credits_refresh_at=user.get("credits_refresh_at"),
             monthly_allowance=get_credits_for_tier(top_tier),
+            recipes_saved=await db.recipes.count_documents({"author_id": user["id"]}),
+            recipe_limit=None,
         )
     tier = user.get("subscription_tier")
     return SubscriptionStatusResponse(
@@ -2548,6 +2590,8 @@ async def get_subscription_status(user: dict = Depends(get_current_user)):
         credits_balance=user.get("credits_balance", 0),
         credits_refresh_at=user.get("credits_refresh_at"),
         monthly_allowance=get_credits_for_tier(tier),
+        recipes_saved=await db.recipes.count_documents({"author_id": user["id"]}),
+        recipe_limit=FREE_TIER_RECIPE_LIMIT if free_recipe_cap_applies(user) else None,
     )
 
 
