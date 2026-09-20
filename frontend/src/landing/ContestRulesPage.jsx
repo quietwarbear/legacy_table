@@ -147,6 +147,12 @@ const ContestRulesPage = () => (
             Entries that cannot be verified are not accepted. One entry per person; you may
             enter with one app or both, but you compete once.
           </p>
+          <p>
+            Entering takes two steps: this form, and the final post you send at the end of the
+            campaign (Section 8). <strong>Both close on December 6, 2026.</strong> There is no
+            earlier cutoff — you can join any time before that date, though joining sooner
+            gives you more of the run to post.
+          </p>
         </Section>
 
         <Section n={4} title="Contest period and stages">
@@ -164,11 +170,11 @@ const ContestRulesPage = () => (
                 <tr className="border-b border-border/60">
                   <td className="py-2 pr-4 align-top">1 · Open the Door</td>
                   <td className="py-2 pr-4 align-top whitespace-nowrap">Sep 14 – Dec 6</td>
-                  <td className="py-2">Enrollment open throughout. Post one introduction when you enroll.</td>
+                  <td className="py-2">Open throughout. Post one introduction when you join.</td>
                 </tr>
                 <tr className="border-b border-border/60">
                   <td className="py-2 pr-4 align-top">2 · The Work</td>
-                  <td className="py-2 pr-4 align-top whitespace-nowrap">From enrolling – Nov 29</td>
+                  <td className="py-2 pr-4 align-top whitespace-nowrap">From joining – Nov 29</td>
                   <td className="py-2">Post at least twice each week following the weekly prompts.</td>
                 </tr>
                 <tr className="border-b border-border/60">
@@ -237,7 +243,7 @@ const ContestRulesPage = () => (
           </p>
         </Section>
 
-        <Section n={8} title="Final submission">
+        <Section n={8} title="Your final post">
           <p>
             Between November 30 and December 6, 2026 (11:59 PM PT), submit the link to your
             final entry through the final submission form we send to eligible entrants.
@@ -432,7 +438,7 @@ const ContestRulesPage = () => (
       <div className="mt-12 rounded-2xl border border-border bg-card p-6 text-center">
         <p className="font-serif text-xl font-bold text-foreground mb-2">Ready to keep the record?</p>
         <p className="text-sm text-muted-foreground mb-4">
-          Enrollment is open September 14 through December 6, 2026.
+          Entries close December 6, 2026.
         </p>
         <a
           href="https://forms.gle/TuiJSZSh1eoB3uQx7"
