@@ -140,7 +140,7 @@ const ContestRulesPage = () => (
               forms.gle/TuiJSZSh1eoB3uQx7
             </a>{" "}
             between <strong>Monday, September 14, 2026</strong> and{" "}
-            <strong>Sunday, October 25, 2026 at 11:59 PM Pacific Time</strong>. You will be
+            <strong>Sunday, December 6, 2026 at 11:59 PM Pacific Time</strong>. You will be
             asked for your name, the social handles you will post from, which app you are
             entering with, proof that your subscription is active, and your agreement to
             these rules. We verify paid status within 48 hours and confirm by message.
@@ -163,12 +163,12 @@ const ContestRulesPage = () => (
               <tbody>
                 <tr className="border-b border-border/60">
                   <td className="py-2 pr-4 align-top">1 · Open the Door</td>
-                  <td className="py-2 pr-4 align-top whitespace-nowrap">Sep 14 – Oct 25</td>
-                  <td className="py-2">Enrollment open. Post one introduction.</td>
+                  <td className="py-2 pr-4 align-top whitespace-nowrap">Sep 14 – Dec 6</td>
+                  <td className="py-2">Enrollment open throughout. Post one introduction when you enroll.</td>
                 </tr>
                 <tr className="border-b border-border/60">
                   <td className="py-2 pr-4 align-top">2 · The Work</td>
-                  <td className="py-2 pr-4 align-top whitespace-nowrap">Oct 26 – Nov 29</td>
+                  <td className="py-2 pr-4 align-top whitespace-nowrap">From enrolling – Nov 29</td>
                   <td className="py-2">Post at least twice each week following the weekly prompts.</td>
                 </tr>
                 <tr className="border-b border-border/60">
@@ -432,7 +432,7 @@ const ContestRulesPage = () => (
       <div className="mt-12 rounded-2xl border border-border bg-card p-6 text-center">
         <p className="font-serif text-xl font-bold text-foreground mb-2">Ready to keep the record?</p>
         <p className="text-sm text-muted-foreground mb-4">
-          Enrollment is open September 14 through October 25, 2026.
+          Enrollment is open September 14 through December 6, 2026.
         </p>
         <a
           href="https://forms.gle/TuiJSZSh1eoB3uQx7"
