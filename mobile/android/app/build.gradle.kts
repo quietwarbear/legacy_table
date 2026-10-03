@@ -58,3 +58,12 @@ android {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    // TikTok App Events (ad attribution) — bridged in MainActivity.kt.
+    implementation("com.github.tiktok:tiktok-business-android-sdk:1.7.1")
+    // Required by the TikTok SDK: app lifecycle + Google Play install referrer.
+    implementation("androidx.lifecycle:lifecycle-process:2.3.1")
+    implementation("androidx.lifecycle:lifecycle-common-java8:2.3.1")
+    implementation("com.android.installreferrer:installreferrer:2.2")
+}

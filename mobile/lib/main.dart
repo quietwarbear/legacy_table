@@ -17,6 +17,7 @@ import 'services/analytics_service.dart';
 import 'services/invite_capture.dart';
 import 'services/push_service.dart';
 import 'services/subscription_service.dart';
+import 'services/tiktok_events.dart';
 import 'views/splash_screen.dart';
 import 'views/onboarding_screen.dart';
 import 'views/home_screen.dart';
@@ -56,6 +57,9 @@ void main() async {
 
   // Product analytics — no-op without a POSTHOG_API_KEY dart-define.
   await analytics.init();
+
+  // TikTok App Events — no-op without a TIKTOK_APP_SECRET_* dart-define.
+  await tiktokEvents.init();
 
   // Let notification taps navigate without push_service importing main.
   PushService.navigatorKey = MyApp.navigatorKey;
@@ -98,6 +102,15 @@ class _MyAppState extends State<MyApp> {
     super.initState();
     _appLinks = AppLinks();
     _initDeepLinks();
+    // iOS tracking prompt. Apple only shows it while the app is active, so
+    // wait for the first frame plus a beat. No-op on Android and whenever
+    // the TikTok SDK is disabled; iOS shows it at most once per install.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Future<void>.delayed(
+        const Duration(seconds: 1),
+        tiktokEvents.requestTrackingAuthorization,
+      );
+    });
   }
 
   @override

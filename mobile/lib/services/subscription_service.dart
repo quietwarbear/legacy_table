@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import '../config/app_config.dart';
 import 'analytics_service.dart';
+import 'tiktok_events.dart';
 
 // Local instance rather than the main.dart singleton to avoid a
 // service→main circular import; the plugin is a stateless method-channel
@@ -88,7 +89,7 @@ class SubscriptionService {
     // ignore: deprecated_member_use
     final result = await Purchases.purchasePackage(package);
 
-    // Revenue events: PostHog for the funnel, Meta for ad attribution.
+    // Revenue events: PostHog for the funnel, Meta and TikTok for ad attribution.
     // Both are best-effort — a logging failure must never look like a
     // failed purchase.
     try {
@@ -103,6 +104,13 @@ class SubscriptionService {
         currency: product.currencyCode,
         parameters: {'product_id': product.identifier},
       );
+      // TikTok: the event App Promotion campaigns optimise toward.
+      await tiktokEvents.track('Subscribe', {
+        'content_id': product.identifier,
+        'content_type': 'subscription',
+        'value': product.price,
+        'currency': product.currencyCode,
+      });
     } catch (e) {
       debugPrint('[Subscription] purchase event logging failed: $e');
     }
