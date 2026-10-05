@@ -105,12 +105,14 @@ class _MyAppState extends State<MyApp> {
     // iOS tracking prompt. Apple only shows it while the app is active, so
     // wait for the first frame plus a beat. No-op on Android and whenever
     // the TikTok SDK is disabled; iOS shows it at most once per install.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Future<void>.delayed(
-        const Duration(seconds: 1),
-        tiktokEvents.requestTrackingAuthorization,
-      );
-    });
+    if (tiktokEvents.enabled) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Future<void>.delayed(
+          const Duration(seconds: 1),
+          tiktokEvents.requestTrackingAuthorization,
+        );
+      });
+    }
   }
 
   @override

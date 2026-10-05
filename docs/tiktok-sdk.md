@@ -50,4 +50,4 @@ cd ios && pod install
 
 TikTok Events Manager > the app > **Test event**. Run a build with the secret,
 sign up and buy a tier in sandbox, and confirm `Registration` and `Subscribe`
-arrive.
+arrive. Debug builds enable TikTok's SDK Test Event mode; release builds do not.

@@ -45,6 +45,7 @@ enum TikTokEventsBridge {
         return
       }
       if args["debug"] as? Bool == true {
+        config.enableDebugMode()
         config.setLogLevel(TikTokLogLevelDebug)
       }
       // Until the user has answered the tracking prompt, hold the first

@@ -42,6 +42,7 @@ class MainActivity : FlutterActivity() {
                     .setAppId(appId)
                     .setTTAppId(ttAppId)
                 if (call.argument<Boolean>("debug") == true) {
+                    config.openDebugMode()
                     config.setLogLevel(TikTokBusinessSdk.LogLevel.DEBUG)
                 }
                 val main = Handler(Looper.getMainLooper())

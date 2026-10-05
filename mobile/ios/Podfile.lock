@@ -150,6 +150,7 @@ PODS:
     - FlutterMacOS
   - sign_in_with_apple (0.0.1):
     - Flutter
+  - TikTokBusinessSDK (1.7.2)
   - url_launcher_ios (0.0.1):
     - Flutter
 
@@ -175,6 +176,7 @@ DEPENDENCIES:
   - share_plus (from `.symlinks/plugins/share_plus/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
   - sign_in_with_apple (from `.symlinks/plugins/sign_in_with_apple/ios`)
+  - TikTokBusinessSDK (~> 1.7)
   - url_launcher_ios (from `.symlinks/plugins/url_launcher_ios/ios`)
 
 SPEC REPOS:
@@ -201,6 +203,7 @@ SPEC REPOS:
     - PurchasesHybridCommon
     - RevenueCat
     - Sentry
+    - TikTokBusinessSDK
 
 EXTERNAL SOURCES:
   app_links:
@@ -292,8 +295,9 @@ SPEC CHECKSUMS:
   share_plus: c3fef564749587fc939ef86ffb283ceac0baf9f5
   shared_preferences_foundation: 5086985c1d43c5ba4d5e69a4e8083a389e2909e6
   sign_in_with_apple: f3bf75217ea4c2c8b91823f225d70230119b8440
+  TikTokBusinessSDK: c8878048daf0c46a0d9e89932359d553ea38096c
   url_launcher_ios: bb13df5870e8c4234ca12609d04010a21be43dfa
 
-PODFILE CHECKSUM: 70277dec4ac1a5a808bdc6dd97e7a9e7bcb70d38
+PODFILE CHECKSUM: 30a03dedcb3e89c5ef41ac84b75da594551b4cd9
 
 COCOAPODS: 1.13.0
