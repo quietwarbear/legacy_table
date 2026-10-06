@@ -56,6 +56,14 @@ export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
 flutter --version
 flutter doctor -v || true
 
+# This project is CocoaPods-based. Newer Flutter releases may enable Swift
+# Package Manager integration automatically and try to add posthog-ios while
+# Xcode Cloud has automatic package resolution disabled. That combination
+# fails before the archive starts because there is no SPM Package.resolved.
+# Keep CI on the dependency manager committed by this project for this
+# release; an SPM migration should be handled separately and atomically.
+flutter config --no-enable-swift-package-manager
+
 echo ""
 echo "──── 2/3 flutter pub get (regenerates Generated.xcconfig) ────"
 cd "$MOBILE_DIR"
