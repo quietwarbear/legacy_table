@@ -2,6 +2,8 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+        // TikTok App Events SDK is published on JitPack.
+        maven { url = uri("https://jitpack.io") }
     }
 }
 

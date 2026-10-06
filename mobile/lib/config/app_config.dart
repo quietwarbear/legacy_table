@@ -34,7 +34,25 @@ class AppConfig {
     defaultValue:
         'https://6673dabfdb3831f9277bb2c98dea72b9@o4511694752120832.ingest.us.sentry.io/4511694759395328',
   );
-  
+
+  // TikTok App Events (ad attribution). The App IDs identify the app in
+  // TikTok Events Manager and are not secret. The App Secrets authorise
+  // sending events, so they are NOT committed: pass them at build time with
+  // --dart-define. An empty secret disables the TikTok SDK entirely.
+  static const String tiktokStoreAppIdIos = '6759821009';
+  static const String tiktokAppIdIos = '7692517129224044596';
+  static const String tiktokStoreAppIdAndroid =
+      'com.htrecipes.family_recipe_app';
+  static const String tiktokAppIdAndroid = '7692521935023996949';
+  static const String tiktokAppSecretIos = String.fromEnvironment(
+    'TIKTOK_APP_SECRET_IOS',
+    defaultValue: '',
+  );
+  static const String tiktokAppSecretAndroid = String.fromEnvironment(
+    'TIKTOK_APP_SECRET_ANDROID',
+    defaultValue: '',
+  );
+
   // Get base URL based on environment
   static String get baseUrl => _isProduction ? _prodBaseUrl : _devBaseUrl;
 

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:posthog_flutter/posthog_flutter.dart';
 
 import '../config/app_config.dart';
+import 'tiktok_events.dart';
 
 /// Product analytics wrapper around PostHog.
 ///
@@ -37,6 +38,8 @@ class AnalyticsService {
 
   /// Tie events to the logged-in user (backend user id, never email).
   Future<void> identify(String userId) async {
+    // TikTok attribution runs independently of PostHog being configured.
+    await tiktokEvents.identify(userId);
     if (!_initialized) return;
     try {
       await Posthog().identify(userId: userId);
@@ -46,6 +49,11 @@ class AnalyticsService {
   }
 
   Future<void> capture(String event, [Map<String, Object>? properties]) async {
+    // Every sign-up path (email, Google, Apple, Facebook) reports 'signup'
+    // here, so this is the single place TikTok learns about a new account.
+    if (event == 'signup') {
+      await tiktokEvents.track('Registration', properties);
+    }
     if (!_initialized) return;
     try {
       await Posthog().capture(eventName: event, properties: properties ?? {});
@@ -56,6 +64,7 @@ class AnalyticsService {
 
   /// Clear identity on logout so the next signup isn't merged.
   Future<void> reset() async {
+    await tiktokEvents.logout();
     if (!_initialized) return;
     try {
       await Posthog().reset();

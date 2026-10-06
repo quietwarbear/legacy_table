@@ -78,7 +78,7 @@
 		<string>fbshareextension</string>
 	</array>
 	<key>NSUserTrackingUsageDescription</key>
-	<string>Legacy Table uses this to improve our app and measure the effectiveness of ads we run on Facebook and Instagram. You can change this anytime in Settings.</string>
+	<string>Legacy Table uses this to improve our app and measure the effectiveness of ads we run on Facebook, Instagram, and TikTok. You can change this anytime in Settings.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>GIDClientID</key>

@@ -61,6 +61,18 @@ echo "──── 2/3 flutter pub get (regenerates Generated.xcconfig) ──�
 cd "$MOBILE_DIR"
 flutter pub get
 
+# Optional: TikTok App Events. Xcode Cloud builds with xcodebuild, which never
+# sees `flutter build --dart-define` flags, so bake the define into
+# Generated.xcconfig here. Set TIKTOK_APP_SECRET_IOS as a *secret* environment
+# variable on the Xcode Cloud workflow; when it is unset this block is skipped
+# and the TikTok SDK stays disabled in the build.
+if [ -n "${TIKTOK_APP_SECRET_IOS:-}" ]; then
+    echo ""
+    echo "──── 2b flutter build ios --config-only (TikTok dart-define) ────"
+    flutter build ios --config-only --release --no-codesign \
+        --dart-define=TIKTOK_APP_SECRET_IOS="${TIKTOK_APP_SECRET_IOS}"
+fi
+
 echo ""
 echo "──── 3/3 pod install (regenerates Pods workspace + xcfilelists) ────"
 cd "$IOS_DIR"
