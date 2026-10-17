@@ -124,7 +124,10 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
       if (kDebugMode) {
         print('Recipes loaded: ${recipes.length} recipes (category: $_selectedCategory)');
       }
-      
+
+      // The load can finish after the user has left or backgrounded the
+      // screen; setState on an unmounted State crashes (_element! is null).
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
         _recipes = recipes;
@@ -135,6 +138,7 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
       if (kDebugMode) {
         print('Error loading recipes: $e');
       }
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
       });
