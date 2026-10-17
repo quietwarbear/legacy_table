@@ -166,14 +166,23 @@ class _MyAppState extends State<MyApp> {
         _handleDeepLink(initialUri);
       } else {
         // No deep link — the install may have come through a store, which
-        // strips link context. Try deferred capture (Play Install Referrer
-        // on Android, clipboard on iOS; runs at most once per install) and
-        // feed any recovered code through the normal deep-link path so it
-        // lands on JoinFamilyScreen exactly like a tapped invite link.
-        final capturedCode = await InviteCapture.captureOnce();
-        if (capturedCode != null) {
-          _handleDeepLink(Uri.parse('legacytable://invite/$capturedCode'));
-        }
+        // strips link context. Recover via deferred capture (Play Install
+        // Referrer on Android, clipboard on iOS; runs at most once per
+        // install) and feed any recovered code through the normal deep-link
+        // path so it lands on JoinFamilyScreen like a tapped invite link.
+        //
+        // Deferred OFF the launch-critical path: on iOS the clipboard read
+        // blocks the main thread (and shows the system paste banner), so
+        // running it during startup can hang the launch (Sentry
+        // LEGACY-TABLE-MOBILE-7). Two seconds in, the app is interactive and
+        // a brief pasteboard read is no longer a startup hang.
+        Future.delayed(const Duration(seconds: 2), () async {
+          if (!mounted) return;
+          final capturedCode = await InviteCapture.captureOnce();
+          if (capturedCode != null && mounted) {
+            _handleDeepLink(Uri.parse('legacytable://invite/$capturedCode'));
+          }
+        });
       }
 
       // Listen for deep links while app is running

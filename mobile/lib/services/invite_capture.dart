@@ -72,7 +72,10 @@ class InviteCapture {
   static Future<String?> _fromClipboard() async {
     // Reading the clipboard triggers the iOS system paste notice — this
     // method is reached once per install at most, so the user sees it once.
-    final data = await Clipboard.getData(Clipboard.kTextPlain);
+    // Bound the await so a slow/stuck pasteboard read can't leave this
+    // hanging (the caller also defers it off the launch-critical path).
+    final data = await Clipboard.getData(Clipboard.kTextPlain)
+        .timeout(const Duration(seconds: 2), onTimeout: () => null);
     final text = data?.text?.trim().toUpperCase();
     if (text == null || text.isEmpty) return null;
     return text;
