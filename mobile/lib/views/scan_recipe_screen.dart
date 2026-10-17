@@ -51,6 +51,7 @@ class _ScanRecipeScreenState extends State<ScanRecipeScreen> {
     );
 
     if (image == null) return;
+    if (!mounted) return;
 
     setState(() {
       _selectedImage = File(image.path);

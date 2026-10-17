@@ -109,6 +109,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
         // Refresh user data in the background
         try {
           final user = await apiService.auth.getCurrentUser();
+          if (!mounted) return;
           setState(() {
             _currentUser = user;
             _nicknameController.text = user.nickname ?? '';
@@ -122,6 +123,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       } else {
         // If no cached user, fetch from API
         final user = await apiService.auth.getCurrentUser();
+        if (!mounted) return;
         setState(() {
           _currentUser = user;
           _nicknameController.text = user.nickname ?? '';
@@ -213,6 +215,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                 : 'jpeg'; // default to jpeg
         final dataUri = 'data:image/$mimeType;base64,$base64String';
 
+        if (!mounted) return;
         setState(() {
           _selectedAvatarBytes = bytes;
           _selectedAvatarBase64 = dataUri;
@@ -245,6 +248,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       // Update session manager
       await sessionManager.refreshUser();
 
+      if (!mounted) return;
       setState(() {
         _currentUser = updatedUser;
         _selectedAvatarBase64 = null;

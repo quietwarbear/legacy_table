@@ -61,7 +61,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (kDebugMode) {
         print('My recipes loaded: ${recipes.length} recipes');
       }
-      
+
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
         _recipes = recipes;

@@ -66,6 +66,7 @@ class _VoiceRecipeScreenState extends State<VoiceRecipeScreen> {
         path: path,
       );
 
+      if (!mounted) return;
       setState(() {
         _isRecording = true;
         _recordingPath = path;
@@ -90,6 +91,7 @@ class _VoiceRecipeScreenState extends State<VoiceRecipeScreen> {
 
     try {
       final path = await _recorder.stop();
+      if (!mounted) return;
       setState(() {
         _isRecording = false;
         if (path != null) {

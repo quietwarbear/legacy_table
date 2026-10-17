@@ -43,6 +43,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
       final unreadCountResponse = await apiService.notifications.getUnreadCount();
 
+      if (!mounted) return;
       setState(() {
         _notifications = notifications;
         _unreadCount = unreadCountResponse.count;
@@ -95,6 +96,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Future<void> _markAsRead(String notificationId) async {
     try {
       await apiService.notifications.markAsRead(notificationId);
+      if (!mounted) return;
       // Update local state
       setState(() {
         final index = _notifications.indexWhere((n) => n.id == notificationId);

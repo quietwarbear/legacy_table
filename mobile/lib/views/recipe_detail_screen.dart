@@ -58,6 +58,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   Future<void> _loadRecipe() async {
     try {
       final recipe = await apiService.recipes.getRecipeById(widget.recipeId);
+      if (!mounted) return;
       setState(() {
         _recipe = recipe;
         _isLoading = false;
@@ -95,6 +96,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       // Sort comments by creation date (newest first)
       comments.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
+      if (!mounted) return;
       setState(() {
         _comments = comments;
         _isLoadingComments = false;
@@ -153,6 +155,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       }
 
       // Add new comment at the beginning (newest first)
+      if (!mounted) return;
       setState(() {
         _comments = [comment, ..._comments];
         _commentController.clear();
@@ -180,6 +183,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       if (kDebugMode) {
         print('Error submitting comment: $e');
       }
+      if (!mounted) return;
       setState(() {
         _isSubmittingComment = false;
       });
@@ -232,6 +236,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
 
       await apiService.comments.deleteComment(commentId);
 
+      if (!mounted) return;
       // Remove comment from list
       setState(() {
         _comments = _comments.where((c) => c.id != commentId).toList();

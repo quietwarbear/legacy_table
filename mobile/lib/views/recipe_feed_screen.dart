@@ -52,6 +52,7 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
   Future<void> _loadUnreadNotificationCount() async {
     try {
       final response = await apiService.notifications.getUnreadCount();
+      if (!mounted) return;
       setState(() {
         _unreadNotificationCount = response.count;
       });
@@ -92,7 +93,8 @@ class _RecipeFeedScreenState extends State<RecipeFeedScreen> {
       if (kDebugMode) {
         print('Categories loaded: ${categories.length} categories');
       }
-      
+
+      if (!mounted) return;
       setState(() {
         _isLoadingCategories = false;
         _categories = categories;

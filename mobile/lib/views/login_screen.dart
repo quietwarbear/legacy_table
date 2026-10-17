@@ -158,6 +158,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final googleUser = await _googleSignIn.signIn();
+      if (!mounted) return;
       if (googleUser == null) {
         // User cancelled
         setState(() {

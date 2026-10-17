@@ -323,7 +323,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
       final ImagePicker picker = ImagePicker();
       final List<XFile> images = await picker.pickMultiImage();
 
-      if (images.isNotEmpty) {
+      if (mounted && images.isNotEmpty) {
         setState(() {
           _selectedImages.addAll(images.map((xFile) => File(xFile.path)).toList());
         });
@@ -356,7 +356,7 @@ class _AddRecipeScreenState extends State<AddRecipeScreen> {
         maxHeight: 1920,
       );
 
-      if (image != null) {
+      if (mounted && image != null) {
         setState(() {
           _selectedImages.add(File(image.path));
         });
