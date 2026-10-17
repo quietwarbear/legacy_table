@@ -48,7 +48,10 @@ class _CookbookScreenState extends State<CookbookScreen> {
       if (kDebugMode) {
         print('Cookbook recipes loaded: ${recipes.length} recipes');
       }
-      
+
+      // The load can finish after the user has left or backgrounded the
+      // screen; setState on an unmounted State crashes (_element! is null).
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
         _recipes = recipes;
@@ -57,6 +60,7 @@ class _CookbookScreenState extends State<CookbookScreen> {
       if (kDebugMode) {
         print('Error loading cookbook recipes: $e');
       }
+      if (!mounted) return;
       setState(() {
         _isLoading = false;
       });
