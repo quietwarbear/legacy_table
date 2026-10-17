@@ -76,6 +76,14 @@ dependencies:
 
 dev_dependencies:
   flutter_launcher_icons: ^0.14.4
+  # Uploads debug symbols (Dart, Android native, iOS dSYMs) to Sentry so
+  # native crashes (e.g. the SIGABRT in LEGACY-TABLE-MOBILE-9) symbolicate
+  # instead of showing <unknown> frames. Runs as a post-build command
+  # (`dart run sentry_dart_plugin`), never during `flutter build`, so it
+  # can't break a release build. Config in the top-level `sentry:` block;
+  # needs SENTRY_AUTH_TOKEN in the environment to upload. See
+  # docs/sentry-symbols.md.
+  sentry_dart_plugin: ^2.0.0
   flutter_test:
     sdk: flutter
 
@@ -184,3 +192,15 @@ flutter_launcher_icons:
   macos:
     generate: true
     image_path: "assets/images/app-icon.png"
+
+# Sentry debug-symbol upload (sentry_dart_plugin).
+# Run after a release build: `dart run sentry_dart_plugin` with
+# SENTRY_AUTH_TOKEN set. No token = no-op; never affects `flutter build`.
+sentry:
+  upload_debug_symbols: true
+  upload_source_maps: false
+  upload_sources: false
+  project: legacy-table-mobile
+  org: ubuntu-markets
+  wait_for_processing: false
+  # auth_token is read from the SENTRY_AUTH_TOKEN environment variable.
