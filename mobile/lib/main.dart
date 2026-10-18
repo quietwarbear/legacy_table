@@ -73,6 +73,12 @@ void main() async {
         options.tracesSampleRate = 0.2;
         options.environment =
             AppConfig.isProduction ? 'production' : 'development';
+        // Only auto-capture failed HTTP requests to OUR API. By default
+        // sentry_flutter logs every failed request, so transient 5xx from
+        // third-party services the SDKs call (e.g. Firebase's
+        // fcmtoken.googleapis.com, TikTok, Facebook, RevenueCat) show up as
+        // app errors — noise, not Legacy Table bugs (LEGACY-TABLE-MOBILE-A).
+        options.failedRequestTargets = ['api.legacytable.app'];
       },
       appRunner: () => runApp(const MyApp()),
     );
