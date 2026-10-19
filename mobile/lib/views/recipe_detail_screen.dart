@@ -95,6 +95,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       // Sort comments by creation date (newest first)
       comments.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
+      if (!mounted) return;
       setState(() {
         _comments = comments;
         _isLoadingComments = false;
@@ -103,10 +104,13 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       if (kDebugMode) {
         print('Error loading comments: $e');
       }
-      setState(() {
-        _isLoadingComments = false;
-      });
+      // Guard the state update too: the widget can be disposed during the
+      // await above, and setState on an unmounted State throws
+      // "Null check operator used on a null value".
       if (mounted) {
+        setState(() {
+          _isLoadingComments = false;
+        });
         StyledSnackBar.showError(
           context,
           AppLocalizations.of(context).recipeDetailLoadCommentsError,
@@ -153,6 +157,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       }
 
       // Add new comment at the beginning (newest first)
+      if (!mounted) return;
       setState(() {
         _comments = [comment, ..._comments];
         _commentController.clear();
@@ -180,10 +185,10 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       if (kDebugMode) {
         print('Error submitting comment: $e');
       }
-      setState(() {
-        _isSubmittingComment = false;
-      });
       if (mounted) {
+        setState(() {
+          _isSubmittingComment = false;
+        });
         final l10n = AppLocalizations.of(context);
         String errorMessage = l10n.recipeDetailPostCommentError;
         if (e.toString().contains('Exception:')) {
@@ -233,6 +238,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       await apiService.comments.deleteComment(commentId);
 
       // Remove comment from list
+      if (!mounted) return;
       setState(() {
         _comments = _comments.where((c) => c.id != commentId).toList();
       });
