@@ -2868,11 +2868,16 @@ def _verify_stripe_price(stripe_lib, price_id: str, key: str) -> None:
     except Exception as e:
         logger.error("Stripe price %s (%s) not retrievable: %s", price_id, key, e)
         raise HTTPException(status_code=500, detail="Payment configuration error — contact support")
-    interval = (price.get("recurring") or {}).get("interval")
-    if price.get("unit_amount") != expected_cents or interval != expected_interval:
+    # Stripe objects are not dicts in current stripe-python (`.get` raises
+    # AttributeError), so read fields by attribute. getattr tolerates the
+    # one-time-price case where `recurring` is None.
+    recurring = getattr(price, "recurring", None)
+    interval = getattr(recurring, "interval", None)
+    unit_amount = getattr(price, "unit_amount", None)
+    if unit_amount != expected_cents or interval != expected_interval:
         logger.error(
             "Stripe price %s (%s) mismatch: got %s/%s, expected %s/%s",
-            price_id, key, price.get("unit_amount"), interval,
+            price_id, key, unit_amount, interval,
             expected_cents, expected_interval,
         )
         raise HTTPException(status_code=500, detail="Payment configuration error — contact support")
