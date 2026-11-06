@@ -32,6 +32,7 @@ from owner_alerts import (
     alert_stripe_gift,
 )
 import ga4
+import sso_guard
 from voice_storage import (
     VoiceStorageError,
     VoiceStorageNotConfigured,
@@ -945,6 +946,8 @@ async def sso_redeem_code(payload: SSORedeemRequest, request: Request, response:
 async def lt_open_kindred(user: dict = Depends(get_current_user)):
     """Start an 'Open in Kindred' jump from Legacy Table. Mints a single-use code at
     Kindred (shared secret) and returns the jump URL — only a one-time code in the URL."""
+    if not sso_guard.email_proven(user):
+        raise HTTPException(status_code=403, detail=sso_guard.UNVERIFIED_MESSAGE)
     kindred_api = os.environ.get("KINDRED_API_URL", "https://kindred-production-badd.up.railway.app/api").rstrip("/")
     kindred_web = os.environ.get("KINDRED_WEB_URL", "https://www.heykindred.org").rstrip("/")
     secret = os.environ.get("UBUNTU_SSO_SECRET", "")
