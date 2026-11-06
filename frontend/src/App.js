@@ -4666,8 +4666,9 @@ const FamilyPage = () => {
     try {
       const res = await axios.post(`${API}/federation/open-kindred`, {}, { headers: { Authorization: `Bearer ${token}` } });
       window.open(res.data.url, "_blank", "noopener");
-    } catch {
-      toast.error("Couldn't open Kindred.");
+    } catch (error) {
+      const detail = error?.response?.data?.detail;
+      toast.error(typeof detail === "string" && error.response.status === 403 ? detail : "Couldn't open Kindred.");
     }
   };
 
