@@ -1,4 +1,4 @@
-import React, { useState, useEffect, createContext, useContext, useCallback } from "react";
+import React, { useState, useEffect, createContext, useContext, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useAuth } from "./App";
 import axios from "axios";
@@ -52,15 +52,24 @@ const SubscriptionContext = createContext(null);
 export const useSubscription = () => useContext(SubscriptionContext);
 
 export const SubscriptionProvider = ({ children }) => {
-  const { user, token } = useAuth();
+  const { token } = useAuth();
   const [tier, setTier] = useState(null); // "heritage" | "legacy" | null
   const [credits, setCredits] = useState({ balance: 0, refreshAt: null, monthlyAllowance: 3 });
-  const [loading, setLoading] = useState(true);
+  const [pending, setLoading] = useState(true);
+  const [resolvedToken, setResolvedToken] = useState(null);
+  const [error, setError] = useState(false);
+  const requestId = useRef(0);
+  // A new session must be pending on its very first render, before effects run.
+  const loading = pending || resolvedToken !== token;
 
   const fetchStatus = useCallback(async () => {
+    const currentRequest = ++requestId.current;
+    setLoading(true);
+    setError(false);
     if (!token) {
       setTier(null);
       setCredits({ balance: 0, refreshAt: null, monthlyAllowance: 3 });
+      setResolvedToken(token);
       setLoading(false);
       return;
     }
@@ -68,6 +77,7 @@ export const SubscriptionProvider = ({ children }) => {
       const res = await axios.get(`${API}/subscriptions/status`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      if (currentRequest !== requestId.current) return;
       setTier(res.data.subscription_tier || null);
       setCredits({
         balance: res.data.credits_balance ?? 0,
@@ -75,13 +85,17 @@ export const SubscriptionProvider = ({ children }) => {
         monthlyAllowance: res.data.monthly_allowance ?? 3,
       });
     } catch {
+      if (currentRequest !== requestId.current) return;
       setTier(null);
+      setError(true);
     }
+    setResolvedToken(token);
     setLoading(false);
   }, [token]);
 
   useEffect(() => {
     fetchStatus();
+    return () => { requestId.current += 1; };
   }, [fetchStatus]);
 
   const hasAny = tier != null;
@@ -101,7 +115,7 @@ export const SubscriptionProvider = ({ children }) => {
 
   return (
     <SubscriptionContext.Provider
-      value={{ tier, loading, hasAny, hasHeritage, hasLegacy, canAccess, hasCredits, credits, refetch: fetchStatus }}
+      value={{ tier, loading, error, hasAny, hasHeritage, hasLegacy, canAccess, hasCredits, credits, refetch: fetchStatus }}
     >
       {children}
     </SubscriptionContext.Provider>

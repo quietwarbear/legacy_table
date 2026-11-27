@@ -749,15 +749,16 @@ const LoginPage = () => {
   const [formData, setFormData] = useState({ name: "", email: "", password: "" });
   const [loading, setLoading] = useState(false);
   const { login, user } = useAuth();
-  const { hasAny, loading: subLoading } = useSubscription();
+  const { hasAny, loading: subLoading, error: subError } = useSubscription();
   const navigate = useNavigate();
   const googleButtonRef = React.useRef(null);
 
   useEffect(() => {
     if (user && !subLoading) {
-      navigate(hasAny ? "/home" : "/subscribe");
+      // A failed status lookup is not evidence that a paid plan is missing.
+      navigate(hasAny || subError ? "/home" : "/subscribe", { replace: true });
     }
-  }, [user, subLoading, hasAny, navigate]);
+  }, [user, subLoading, subError, hasAny, navigate]);
 
   // Initialize Google Sign-In
   useEffect(() => {
