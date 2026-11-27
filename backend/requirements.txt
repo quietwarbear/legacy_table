@@ -1,6 +1,6 @@
 fastapi==0.110.1
 uvicorn==0.25.0
-sentry-sdk[fastapi]>=2.0.0
+sentry-sdk[fastapi]==2.77.0
 google-auth>=2.30.0
 reportlab>=4.1.0
 qrcode>=7.4.2
